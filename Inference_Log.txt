@@ -1,0 +1,710 @@
+W0731 02:47:25.103000 24648 .venv\Lib\site-packages\torch\utils\flop_counter.py:29] triton not found; flop counting will not work for triton kernels
+---------------------------------------------TTS Config---------------------------------------------
+device              : cuda
+is_half             : True
+version             : v2Pro
+t2s_weights_path    : ../TTS-KurisuMakise/牧懒红莉栖-e15.ckpt
+vits_weights_path   : ../TTS-KurisuMakise/牧懒红莉栖_e4_s972.pth
+bert_base_path      : GPT_SoVITS/pretrained_models/chinese-roberta-wwm-ext-large
+cnhuhbert_base_path : GPT_SoVITS/pretrained_models/chinese-hubert-base
+----------------------------------------------------------------------------------------------------
+
+Loading Text2Semantic weights from ../TTS-KurisuMakise/牧懒红莉栖-e15.ckpt
+Loading VITS weights from ../TTS-KurisuMakise/牧懒红莉栖_e4_s972.pth. _IncompatibleKeys(missing_keys=['enc_q.pre.weight', 'enc_q.pre.bias', 'enc_q.enc.in_layers.0.bias', 'enc_q.enc.in_layers.0.weight_g', 'enc_q.enc.in_layers.0.weight_v', 'enc_q.enc.in_layers.1.bias', 'enc_q.enc.in_layers.1.weight_g', 'enc_q.enc.in_layers.1.weight_v', 'enc_q.enc.in_layers.2.bias', 'enc_q.enc.in_layers.2.weight_g', 'enc_q.enc.in_layers.2.weight_v', 'enc_q.enc.in_layers.3.bias', 'enc_q.enc.in_layers.3.weight_g', 'enc_q.enc.in_layers.3.weight_v', 'enc_q.enc.in_layers.4.bias', 'enc_q.enc.in_layers.4.weight_g', 'enc_q.enc.in_layers.4.weight_v', 'enc_q.enc.in_layers.5.bias', 'enc_q.enc.in_layers.5.weight_g', 'enc_q.enc.in_layers.5.weight_v', 'enc_q.enc.in_layers.6.bias', 'enc_q.enc.in_layers.6.weight_g', 'enc_q.enc.in_layers.6.weight_v', 'enc_q.enc.in_layers.7.bias', 'enc_q.enc.in_layers.7.weight_g','enc_q.enc.in_layers.7.weight_v', 'enc_q.enc.in_layers.8.bias', 'enc_q.enc.in_layers.8.weight_g', 'enc_q.enc.in_layers.8.weight_v', 'enc_q.enc.in_layers.9.bias', 'enc_q.enc.in_layers.9.weight_g', 'enc_q.enc.in_layers.9.weight_v', 'enc_q.enc.in_layers.10.bias', 'enc_q.enc.in_layers.10.weight_g', 'enc_q.enc.in_layers.10.weight_v', 'enc_q.enc.in_layers.11.bias', 'enc_q.enc.in_layers.11.weight_g', 'enc_q.enc.in_layers.11.weight_v', 'enc_q.enc.in_layers.12.bias', 'enc_q.enc.in_layers.12.weight_g', 'enc_q.enc.in_layers.12.weight_v', 'enc_q.enc.in_layers.13.bias', 'enc_q.enc.in_layers.13.weight_g', 'enc_q.enc.in_layers.13.weight_v', 'enc_q.enc.in_layers.14.bias', 'enc_q.enc.in_layers.14.weight_g', 'enc_q.enc.in_layers.14.weight_v', 'enc_q.enc.in_layers.15.bias', 'enc_q.enc.in_layers.15.weight_g','enc_q.enc.in_layers.15.weight_v', 'enc_q.enc.res_skip_layers.0.bias', 'enc_q.enc.res_skip_layers.0.weight_g', 'enc_q.enc.res_skip_layers.0.weight_v', 'enc_q.enc.res_skip_layers.1.bias', 'enc_q.enc.res_skip_layers.1.weight_g', 'enc_q.enc.res_skip_layers.1.weight_v','enc_q.enc.res_skip_layers.2.bias', 'enc_q.enc.res_skip_layers.2.weight_g', 'enc_q.enc.res_skip_layers.2.weight_v', 'enc_q.enc.res_skip_layers.3.bias', 'enc_q.enc.res_skip_layers.3.weight_g', 'enc_q.enc.res_skip_layers.3.weight_v', 'enc_q.enc.res_skip_layers.4.bias', 'enc_q.enc.res_skip_layers.4.weight_g', 'enc_q.enc.res_skip_layers.4.weight_v', 'enc_q.enc.res_skip_layers.5.bias', 'enc_q.enc.res_skip_layers.5.weight_g', 'enc_q.enc.res_skip_layers.5.weight_v', 'enc_q.enc.res_skip_layers.6.bias', 'enc_q.enc.res_skip_layers.6.weight_g', 'enc_q.enc.res_skip_layers.6.weight_v', 'enc_q.enc.res_skip_layers.7.bias', 'enc_q.enc.res_skip_layers.7.weight_g', 'enc_q.enc.res_skip_layers.7.weight_v', 'enc_q.enc.res_skip_layers.8.bias', 'enc_q.enc.res_skip_layers.8.weight_g', 'enc_q.enc.res_skip_layers.8.weight_v', 'enc_q.enc.res_skip_layers.9.bias', 'enc_q.enc.res_skip_layers.9.weight_g', 'enc_q.enc.res_skip_layers.9.weight_v', 'enc_q.enc.res_skip_layers.10.bias', 'enc_q.enc.res_skip_layers.10.weight_g', 'enc_q.enc.res_skip_layers.10.weight_v', 'enc_q.enc.res_skip_layers.11.bias', 'enc_q.enc.res_skip_layers.11.weight_g', 'enc_q.enc.res_skip_layers.11.weight_v', 'enc_q.enc.res_skip_layers.12.bias', 'enc_q.enc.res_skip_layers.12.weight_g', 'enc_q.enc.res_skip_layers.12.weight_v', 'enc_q.enc.res_skip_layers.13.bias', 'enc_q.enc.res_skip_layers.13.weight_g', 'enc_q.enc.res_skip_layers.13.weight_v', 'enc_q.enc.res_skip_layers.14.bias', 'enc_q.enc.res_skip_layers.14.weight_g', 'enc_q.enc.res_skip_layers.14.weight_v', 'enc_q.enc.res_skip_layers.15.bias', 'enc_q.enc.res_skip_layers.15.weight_g', 'enc_q.enc.res_skip_layers.15.weight_v', 'enc_q.enc.cond_layer.bias', 'enc_q.enc.cond_layer.weight_g', 'enc_q.enc.cond_layer.weight_v', 'enc_q.proj.weight', 'enc_q.proj.bias'], unexpected_keys=[])
+Loading BERT weights from GPT_SoVITS/pretrained_models/chinese-roberta-wwm-ext-large
+Loading CNHuBERT weights from GPT_SoVITS/pretrained_models/chinese-hubert-base
+INFO:     Started server process [24648]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:9880 (Press CTRL+C to quit)
+False False False
+Set seed to 4111729970
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+こんにちは！
+Actual Input Target Text (after sentence segmentation):
+['こんにちは！']
+############ Extract Text BERT Features ############
+100%|█████████████████████████████████████████████████████| 1/1 [00:00<00:00, 15.25it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['こんにちは！']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  2%|▉                                                | 27/1500 [00:00<00:37, 39.57it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+2.200   0.071   1.248   0.556
+INFO:     127.0.0.1:55168 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 3408698110
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+調子はいかがですか？
+Actual Input Target Text (after sentence segmentation):
+['調子はいかがですか？']
+############ Extract Text BERT Features ############
+100%|█████████████████████████████████████████████████████| 1/1 [00:00<00:00,  3.39it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['調子はいかがですか？']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  2%|█▏                                               | 37/1500 [00:00<00:29, 49.43it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.298   0.824   0.367
+INFO:     127.0.0.1:55170 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 2952655699
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+。你好呀！
+Actual Input Target Text (after sentence segmentation):
+['你好呀！']
+############ Extract Text BERT Features ############
+  0%|                                                             | 0/1 [00:00<?, ?it/s]WARNING: JPCommonLabel_make() in jcomon_label.c: No phoneme.
+WARNING: JPCommonLabel_make() in jcomon_label.c: No phoneme.
+100%|████████████████████████████████████████████████████| 1/1 [00:00<00:00, 282.88it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['.你好呀！']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  2%|▊                                                | 24/1500 [00:00<00:44, 32.83it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.005   0.819   0.752
+INFO:     127.0.0.1:55176 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 3781277589
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+。你好呀！
+Actual Input Target Text (after sentence segmentation):
+['你好呀！']
+############ Extract Text BERT Features ############
+  0%|                                                             | 0/1 [00:00<?, ?it/s]WARNING: JPCommonLabel_make() in jcomon_label.c: No phoneme.
+WARNING: JPCommonLabel_make() in jcomon_label.c: No phoneme.
+100%|████████████████████████████████████████████████████| 1/1 [00:00<00:00, 330.31it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['.你好呀！']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  1%|▌                                                | 16/1500 [00:00<00:32, 45.15it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.004   0.420   0.333
+INFO:     127.0.0.1:55178 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 1869723846
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+有什么想跟我聊聊的吗？
+Actual Input Target Text (after sentence segmentation):
+['有什么想跟我聊聊的吗？']
+############ Extract Text BERT Features ############
+100%|███████████████████████████████████████████████████| 1/1 [00:00<00:00, 1001.03it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['有什么想跟我聊聊的吗？']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  2%|█▏                                               | 35/1500 [00:00<00:31, 47.19it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.003   0.816   0.307
+INFO:     127.0.0.1:55182 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 118140559
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+。嗯？
+Actual Input Target Text (after sentence segmentation):
+['嗯？']
+############ Extract Text BERT Features ############
+  0%|                                                             | 0/1 [00:00<?, ?it/s]WARNING: JPCommonLabel_make() in jcomon_label.c: No phoneme.
+WARNING: JPCommonLabel_make() in jcomon_label.c: No phoneme.
+100%|████████████████████████████████████████████████████| 1/1 [00:00<00:00, 500.27it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['.嗯？']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  1%|▎                                                | 11/1500 [00:00<00:34, 43.63it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.004   0.337   0.299
+INFO:     127.0.0.1:55178 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 3705035505
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+你想说什么呢？
+Actual Input Target Text (after sentence segmentation):
+['你想说什么呢？']
+############ Extract Text BERT Features ############
+  0%|                                                             | 0/1 [00:00<?, ?it/s]WARNING: JPCommonLabel_make() in jcomon_label.c: No phoneme.
+WARNING: JPCommonLabel_make() in jcomon_label.c: No phoneme.
+100%|████████████████████████████████████████████████████| 1/1 [00:00<00:00, 284.05it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['.你想说什么呢？']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  1%|▌                                                | 19/1500 [00:00<00:33, 44.17it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.005   0.505   0.267
+INFO:     127.0.0.1:55190 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 722967440
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+。慢慢说，我在听。
+Actual Input Target Text (after sentence segmentation):
+['慢慢说，我在听。']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████| 1/1 [00:00<00:00, 474.90it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['慢慢说，我在听。']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  5%|██▎                                              | 70/1500 [00:01<00:27, 52.82it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.003   1.388   0.328
+INFO:     127.0.0.1:55178 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 2686668325
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+。会呀，我们可以用中文聊。
+Actual Input Target Text (after sentence segmentation):
+['会呀，我们可以用中文聊。']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████| 1/1 [00:00<00:00, 993.68it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['会呀，我们可以用中文聊。']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  3%|█▎                                               | 41/1500 [00:00<00:28, 50.81it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.003   0.877   0.296
+INFO:     127.0.0.1:55178 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 1495626428
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+你今天想聊点什么？
+Actual Input Target Text (after sentence segmentation):
+['你今天想聊点什么？']
+############ Extract Text BERT Features ############
+  0%|                                                             | 0/1 [00:00<?, ?it/s]WARNING: JPCommonLabel_insert_pause() in jpcommon_label.c: First mora should not be shortpause.
+100%|████████████████████████████████████████████████████| 1/1 [00:00<00:00, 601.16it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['你今天想聊点什么？']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  1%|▌                                                | 16/1500 [00:00<00:32, 45.55it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.004   0.429   0.116
+INFO:     127.0.0.1:55197 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 149539463
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+Your display name is Patrick, or "patrick the communist star".
+Actual Input Target Text (after sentence segmentation):
+['Your display name is Patrick,', ' or "patrick the communist star".']
+############ Extract Text BERT Features ############
+  0%|                                                             | 0/2 [00:12<?, ?it/s]
+Traceback (most recent call last):
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\api_v2.py", line 441, in tts_handle
+    sr, audio_data = next(tts_generator)
+                     ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\.venv\Lib\site-packages\torch\utils\_contextlib.py", line 40, in generator_context
+    response = gen.send(None)
+               ^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\GPT_SoVITS\TTS_infer_pack\TTS.py", line 1176, in run
+    data = self.text_preprocessor.preprocess(text, text_lang, text_split_method, self.configs.version)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS/GPT_SoVITS\TTS_infer_pack\TextPreprocessor.py", line 66, in preprocess
+    phones, bert_features, norm_text = self.segment_and_extract_feature_for_text(text, lang, version)
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS/GPT_SoVITS\TTS_infer_pack\TextPreprocessor.py", line 120, in segment_and_extract_feature_for_text
+    return self.get_phones_and_bert(text, language, version)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS/GPT_SoVITS\TTS_infer_pack\TextPreprocessor.py", line 177, in get_phones_and_bert
+    phones, word2ph, norm_text = self.clean_text_inf(textlist[i], lang, version)
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS/GPT_SoVITS\TTS_infer_pack\TextPreprocessor.py", line 208, in clean_text_inf
+    phones, word2ph, norm_text = clean_text(text, language, version)
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS/GPT_SoVITS\text\cleaner.py", line 47, in clean_text
+    phones = language_module.g2p(norm_text)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS/GPT_SoVITS\text\english.py", line 365, in g2p
+    phone_list = _g2p(text)
+                 ^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS/GPT_SoVITS\text\english.py", line 273, in __call__
+    tokens = pos_tag(words)  # tuples of (word, tag)
+             ^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\.venv\Lib\site-packages\nltk\tag\__init__.py", line 168, in pos_tag
+    tagger = _get_tagger(lang)
+             ^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\.venv\Lib\site-packages\nltk\tag\__init__.py", line 110, in _get_tagger
+    tagger = PerceptronTagger()
+             ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\.venv\Lib\site-packages\nltk\tag\perceptron.py", line 183, in __init__
+    self.load_from_json(lang, loc)
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\.venv\Lib\site-packages\nltk\tag\perceptron.py", line 279, in load_from_json
+    loc = find(f"taggers/averaged_perceptron_tagger_{lang}/")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\.venv\Lib\site-packages\nltk\data.py", line 877, in find
+    raise LookupError(resource_not_found)
+LookupError:
+**********************************************************************
+  Resource 'averaged_perceptron_tagger_eng' not found.
+  Please use the NLTK Downloader to obtain the resource:
+
+  >>> import nltk
+  >>> nltk.download('averaged_perceptron_tagger_eng')
+
+  For more information see: https://www.nltk.org/data.html
+
+  Attempted to load 'taggers/averaged_perceptron_tagger_eng/'
+
+  Searched in:
+    - 'C:\\Users\\lyang/nltk_data'
+    - 'C:\\Users\\lyang\\Code\\DC_BOT\\GPT-SoVITS\\.venv\\nltk_data'
+    - 'C:\\Users\\lyang\\Code\\DC_BOT\\GPT-SoVITS\\.venv\\share\\nltk_data'
+    - 'C:\\Users\\lyang\\Code\\DC_BOT\\GPT-SoVITS\\.venv\\lib\\nltk_data'
+    - 'C:\\Users\\lyang\\AppData\\Roaming\\nltk_data'
+    - 'C:\\nltk_data'
+    - 'D:\\nltk_data'
+    - 'E:\\nltk_data'
+**********************************************************************
+
+INFO:     127.0.0.1:55639 - "POST /tts HTTP/1.1" 400 Bad Request
+False False False
+Set seed to 2621747968
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+こんにちは！
+Actual Input Target Text (after sentence segmentation):
+['こんにちは！']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████| 1/1 [00:00<00:00, 869.65it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['こんにちは！']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  3%|█▎                                               | 39/1500 [00:00<00:31, 46.40it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.004   0.920   0.299
+INFO:     127.0.0.1:60734 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 2562653571
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+How can I help you today?
+Actual Input Target Text (after sentence segmentation):
+['How can I help you today?']
+############ Extract Text BERT Features ############
+  0%|                                                             | 0/1 [00:00<?, ?it/s]
+Traceback (most recent call last):
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\api_v2.py", line 441, in tts_handle
+    sr, audio_data = next(tts_generator)
+                     ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\.venv\Lib\site-packages\torch\utils\_contextlib.py", line 40, in generator_context
+    response = gen.send(None)
+               ^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\GPT_SoVITS\TTS_infer_pack\TTS.py", line 1176, in run
+    data = self.text_preprocessor.preprocess(text, text_lang, text_split_method, self.configs.version)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS/GPT_SoVITS\TTS_infer_pack\TextPreprocessor.py", line 66, in preprocess
+    phones, bert_features, norm_text = self.segment_and_extract_feature_for_text(text, lang, version)
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS/GPT_SoVITS\TTS_infer_pack\TextPreprocessor.py", line 120, in segment_and_extract_feature_for_text
+    return self.get_phones_and_bert(text, language, version)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS/GPT_SoVITS\TTS_infer_pack\TextPreprocessor.py", line 177, in get_phones_and_bert
+    phones, word2ph, norm_text = self.clean_text_inf(textlist[i], lang, version)
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS/GPT_SoVITS\TTS_infer_pack\TextPreprocessor.py", line 208, in clean_text_inf
+    phones, word2ph, norm_text = clean_text(text, language, version)
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS/GPT_SoVITS\text\cleaner.py", line 47, in clean_text
+    phones = language_module.g2p(norm_text)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS/GPT_SoVITS\text\english.py", line 365, in g2p
+    phone_list = _g2p(text)
+                 ^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS/GPT_SoVITS\text\english.py", line 273, in __call__
+    tokens = pos_tag(words)  # tuples of (word, tag)
+             ^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\.venv\Lib\site-packages\nltk\tag\__init__.py", line 168, in pos_tag
+    tagger = _get_tagger(lang)
+             ^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\.venv\Lib\site-packages\nltk\tag\__init__.py", line 110, in _get_tagger
+    tagger = PerceptronTagger()
+             ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\.venv\Lib\site-packages\nltk\tag\perceptron.py", line 183, in __init__
+    self.load_from_json(lang, loc)
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\.venv\Lib\site-packages\nltk\tag\perceptron.py", line 279, in load_from_json
+    loc = find(f"taggers/averaged_perceptron_tagger_{lang}/")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\.venv\Lib\site-packages\nltk\data.py", line 877, in find
+    raise LookupError(resource_not_found)
+LookupError:
+**********************************************************************
+  Resource 'averaged_perceptron_tagger_eng' not found.
+  Please use the NLTK Downloader to obtain the resource:
+
+  >>> import nltk
+  >>> nltk.download('averaged_perceptron_tagger_eng')
+
+  For more information see: https://www.nltk.org/data.html
+
+  Attempted to load 'taggers/averaged_perceptron_tagger_eng/'
+
+  Searched in:
+    - 'C:\\Users\\lyang/nltk_data'
+    - 'C:\\Users\\lyang\\Code\\DC_BOT\\GPT-SoVITS\\.venv\\nltk_data'
+    - 'C:\\Users\\lyang\\Code\\DC_BOT\\GPT-SoVITS\\.venv\\share\\nltk_data'
+    - 'C:\\Users\\lyang\\Code\\DC_BOT\\GPT-SoVITS\\.venv\\lib\\nltk_data'
+    - 'C:\\Users\\lyang\\AppData\\Roaming\\nltk_data'
+    - 'C:\\nltk_data'
+    - 'D:\\nltk_data'
+    - 'E:\\nltk_data'
+**********************************************************************
+
+INFO:     127.0.0.1:55639 - "POST /tts HTTP/1.1" 400 Bad Request
+False False False
+Set seed to 2573183903
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+Your display name shows up as "patrick the communist star".
+Actual Input Target Text (after sentence segmentation):
+['Your display name shows up as "patrick the communist star".']
+############ Extract Text BERT Features ############
+  0%|                                                             | 0/1 [00:00<?, ?it/s]
+Traceback (most recent call last):
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\api_v2.py", line 441, in tts_handle
+    sr, audio_data = next(tts_generator)
+                     ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\.venv\Lib\site-packages\torch\utils\_contextlib.py", line 40, in generator_context
+    response = gen.send(None)
+               ^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\GPT_SoVITS\TTS_infer_pack\TTS.py", line 1176, in run
+    data = self.text_preprocessor.preprocess(text, text_lang, text_split_method, self.configs.version)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS/GPT_SoVITS\TTS_infer_pack\TextPreprocessor.py", line 66, in preprocess
+    phones, bert_features, norm_text = self.segment_and_extract_feature_for_text(text, lang, version)
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS/GPT_SoVITS\TTS_infer_pack\TextPreprocessor.py", line 120, in segment_and_extract_feature_for_text
+    return self.get_phones_and_bert(text, language, version)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS/GPT_SoVITS\TTS_infer_pack\TextPreprocessor.py", line 177, in get_phones_and_bert
+    phones, word2ph, norm_text = self.clean_text_inf(textlist[i], lang, version)
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS/GPT_SoVITS\TTS_infer_pack\TextPreprocessor.py", line 208, in clean_text_inf
+    phones, word2ph, norm_text = clean_text(text, language, version)
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS/GPT_SoVITS\text\cleaner.py", line 47, in clean_text
+    phones = language_module.g2p(norm_text)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS/GPT_SoVITS\text\english.py", line 365, in g2p
+    phone_list = _g2p(text)
+                 ^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS/GPT_SoVITS\text\english.py", line 273, in __call__
+    tokens = pos_tag(words)  # tuples of (word, tag)
+             ^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\.venv\Lib\site-packages\nltk\tag\__init__.py", line 168, in pos_tag
+    tagger = _get_tagger(lang)
+             ^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\.venv\Lib\site-packages\nltk\tag\__init__.py", line 110, in _get_tagger
+    tagger = PerceptronTagger()
+             ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\.venv\Lib\site-packages\nltk\tag\perceptron.py", line 183, in __init__
+    self.load_from_json(lang, loc)
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\.venv\Lib\site-packages\nltk\tag\perceptron.py", line 279, in load_from_json
+    loc = find(f"taggers/averaged_perceptron_tagger_{lang}/")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\.venv\Lib\site-packages\nltk\data.py", line 877, in find
+    raise LookupError(resource_not_found)
+LookupError:
+**********************************************************************
+  Resource 'averaged_perceptron_tagger_eng' not found.
+  Please use the NLTK Downloader to obtain the resource:
+
+  >>> import nltk
+  >>> nltk.download('averaged_perceptron_tagger_eng')
+
+  For more information see: https://www.nltk.org/data.html
+
+  Attempted to load 'taggers/averaged_perceptron_tagger_eng/'
+
+  Searched in:
+    - 'C:\\Users\\lyang/nltk_data'
+    - 'C:\\Users\\lyang\\Code\\DC_BOT\\GPT-SoVITS\\.venv\\nltk_data'
+    - 'C:\\Users\\lyang\\Code\\DC_BOT\\GPT-SoVITS\\.venv\\share\\nltk_data'
+    - 'C:\\Users\\lyang\\Code\\DC_BOT\\GPT-SoVITS\\.venv\\lib\\nltk_data'
+    - 'C:\\Users\\lyang\\AppData\\Roaming\\nltk_data'
+    - 'C:\\nltk_data'
+    - 'D:\\nltk_data'
+    - 'E:\\nltk_data'
+**********************************************************************
+
+INFO:     127.0.0.1:60747 - "POST /tts HTTP/1.1" 400 Bad Request
+False False False
+Set seed to 2925871220
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+你的显示名称是 patrick the communist star，也可以直接叫你 Patrick。
+Actual Input Target Text (after sentence segmentation):
+['你的显示名称是 patrick the communist star，', '也可以直接叫你 Patrick。']
+############ Extract Text BERT Features ############
+  0%|                                                             | 0/2 [00:00<?, ?it/s]WARNING: JPCommonLabel_insert_pause() in jpcommon_label.c: First mora should not be shortpause.
+  0%|                                                             | 0/2 [00:00<?, ?it/s]
+Traceback (most recent call last):
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\api_v2.py", line 441, in tts_handle
+    sr, audio_data = next(tts_generator)
+                     ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\.venv\Lib\site-packages\torch\utils\_contextlib.py", line 40, in generator_context
+    response = gen.send(None)
+               ^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\GPT_SoVITS\TTS_infer_pack\TTS.py", line 1176, in run
+    data = self.text_preprocessor.preprocess(text, text_lang, text_split_method, self.configs.version)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS/GPT_SoVITS\TTS_infer_pack\TextPreprocessor.py", line 66, in preprocess
+    phones, bert_features, norm_text = self.segment_and_extract_feature_for_text(text, lang, version)
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS/GPT_SoVITS\TTS_infer_pack\TextPreprocessor.py", line 120, in segment_and_extract_feature_for_text
+    return self.get_phones_and_bert(text, language, version)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS/GPT_SoVITS\TTS_infer_pack\TextPreprocessor.py", line 177, in get_phones_and_bert
+    phones, word2ph, norm_text = self.clean_text_inf(textlist[i], lang, version)
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS/GPT_SoVITS\TTS_infer_pack\TextPreprocessor.py", line 208, in clean_text_inf
+    phones, word2ph, norm_text = clean_text(text, language, version)
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS/GPT_SoVITS\text\cleaner.py", line 47, in clean_text
+    phones = language_module.g2p(norm_text)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS/GPT_SoVITS\text\english.py", line 365, in g2p
+    phone_list = _g2p(text)
+                 ^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS/GPT_SoVITS\text\english.py", line 273, in __call__
+    tokens = pos_tag(words)  # tuples of (word, tag)
+             ^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\.venv\Lib\site-packages\nltk\tag\__init__.py", line 168, in pos_tag
+    tagger = _get_tagger(lang)
+             ^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\.venv\Lib\site-packages\nltk\tag\__init__.py", line 110, in _get_tagger
+    tagger = PerceptronTagger()
+             ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\.venv\Lib\site-packages\nltk\tag\perceptron.py", line 183, in __init__
+    self.load_from_json(lang, loc)
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\.venv\Lib\site-packages\nltk\tag\perceptron.py", line 279, in load_from_json
+    loc = find(f"taggers/averaged_perceptron_tagger_{lang}/")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\.venv\Lib\site-packages\nltk\data.py", line 877, in find
+    raise LookupError(resource_not_found)
+LookupError:
+**********************************************************************
+  Resource 'averaged_perceptron_tagger_eng' not found.
+  Please use the NLTK Downloader to obtain the resource:
+
+  >>> import nltk
+  >>> nltk.download('averaged_perceptron_tagger_eng')
+
+  For more information see: https://www.nltk.org/data.html
+
+  Attempted to load 'taggers/averaged_perceptron_tagger_eng/'
+
+  Searched in:
+    - 'C:\\Users\\lyang/nltk_data'
+    - 'C:\\Users\\lyang\\Code\\DC_BOT\\GPT-SoVITS\\.venv\\nltk_data'
+    - 'C:\\Users\\lyang\\Code\\DC_BOT\\GPT-SoVITS\\.venv\\share\\nltk_data'
+    - 'C:\\Users\\lyang\\Code\\DC_BOT\\GPT-SoVITS\\.venv\\lib\\nltk_data'
+    - 'C:\\Users\\lyang\\AppData\\Roaming\\nltk_data'
+    - 'C:\\nltk_data'
+    - 'D:\\nltk_data'
+    - 'E:\\nltk_data'
+**********************************************************************
+
+INFO:     127.0.0.1:58641 - "POST /tts HTTP/1.1" 400 Bad Request
+False False False
+Set seed to 1116908373
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+。嗯，怎么啦？
+Actual Input Target Text (after sentence segmentation):
+['嗯，怎么啦？']
+############ Extract Text BERT Features ############
+  0%|                                                             | 0/1 [00:00<?, ?it/s]WARNING: JPCommonLabel_make() in jcomon_label.c: No phoneme.
+WARNING: JPCommonLabel_make() in jcomon_label.c: No phoneme.
+WARNING: JPCommonLabel_make() in jcomon_label.c: No phoneme.
+WARNING: JPCommonLabel_make() in jcomon_label.c: No phoneme.
+100%|████████████████████████████████████████████████████| 1/1 [00:00<00:00, 396.55it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['.嗯，怎么啦？']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  1%|▍                                                | 15/1500 [00:00<00:28, 51.57it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.004   0.364   0.282
+INFO:     127.0.0.1:58641 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 2671384547
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+有什么想聊的吗？
+Actual Input Target Text (after sentence segmentation):
+['有什么想聊的吗？']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████| 1/1 [00:00<00:00, 988.99it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['有什么想聊的吗？']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  3%|█▋                                               | 51/1500 [00:01<00:28, 50.90it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.004   1.082   0.296
+INFO:     127.0.0.1:58642 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 2040034286
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+我没有特定的名字，你可以叫我 AI 助手，或者直接跟我聊天就好。
+Actual Input Target Text (after sentence segmentation):
+['我没有特定的名字，', '你可以叫我 AI 助手，', '或者直接跟我聊天就好。']
+############ Extract Text BERT Features ############
+  0%|                                                             | 0/3 [00:00<?, ?it/s]WARNING: JPCommonLabel_insert_pause() in jpcommon_label.c: First mora should not be shortpause.
+ 33%|█████████████████▎                                  | 1/3 [00:00<00:00, 199.74it/s]
+Traceback (most recent call last):
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\api_v2.py", line 441, in tts_handle
+    sr, audio_data = next(tts_generator)
+                     ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\.venv\Lib\site-packages\torch\utils\_contextlib.py", line 40, in generator_context
+    response = gen.send(None)
+               ^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\GPT_SoVITS\TTS_infer_pack\TTS.py", line 1176, in run
+    data = self.text_preprocessor.preprocess(text, text_lang, text_split_method, self.configs.version)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS/GPT_SoVITS\TTS_infer_pack\TextPreprocessor.py", line 66, in preprocess
+    phones, bert_features, norm_text = self.segment_and_extract_feature_for_text(text, lang, version)
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS/GPT_SoVITS\TTS_infer_pack\TextPreprocessor.py", line 120, in segment_and_extract_feature_for_text
+    return self.get_phones_and_bert(text, language, version)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS/GPT_SoVITS\TTS_infer_pack\TextPreprocessor.py", line 177, in get_phones_and_bert
+    phones, word2ph, norm_text = self.clean_text_inf(textlist[i], lang, version)
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS/GPT_SoVITS\TTS_infer_pack\TextPreprocessor.py", line 208, in clean_text_inf
+    phones, word2ph, norm_text = clean_text(text, language, version)
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS/GPT_SoVITS\text\cleaner.py", line 47, in clean_text
+    phones = language_module.g2p(norm_text)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS/GPT_SoVITS\text\english.py", line 365, in g2p
+    phone_list = _g2p(text)
+                 ^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS/GPT_SoVITS\text\english.py", line 273, in __call__
+    tokens = pos_tag(words)  # tuples of (word, tag)
+             ^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\.venv\Lib\site-packages\nltk\tag\__init__.py", line 168, in pos_tag
+    tagger = _get_tagger(lang)
+             ^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\.venv\Lib\site-packages\nltk\tag\__init__.py", line 110, in _get_tagger
+    tagger = PerceptronTagger()
+             ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\.venv\Lib\site-packages\nltk\tag\perceptron.py", line 183, in __init__
+    self.load_from_json(lang, loc)
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\.venv\Lib\site-packages\nltk\tag\perceptron.py", line 279, in load_from_json
+    loc = find(f"taggers/averaged_perceptron_tagger_{lang}/")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lyang\Code\DC_BOT\GPT-SoVITS\.venv\Lib\site-packages\nltk\data.py", line 877, in find
+    raise LookupError(resource_not_found)
+LookupError:
+**********************************************************************
+  Resource 'averaged_perceptron_tagger_eng' not found.
+  Please use the NLTK Downloader to obtain the resource:
+
+  >>> import nltk
+  >>> nltk.download('averaged_perceptron_tagger_eng')
+
+  For more information see: https://www.nltk.org/data.html
+
+  Attempted to load 'taggers/averaged_perceptron_tagger_eng/'
+
+  Searched in:
+    - 'C:\\Users\\lyang/nltk_data'
+    - 'C:\\Users\\lyang\\Code\\DC_BOT\\GPT-SoVITS\\.venv\\nltk_data'
+    - 'C:\\Users\\lyang\\Code\\DC_BOT\\GPT-SoVITS\\.venv\\share\\nltk_data'
+    - 'C:\\Users\\lyang\\Code\\DC_BOT\\GPT-SoVITS\\.venv\\lib\\nltk_data'
+    - 'C:\\Users\\lyang\\AppData\\Roaming\\nltk_data'
+    - 'C:\\nltk_data'
+    - 'D:\\nltk_data'
+    - 'E:\\nltk_data'
+**********************************************************************
+
+INFO:     127.0.0.1:53383 - "POST /tts HTTP/1.1" 400 Bad Request
+False False False
+Set seed to 455597475
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+你觉得叫我什么比较顺口呢？
+Actual Input Target Text (after sentence segmentation):
+['你觉得叫我什么比较顺口呢？']
+############ Extract Text BERT Features ############
+  0%|                                                             | 0/1 [00:00<?, ?it/s]WARNING: JPCommonLabel_insert_pause() in jpcommon_label.c: First mora should not be shortpause.
+100%|████████████████████████████████████████████████████| 1/1 [00:00<00:00, 497.72it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['你觉得叫我什么比较顺口呢？']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  3%|█▍                                               | 44/1500 [00:00<00:31, 45.65it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.004   1.038   0.291
+INFO:     127.0.0.1:53384 - "POST /tts HTTP/1.1" 200 OK

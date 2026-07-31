@@ -1,0 +1,30 @@
+[project]
+name = "qwen3-asr"
+version = "0.1.0"
+description = "Local Qwen3-ASR transcription service for the Discord voice bot."
+requires-python = ">=3.10,<3.13"
+# NOTE: qwen-asr pins transformers==4.57.6 and accelerate==1.12.0 exactly.
+# torch must be installed separately, matching your CUDA build, e.g.:
+#   pip install torch --index-url https://download.pytorch.org/whl/cu124
+dependencies = [
+    "qwen-asr==0.0.6",
+    "fastapi[standard]>=0.115.2",
+    "pydantic>=2.9,<2.11",
+    "numpy<2.0",
+    "soundfile",
+    "librosa==0.10.2",
+    "uvicorn",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "httpx",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]

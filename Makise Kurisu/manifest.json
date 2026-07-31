@@ -1,0 +1,16 @@
+{
+  "format": "airi-character-card",
+  "version": 1,
+  "createdAt": "2026-07-30T09:01:15.455Z",
+  "card": {
+    "path": "card.json",
+    "spec": "chara_card_v3"
+  },
+  "resources": {
+    "displayModel": {
+      "format": "live2d-zip",
+      "name": "Kurisu.zip",
+      "path": "models/body-model.zip"
+    }
+  }
+}
