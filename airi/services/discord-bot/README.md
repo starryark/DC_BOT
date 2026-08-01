@@ -17,6 +17,15 @@ In the **"Bot"** tab, find "Privileged Gateway Intents" section, toggle on the f
 - **"Server Members Intent"**
 - **"Message Content Intent"**
 
+The bot role also needs **View Channel**, **Send Messages**, and **Read Message
+History** in channels where text replies are enabled. Add **Send Messages in
+Threads** for thread replies. Keep the existing voice permissions enabled.
+
+> [!IMPORTANT]
+> Message Content Intent must be enabled before deploying this version. Discord
+> rejects the gateway connection when the code requests a privileged intent
+> that is disabled for the application.
+
 Now look above the "Privileged Gateway Intents" section, you will find the "Token" section,
 for newly created bots, click "Reset Token" to generate a new token, and copy the token for later use.
 

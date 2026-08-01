@@ -10,6 +10,7 @@ import { FileCharacterRegistry } from './character/character-registry'
 import { DefaultPromptCompiler } from './character/prompt-compiler'
 import { config } from './config'
 import { ConversationController } from './orchestration/conversation-controller'
+import { MentionResponder } from './orchestration/mention-responder'
 import { QwenHttpAsrProvider } from './providers/asr/qwen-http'
 import { GeminiBrainProvider } from './providers/brain/gemini'
 import { GptSoVitsTtsProvider } from './providers/tts/gpt-sovits'
@@ -100,7 +101,8 @@ async function main() {
     // the only orchestrator in direct mode.
     // eslint-disable-next-line no-new
     new ConversationController({ voice, asr, brain, tts, character, promptCompiler })
-    log.log('Direct backend active: Qwen ASR → Gemini → GPT-SoVITS.')
+    adapter.setMentionResponder(new MentionResponder({ brain, character, promptCompiler }))
+    log.log('Direct backend active: Qwen ASR → Gemini → GPT-SoVITS, with Discord text replies.')
   }
   else {
     log.log('AIRI backend active: deferring to WebSocket server.')

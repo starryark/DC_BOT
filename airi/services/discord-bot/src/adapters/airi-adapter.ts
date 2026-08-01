@@ -1,11 +1,12 @@
 import type { Discord } from '@proj-airi/server-shared/types'
 import type { Interaction } from 'discord.js'
+import type { TextMentionResponder } from '../orchestration/mention-responder'
 
 import { env } from 'node:process'
 
 import { useLogg } from '@guiiai/logg'
 import { Client as ServerChannel } from '@proj-airi/server-sdk'
-import { Client, Events, GatewayIntentBits } from 'discord.js'
+import { Client, Events, GatewayIntentBits, Partials } from 'discord.js'
 
 import { handleAvatarState, handlePing, handleVoiceTest, registerCommands, VoiceManager } from '../bots/discord/commands'
 
@@ -51,6 +52,36 @@ function normalizeDiscordMetadata(discord?: Discord): Discord | undefined {
   }
 }
 
+const ALLOWED_MENTIONS = { parse: [] as [], repliedUser: false }
+const MAX_ROUTED_OUTPUT_LENGTH = 12_000
+
+/** Split Discord output without exceeding its message limit. */
+export function chunkDiscordText(text: string, maximum = 1900): string[] {
+  if (!Number.isInteger(maximum) || maximum < 1 || maximum > 2000)
+    throw new RangeError('Discord chunk size must be between 1 and 2000')
+
+  const chunks: string[] = []
+  let remaining = text.trim()
+  while (remaining.length > maximum) {
+    const window = remaining.slice(0, maximum + 1)
+    const paragraph = window.lastIndexOf('\n\n')
+    const newline = window.lastIndexOf('\n')
+    const space = window.lastIndexOf(' ')
+    const splitAt = paragraph > 0
+      ? paragraph
+      : newline > 0
+        ? newline
+        : space > 0
+          ? space
+          : maximum
+    chunks.push(remaining.slice(0, splitAt).trimEnd())
+    remaining = remaining.slice(splitAt).trimStart()
+  }
+  if (remaining)
+    chunks.push(remaining)
+  return chunks
+}
+
 export class DiscordAdapter {
   private airiClient: ServerChannel
   private discordClient: Client
@@ -58,6 +89,7 @@ export class DiscordAdapter {
   /** Exposed so the direct-mode orchestrator in index.ts can subscribe to utterances. */
   voiceManager: VoiceManager
   private isReconnecting = false
+  private mentionResponder?: TextMentionResponder
 
   constructor(config: DiscordAdapterConfig) {
     this.discordToken = config.discordToken || env.DISCORD_TOKEN || ''
@@ -66,8 +98,12 @@ export class DiscordAdapter {
     this.discordClient = new Client({
       intents: [
         GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.DirectMessages,
         GatewayIntentBits.GuildVoiceStates,
       ],
+      partials: [Partials.Channel],
     })
 
     // Initialize AIRI client
@@ -87,6 +123,10 @@ export class DiscordAdapter {
     this.voiceManager = new VoiceManager(this.discordClient)
 
     this.setupEventHandlers()
+  }
+
+  setMentionResponder(responder: TextMentionResponder): void {
+    this.mentionResponder = responder
   }
 
   private setupEventHandlers(): void {
@@ -161,33 +201,8 @@ export class DiscordAdapter {
         if (message?.content && discordContext?.channelId) {
           const channel = await this.discordClient.channels.fetch(discordContext.channelId)
           if (channel?.isTextBased() && 'send' in channel && typeof channel.send === 'function') {
-            const content = message.content
-            if (content.length <= 2000) {
-              await channel.send(content)
-            }
-            else {
-              let remaining = content
-              while (remaining.length > 0) {
-                let chunkSize = 2000
-                if (remaining.length > 2000) {
-                  // Try to split at the last newline before 2000
-                  const lastNewline = remaining.lastIndexOf('\n', 2000)
-                  if (lastNewline > -1) {
-                    chunkSize = lastNewline
-                  }
-                  else {
-                    // Fallback to last space
-                    const lastSpace = remaining.lastIndexOf(' ', 2000)
-                    if (lastSpace > -1)
-                      chunkSize = lastSpace
-                  }
-                }
-
-                const chunk = remaining.slice(0, chunkSize)
-                await channel.send(chunk)
-                remaining = remaining.slice(chunkSize).trim()
-              }
-            }
+            for (const chunk of chunkDiscordText(message.content.slice(0, MAX_ROUTED_OUTPUT_LENGTH)))
+              await channel.send({ content: chunk, allowedMentions: ALLOWED_MENTIONS })
           }
         }
       }
@@ -201,6 +216,107 @@ export class DiscordAdapter {
       log.log(`Discord bot ready! User: ${readyClient.user.tag}`)
       // Register commands dynamically using the authenticated client's ID and token
       await registerCommands(this.discordToken, readyClient.user.id)
+    })
+
+    this.discordClient.on(Events.MessageCreate, async (message) => {
+      if (message.author.bot || message.system || message.webhookId)
+        return
+
+      const botUser = this.discordClient.user
+      if (!botUser)
+        return
+
+      let referencedMessage: Awaited<ReturnType<typeof message.fetchReference>> | undefined
+      if (message.reference?.messageId) {
+        try {
+          referencedMessage = await message.fetchReference()
+        }
+        catch {
+          // Deleted, inaccessible, and partial references must not discard the input.
+        }
+      }
+
+      const isDirectMessage = message.guildId === null
+      const directlyMentioned = message.mentions.users.has(botUser.id)
+      const repliesToBot = referencedMessage?.author.id === botUser.id
+      if (!isDirectMessage && !directlyMentioned && !repliesToBot)
+        return
+
+      const mentionPattern = new RegExp(`<@!?${botUser.id}>`, 'g')
+      const text = message.content.replace(mentionPattern, '').trim()
+      const event = {
+        type: 'discord-mention' as const,
+        eventId: `${message.id}:in`,
+        turnId: message.id,
+        guildId: message.guildId ?? undefined,
+        channelId: message.channelId,
+        userId: message.author.id,
+        displayName: message.member?.displayName ?? message.author.displayName,
+        timestamp: message.createdTimestamp,
+        messageId: message.id,
+        text,
+      }
+
+      try {
+        if (this.mentionResponder) {
+          const refreshTyping = async (): Promise<void> => {
+            try {
+              await message.channel.sendTyping()
+            }
+            catch {
+              // Typing is cosmetic and can fail when permissions change mid-turn.
+            }
+          }
+          await refreshTyping()
+          const typingInterval = setInterval(() => void refreshTyping(), 8000)
+          try {
+            const response = await this.mentionResponder.respond({
+              event,
+              context: {
+                isDirectMessage,
+                isThread: message.channel.isThread(),
+                repliedToText: referencedMessage?.content,
+              },
+            })
+            const chunks = chunkDiscordText(response)
+            if (chunks.length > 0) {
+              await message.reply({ content: chunks[0], allowedMentions: ALLOWED_MENTIONS })
+              for (const chunk of chunks.slice(1))
+                await message.channel.send({ content: chunk, allowedMentions: ALLOWED_MENTIONS })
+            }
+          }
+          finally {
+            clearInterval(typingInterval)
+          }
+          return
+        }
+
+        const discord: Discord = normalizeDiscordMetadata({
+          guildId: message.guildId ?? undefined,
+          guildName: message.guild?.name,
+          channelId: message.channelId,
+          guildMember: {
+            id: message.author.id,
+            nickname: message.member?.nickname ?? message.author.displayName,
+            displayName: message.member?.displayName ?? message.author.displayName,
+          },
+        })!
+        this.airiClient.send({
+          type: 'input:text',
+          data: {
+            text: text || '(The user mentioned you without adding a message.)',
+            textRaw: message.content,
+            discord,
+          },
+        })
+      }
+      catch (error) {
+        log.withError(error as Error).withFields({
+          guildId: message.guildId ?? 'dm',
+          channelId: message.channelId,
+          messageId: message.id,
+        }).error('Failed to handle Discord text message')
+      }
     })
 
     this.discordClient.on(Events.InteractionCreate, async (interaction: Interaction) => {
