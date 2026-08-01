@@ -10,6 +10,7 @@ $ttsDir = Join-Path $repoRoot "GPT-SoVITS"
 $venvDir = Join-Path $ttsDir ".venv"
 $python = Join-Path $venvDir "Scripts\python.exe"
 $nltkDataDir = Join-Path $ttsDir "nltk_data"
+$kurisuModelDir = Join-Path $repoRoot "TTS-KurisuMakise"
 
 if (-not (Get-Command uv -ErrorAction SilentlyContinue)) {
     throw "uv is required but is not on PATH. Install uv, then rerun this command."
@@ -38,6 +39,50 @@ if ($LASTEXITCODE -ne 0) {
 & uv pip install --python $python -r (Join-Path $ttsDir "requirements.txt")
 if ($LASTEXITCODE -ne 0) {
     throw "GPT-SoVITS dependency installation failed."
+}
+& uv pip install --python $python huggingface_hub
+if ($LASTEXITCODE -ne 0) {
+    throw "Hugging Face download dependency installation failed."
+}
+
+$kurisuRequiredFiles = @(
+    "牧懒红莉栖-e15.ckpt",
+    "牧懒红莉栖_e4_s972.pth",
+    "害羞示范.wav",
+    "无奈.wav"
+)
+$missingKurisuFiles = @($kurisuRequiredFiles | Where-Object {
+    -not (Test-Path -LiteralPath (Join-Path $kurisuModelDir $_))
+})
+if ($missingKurisuFiles.Count -gt 0) {
+    Write-Host "Downloading the Kurisu Makise voice model from Hugging Face..."
+    New-Item -ItemType Directory -Path $kurisuModelDir -Force | Out-Null
+    $downloadKurisuModel = @'
+from huggingface_hub import snapshot_download
+
+snapshot_download(
+    repo_id="bysq/TTS-KurisuMakise",
+    local_dir=r"__MODEL_DIR__",
+    allow_patterns=[
+        "\u7267\u61d2\u7ea2\u8389\u6816-e15.ckpt",
+        "\u7267\u61d2\u7ea2\u8389\u6816_e4_s972.pth",
+        "\u5bb3\u7f9e\u793a\u8303.wav",
+        "\u65e0\u5948.wav",
+    ],
+)
+'@
+    $downloadKurisuModel = $downloadKurisuModel.Replace("__MODEL_DIR__", $kurisuModelDir.Replace("\", "\\"))
+    & $python -c $downloadKurisuModel
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to download bysq/TTS-KurisuMakise from Hugging Face."
+    }
+}
+
+foreach ($requiredFile in $kurisuRequiredFiles) {
+    $requiredPath = Join-Path $kurisuModelDir $requiredFile
+    if (-not (Test-Path -LiteralPath $requiredPath)) {
+        throw "Kurisu model setup is incomplete: $requiredPath is missing."
+    }
 }
 
 Write-Host "Installing the English text-to-phoneme data..."
@@ -71,4 +116,4 @@ if ($LASTEXITCODE -ne 0) {
     throw "Environment verification failed."
 }
 
-Write-Host "Setup complete. Start the bot with .\start-bot.cmd"
+Write-Host "Setup complete, including the Kurisu voice model. Start the bot with .\start-bot.cmd"

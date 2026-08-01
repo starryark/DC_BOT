@@ -131,9 +131,10 @@ considerably slower.
 
 ### 4. Install GPT-SoVITS
 
-The GPT-SoVITS source and pretrained assets are checked out under
-`GPT-SoVITS`. Its custom Kurisu weights are already under
-`TTS-KurisuMakise`.
+The GPT-SoVITS source is checked out under `GPT-SoVITS`. The setup command
+automatically downloads the custom Kurisu weights and reference clips from
+[`bysq/TTS-KurisuMakise`](https://huggingface.co/bysq/TTS-KurisuMakise) into
+`TTS-KurisuMakise` when they are not already present.
 
 Install GPT-SoVITS into its own Python environment:
 
@@ -142,7 +143,8 @@ Install GPT-SoVITS into its own Python environment:
 ```
 
 This creates `GPT-SoVITS/.venv` with Python 3.11, installs CUDA 12.8 PyTorch,
-and then installs the checked-in GPT-SoVITS requirements. The included Windows
+installs the checked-in GPT-SoVITS requirements, and fetches the Kurisu runtime
+assets from Hugging Face. The included Windows
 compatibility adjustment uses SoundFile for reference WAV decoding because
 TorchCodec does not publish Windows wheels. To choose another PyTorch build:
 

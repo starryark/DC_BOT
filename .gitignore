@@ -15,3 +15,7 @@ GPT-SoVITS/GPT_SoVITS/pretrained_models/
 GPT-SoVITS/GPT_SoVITS/text/G2PWModel/
 GPT-SoVITS/GPT_SoVITS/text/G2PWModel_1.1.zip
 GPT-SoVITS/GPT_SoVITS/text/g2pw*/
+
+# Downloaded at setup time from huggingface.co/bysq/TTS-KurisuMakise
+TTS-KurisuMakise/*
+!TTS-KurisuMakise/PROJECT_SETUP.md
