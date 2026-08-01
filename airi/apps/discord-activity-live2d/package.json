@@ -1,0 +1,29 @@
+{
+  "name": "@proj-airi/discord-activity-live2d",
+  "type": "module",
+  "private": true,
+  "description": "Discord Activity surface for AIRI's Live2D renderer",
+  "license": "MIT",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite --host",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "@discord/embedded-app-sdk": "^2.5.0",
+    "@moeru/std": "catalog:",
+    "@proj-airi/discord-avatar-protocol": "workspace:^",
+    "@proj-airi/stage-ui-live2d": "workspace:^",
+    "pinia": "catalog:",
+    "vue": "catalog:"
+  },
+  "devDependencies": {
+    "@proj-airi/unplugin-live2d-sdk": "catalog:",
+    "@vitejs/plugin-vue": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:vitest",
+    "vue-tsc": "catalog:"
+  }
+}

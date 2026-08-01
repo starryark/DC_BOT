@@ -1,0 +1,17 @@
+# Local secrets (keep templates committed)
+.env
+.env.*
+!.env.example
+!*.env.example
+.nested-git-backup/
+
+# Local dependency and environment directories
+**/.venv/
+**/venv/
+**/node_modules/
+
+# Downloaded GPT-SoVITS models and generated runtime data
+GPT-SoVITS/GPT_SoVITS/pretrained_models/
+GPT-SoVITS/GPT_SoVITS/text/G2PWModel/
+GPT-SoVITS/GPT_SoVITS/text/G2PWModel_1.1.zip
+GPT-SoVITS/GPT_SoVITS/text/g2pw*/
