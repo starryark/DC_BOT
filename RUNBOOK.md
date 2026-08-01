@@ -90,10 +90,58 @@ See `GPT_SOVITS_KURISU_SETUP.md` (full TTS detail) and `qwen3-asr/README.md` (AS
 
 - **Per-user capture, no global timer.** Two users can speak simultaneously;
   each is transcribed independently (plan.md §9–10).
-- **One Gemini turn per guild at a time** (FIFO queue); ASR stays concurrent.
-- **Barge-in:** talking while the bot speaks stops playback + TTS instantly;
-  the in-flight Gemini reply aborts once your utterance finalizes.
-- **Per-turn telemetry** is logged with stage latencies (plan.md §37).
+- **Half-duplex by default.** One turn per guild at a time. Speech that arrives
+  while the bot is thinking or speaking is dropped *before* ASR and is never
+  queued. Change with `BOT_INPUT_POLICY`.
+- **Serialized playback.** One persistent `AudioPlayer` per guild and one
+  scheduler own every `play()` call; chunks play in order and a turn stays
+  active until its last chunk finishes.
+- **Barge-in is off by default** (`BARGE_IN_ENABLED=false`). When enabled under
+  a non-half-duplex policy, sustained speech cancels the whole response —
+  generation, synthesis, queued audio and the active resource together.
+- **Filler/duplicate filtering** runs before the model; a repeat of your own
+  previous line inside `VOICE_DUPLICATE_WINDOW_MS` is dropped.
+- **Quota cooldown.** A Gemini 429 suspends requests for the API-reported retry
+  delay and speaks one short notice, debounced by
+  `GEMINI_COOLDOWN_PROMPT_INTERVAL_MS`.
+- **Structured per-turn events** are logged (see below).
+
+### Reading the logs
+
+Each turn emits named events with `guildId`, `turnId` and `responseEpoch`:
+
+```text
+utterance_received        an utterance passed admission + filtering
+input_discarded           dropped before ASR (reason=bot_speaking|bot_thinking|…)
+transcript_filtered       dropped before the model (reason=empty|too_short|filler|duplicate)
+guild_phase_changed       idle → collecting → thinking → speaking → idle
+response_epoch_started    a generation began
+gemini_request_started    a model request left the process
+gemini_rate_limited       429; carries cooldownMs + quotaMetric
+gemini_cooldown_active    a request was suppressed by the cooldown
+tts_synthesis_started     a chunk went to GPT-SoVITS
+playback_enqueued         audio queued (chunkIndex, queueDepth)
+playback_started          play() was issued
+playback_completed        the resource reached idle (durationMs)
+playback_cancelled        epoch cancelled, disconnect, or superseded
+response_completed        history committed
+avatar_action             an ACT token was parsed out of the reply
+```
+
+`guild_phase_transition_rejected` and `playback_invariant_violation` should
+never appear in normal operation; both indicate a bug worth reporting.
+
+### Performance benchmark
+
+With ASR and GPT-SoVITS running, execute `pnpm --filter
+@proj-airi/discord-bot benchmark:voice -- --output
+benchmarks/voice/latest.json` from `airi`. Optional `--asr` accepts a
+comma-separated list of approved WAV fixtures. Repeat ASR runs after starting
+each model/compile configuration and identify it with `--asr-model` and
+`--asr-dtype`. The command never clears the TTS cache automatically; cold-cache
+preparation stays operator-controlled to avoid deleting data. Record subjective
+pronunciation, prosody, and audible gaps beside the JSON report before changing
+streaming defaults.
 
 ## Troubleshooting
 
@@ -106,6 +154,10 @@ See `GPT_SOVITS_KURISU_SETUP.md` (full TTS detail) and `qwen3-asr/README.md` (AS
 | TTS: `averaged_perceptron_tagger_eng not found` | English frontend missing its NLTK resource. Run `./setup-gpt-sovits.cmd` and confirm `GPT-SoVITS/nltk_data/taggers/averaged_perceptron_tagger_eng/english.pickle` exists. `start-bot.cmd` verifies this frontend before launching. |
 | TTS: `not reachable at http://127.0.0.1:9880 (connection refused)` | GPT-SoVITS isn't up yet. The launcher waits for readiness; if launched manually, wait for `Uvicorn running on :9880` and the model-load logs before `/summon`. |
 | Bot replies in Japanese to Chinese/English | Expected if Gemini chose Japanese for the character; the system prompt mirrors the speaker's language. `/voice-test language:zh` confirms zh TTS works in isolation. |
+| Bot ignores you while it is talking | Working as designed under `BOT_INPUT_POLICY=half_duplex`. Look for `input_discarded reason=bot_speaking`. Set `latest_wins` or `barge_in` (plus `BARGE_IN_ENABLED=true`) to interrupt. |
+| Short replies like "嗯" get no answer | The filler filter dropped them (`transcript_filtered reason=filler`). They are accepted when the bot's own previous reply ended in a question. |
+| Bot says it can't answer, then goes quiet | Gemini quota cooldown. Check `gemini_rate_limited` for `cooldownMs`; requests resume automatically when it expires. |
+| `Character card could not be loaded` at boot | `CHARACTER_PATH`/`CHARACTER_ID` do not resolve to a `card.json`. The log prints the resolved path. The bot still runs, with a generic prompt. |
 | Port 9880 / 8765 in use | A previous instance didn't exit. `Stop-Process -Id <pid> -Force`. |
 | First ASR call ~23s | Torch JIT warmup on first inference; subsequent calls ~1s. |
 

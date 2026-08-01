@@ -1,0 +1,120 @@
+
+> @proj-airi/discord-bot@ start C:\Users\lyang\Code\DC_BOT\airi\services\discord-bot
+> tsx --env-file=.env --env-file-if-exists=.config --env-file-if-exists=.env.local src/index.ts
+
+.env.local not found. Continuing without it.
+.env.local not found. Continuing without it.
+2026-08-01T07:03:33.722Z [log] [Bot] Character loaded  { characterId=Makise Kurisu name=Makise Kurisu }
+2026-08-01T07:03:33.724Z [log] [Bot] Direct backend active: Qwen ASR → Gemini → GPT-SoVITS.
+2026-08-01T07:03:33.725Z [log] [DiscordAdapter] Starting Discord adapter...
+2026-08-01T07:03:34.380Z [log] [DiscordAdapter] Discord adapter started successfully
+2026-08-01T07:03:34.405Z [log] [DiscordAdapter] Discord bot ready! User: Makise Kurisu#9909
+2026-08-01T07:03:44.824Z [log] [DiscordAdapter] Interaction received: /summon from starrydark
+2026-08-01T07:03:45.423Z [log] [VoiceManager] Voice connection established in state  { state=ready }
+2026-08-01T07:03:45.438Z [log] [VoiceManager] User speaking: subscribing  { displayName=ратгіск тне соммцлізт звезда userId=502659444493123596 }
+2026-08-01T07:03:45.457Z [log] [VoiceManager] Monitoring user: ратгіск тне соммцлізт звезда
+2026-08-01T07:03:49.738Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=3396 bytes=84480 }
+2026-08-01T07:03:49.739Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T07:03:50.396Z [log] [ConversationController] utterance_received  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда language=zh turnId=6e8c13f0-3097-4ced-9691-b8e7f0984a2f chars=6 }
+2026-08-01T07:03:50.396Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=thinking reason=generation_started }
+2026-08-01T07:03:50.397Z [log] [ConversationController] response_epoch_started  { guildId=616847428351688705 turnId=6e8c13f0-3097-4ced-9691-b8e7f0984a2f responseEpoch=1 }
+2026-08-01T07:03:50.398Z [log] [GeminiBrain] gemini_request_started  { guildId=616847428351688705 userId=502659444493123596 model=gemini-3.6-flash turns=1 systemInstructionChars=3427 }
+2026-08-01T07:03:52.977Z [log] [ConversationController] avatar_action  { guildId=616847428351688705 turnId=6e8c13f0-3097-4ced-9691-b8e7f0984a2f responseEpoch=1 emotion=neutral intensity=0.5 motionHint=looks up from her laptop }
+2026-08-01T07:03:52.978Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=6e8c13f0-3097-4ced-9691-b8e7f0984a2f responseEpoch=1 chunkIndex=0 targetLanguage=en resolution=text-detection chars=6 }
+2026-08-01T07:03:52.978Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=en promptLanguage=ja streamingMode=0 chars=6 }
+2026-08-01T07:03:57.241Z [error] [ConversationController] tts_synthesis_failed  { error=GPT-SoVITS 500: Internal Server Error stack=Error: GPT-SoVITS 500: Internal Server Error
+    at GptSoVitsTtsProvider.synthesize (C:\Users\lyang\Code\DC_BOT\airi\services\discord-bot\src\providers\tts\gpt-sovits.ts:97:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async ConversationController.synthesizeAndPlay (C:\Users\lyang\Code\DC_BOT\airi\services\discord-bot\src\orchestration\conversation-controller.ts:356:22)
+    at async ConversationController.generateAndSpeak (C:\Users\lyang\Code\DC_BOT\airi\services\discord-bot\src\orchestration\conversation-controller.ts:242:9)
+    at async ConversationController.handleUtterance (C:\Users\lyang\Code\DC_BOT\airi\services\discord-bot\src\orchestration\conversation-controller.ts:201:5) guildId=616847428351688705 turnId=6e8c13f0-3097-4ced-9691-b8e7f0984a2f chunkIndex=0 }
+2026-08-01T07:03:57.242Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=6e8c13f0-3097-4ced-9691-b8e7f0984a2f responseEpoch=1 chunkIndex=1 targetLanguage=en resolution=text-detection chars=59 }
+2026-08-01T07:03:57.242Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=en promptLanguage=ja streamingMode=0 chars=59 }
+2026-08-01T07:03:57.255Z [error] [ConversationController] tts_synthesis_failed  { error=GPT-SoVITS 500: Internal Server Error stack=Error: GPT-SoVITS 500: Internal Server Error
+    at GptSoVitsTtsProvider.synthesize (C:\Users\lyang\Code\DC_BOT\airi\services\discord-bot\src\providers\tts\gpt-sovits.ts:97:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async ConversationController.synthesizeAndPlay (C:\Users\lyang\Code\DC_BOT\airi\services\discord-bot\src\orchestration\conversation-controller.ts:356:22)
+    at async ConversationController.generateAndSpeak (C:\Users\lyang\Code\DC_BOT\airi\services\discord-bot\src\orchestration\conversation-controller.ts:242:9)
+    at async ConversationController.handleUtterance (C:\Users\lyang\Code\DC_BOT\airi\services\discord-bot\src\orchestration\conversation-controller.ts:201:5) guildId=616847428351688705 turnId=6e8c13f0-3097-4ced-9691-b8e7f0984a2f chunkIndex=1 }
+2026-08-01T07:03:57.328Z [log] [ConversationController] response_completed  { guildId=616847428351688705 turnId=6e8c13f0-3097-4ced-9691-b8e7f0984a2f responseEpoch=1 chars=65 chunks=2 }
+2026-08-01T07:03:57.328Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=thinking to=idle reason=turn_finished }
+2026-08-01T07:03:57.537Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=1642 bytes=32640 }
+2026-08-01T07:03:57.537Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T07:03:58.043Z [log] [ConversationController] transcript_filtered  { guildId=616847428351688705 userId=502659444493123596 reason=empty chars=0 language=und }
+2026-08-01T07:03:58.043Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=idle reason=transcript_empty }
+2026-08-01T07:04:02.422Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=1457 bytes=47360 }
+2026-08-01T07:04:02.422Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T07:04:03.146Z [log] [ConversationController] utterance_received  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда language=zh turnId=c245a941-9942-4d38-84eb-48885af1753c chars=4 }
+2026-08-01T07:04:03.146Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=thinking reason=generation_started }
+2026-08-01T07:04:03.147Z [log] [ConversationController] response_epoch_started  { guildId=616847428351688705 turnId=c245a941-9942-4d38-84eb-48885af1753c responseEpoch=2 }
+2026-08-01T07:04:03.147Z [log] [GeminiBrain] gemini_request_started  { guildId=616847428351688705 userId=502659444493123596 model=gemini-3.6-flash turns=3 systemInstructionChars=3427 }
+2026-08-01T07:04:04.100Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=500bytes=16640 }
+2026-08-01T07:04:04.100Z [log] [ConversationController] input_discarded  { guildId=616847428351688705 userId=502659444493123596 phase=thinking reason=bot_thinking durationMs=500}
+2026-08-01T07:04:07.350Z [log] [ConversationController] avatar_action  { guildId=616847428351688705 turnId=c245a941-9942-4d38-84eb-48885af1753c responseEpoch=2 emotion=neutral intensity=0.5 motionHint=从电脑屏幕前抬起头 }
+2026-08-01T07:04:07.474Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=c245a941-9942-4d38-84eb-48885af1753c responseEpoch=2 chunkIndex=0 targetLanguage=zh resolution=asr-hint chars=3 }
+2026-08-01T07:04:07.475Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=3 }
+2026-08-01T07:04:07.486Z [error] [ConversationController] tts_synthesis_failed  { error=GPT-SoVITS 500: Internal Server Error stack=Error: GPT-SoVITS 500: Internal Server Error
+    at GptSoVitsTtsProvider.synthesize (C:\Users\lyang\Code\DC_BOT\airi\services\discord-bot\src\providers\tts\gpt-sovits.ts:97:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async ConversationController.synthesizeAndPlay (C:\Users\lyang\Code\DC_BOT\airi\services\discord-bot\src\orchestration\conversation-controller.ts:356:22)
+    at async ConversationController.generateAndSpeak (C:\Users\lyang\Code\DC_BOT\airi\services\discord-bot\src\orchestration\conversation-controller.ts:242:9)
+    at async ConversationController.handleUtterance (C:\Users\lyang\Code\DC_BOT\airi\services\discord-bot\src\orchestration\conversation-controller.ts:201:5) guildId=616847428351688705 turnId=c245a941-9942-4d38-84eb-48885af1753c chunkIndex=0 }
+2026-08-01T07:04:07.486Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=c245a941-9942-4d38-84eb-48885af1753c responseEpoch=2 chunkIndex=1 targetLanguage=zh resolution=text-detection chars=6 }
+2026-08-01T07:04:07.486Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=6 }
+2026-08-01T07:04:07.497Z [error] [ConversationController] tts_synthesis_failed  { error=GPT-SoVITS 500: Internal Server Error stack=Error: GPT-SoVITS 500: Internal Server Error
+    at GptSoVitsTtsProvider.synthesize (C:\Users\lyang\Code\DC_BOT\airi\services\discord-bot\src\providers\tts\gpt-sovits.ts:97:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async ConversationController.synthesizeAndPlay (C:\Users\lyang\Code\DC_BOT\airi\services\discord-bot\src\orchestration\conversation-controller.ts:356:22)
+    at async ConversationController.generateAndSpeak (C:\Users\lyang\Code\DC_BOT\airi\services\discord-bot\src\orchestration\conversation-controller.ts:242:9)
+    at async ConversationController.handleUtterance (C:\Users\lyang\Code\DC_BOT\airi\services\discord-bot\src\orchestration\conversation-controller.ts:201:5) guildId=616847428351688705 turnId=c245a941-9942-4d38-84eb-48885af1753c chunkIndex=1 }
+2026-08-01T07:04:07.531Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=c245a941-9942-4d38-84eb-48885af1753c responseEpoch=2 chunkIndex=2 targetLanguage=zh resolution=text-detection chars=33 }
+2026-08-01T07:04:07.531Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=33 }
+2026-08-01T07:04:07.541Z [error] [ConversationController] tts_synthesis_failed  { error=GPT-SoVITS 500: Internal Server Error stack=Error: GPT-SoVITS 500: Internal Server Error
+    at GptSoVitsTtsProvider.synthesize (C:\Users\lyang\Code\DC_BOT\airi\services\discord-bot\src\providers\tts\gpt-sovits.ts:97:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async ConversationController.synthesizeAndPlay (C:\Users\lyang\Code\DC_BOT\airi\services\discord-bot\src\orchestration\conversation-controller.ts:356:22)
+    at async ConversationController.generateAndSpeak (C:\Users\lyang\Code\DC_BOT\airi\services\discord-bot\src\orchestration\conversation-controller.ts:242:9)
+    at async ConversationController.handleUtterance (C:\Users\lyang\Code\DC_BOT\airi\services\discord-bot\src\orchestration\conversation-controller.ts:201:5) guildId=616847428351688705 turnId=c245a941-9942-4d38-84eb-48885af1753c chunkIndex=2 }
+2026-08-01T07:04:07.564Z [log] [ConversationController] response_completed  { guildId=616847428351688705 turnId=c245a941-9942-4d38-84eb-48885af1753c responseEpoch=2 chars=42 chunks=3 }
+2026-08-01T07:04:07.565Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=thinking to=idle reason=turn_finished }
+2026-08-01T07:04:10.049Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=499bytes=16640 }
+2026-08-01T07:04:10.049Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T07:04:10.485Z [log] [ConversationController] transcript_filtered  { guildId=616847428351688705 userId=502659444493123596 reason=empty chars=0 language=und }
+2026-08-01T07:04:10.486Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=idle reason=transcript_empty }
+2026-08-01T07:04:16.617Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=3379 bytes=60800 }
+2026-08-01T07:04:16.617Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T07:04:17.267Z [log] [ConversationController] utterance_received  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда language=zh turnId=a5374e4b-40b0-4a6f-82c3-7b5f32ee8ce2 chars=2 }
+2026-08-01T07:04:17.267Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=thinking reason=generation_started }
+2026-08-01T07:04:17.267Z [log] [ConversationController] response_epoch_started  { guildId=616847428351688705 turnId=a5374e4b-40b0-4a6f-82c3-7b5f32ee8ce2 responseEpoch=3 }
+2026-08-01T07:04:17.267Z [log] [GeminiBrain] gemini_request_started  { guildId=616847428351688705 userId=502659444493123596 model=gemini-3.6-flash turns=5 systemInstructionChars=3427 }
+2026-08-01T07:04:21.370Z [log] [ConversationController] avatar_action  { guildId=616847428351688705 turnId=a5374e4b-40b0-4a6f-82c3-7b5f32ee8ce2 responseEpoch=3 emotion=question intensity=0.6 motionHint=停止打字，有些无奈地转过头看你 }
+2026-08-01T07:04:21.530Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=a5374e4b-40b0-4a6f-82c3-7b5f32ee8ce2 responseEpoch=3 chunkIndex=0 targetLanguage=zh resolution=text-detection chars=9 }
+2026-08-01T07:04:21.530Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=9 }
+2026-08-01T07:04:21.541Z [error] [ConversationController] tts_synthesis_failed  { error=GPT-SoVITS 500: Internal Server Error stack=Error: GPT-SoVITS 500: Internal Server Error
+    at GptSoVitsTtsProvider.synthesize (C:\Users\lyang\Code\DC_BOT\airi\services\discord-bot\src\providers\tts\gpt-sovits.ts:97:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async ConversationController.synthesizeAndPlay (C:\Users\lyang\Code\DC_BOT\airi\services\discord-bot\src\orchestration\conversation-controller.ts:356:22)
+    at async ConversationController.generateAndSpeak (C:\Users\lyang\Code\DC_BOT\airi\services\discord-bot\src\orchestration\conversation-controller.ts:242:9)
+    at async ConversationController.handleUtterance (C:\Users\lyang\Code\DC_BOT\airi\services\discord-bot\src\orchestration\conversation-controller.ts:201:5) guildId=616847428351688705 turnId=a5374e4b-40b0-4a6f-82c3-7b5f32ee8ce2 chunkIndex=0 }
+2026-08-01T07:04:21.541Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=a5374e4b-40b0-4a6f-82c3-7b5f32ee8ce2 responseEpoch=3 chunkIndex=1 targetLanguage=zh resolution=text-detection chars=22 }
+2026-08-01T07:04:21.542Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=22 }
+2026-08-01T07:04:21.554Z [error] [ConversationController] tts_synthesis_failed  { error=GPT-SoVITS 500: Internal Server Error stack=Error: GPT-SoVITS 500: Internal Server Error
+    at GptSoVitsTtsProvider.synthesize (C:\Users\lyang\Code\DC_BOT\airi\services\discord-bot\src\providers\tts\gpt-sovits.ts:97:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async ConversationController.synthesizeAndPlay (C:\Users\lyang\Code\DC_BOT\airi\services\discord-bot\src\orchestration\conversation-controller.ts:356:22)
+    at async ConversationController.generateAndSpeak (C:\Users\lyang\Code\DC_BOT\airi\services\discord-bot\src\orchestration\conversation-controller.ts:242:9)
+    at async ConversationController.handleUtterance (C:\Users\lyang\Code\DC_BOT\airi\services\discord-bot\src\orchestration\conversation-controller.ts:201:5) guildId=616847428351688705 turnId=a5374e4b-40b0-4a6f-82c3-7b5f32ee8ce2 chunkIndex=1 }
+2026-08-01T07:04:21.557Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=a5374e4b-40b0-4a6f-82c3-7b5f32ee8ce2 responseEpoch=3 chunkIndex=2 targetLanguage=zh resolution=text-detection chars=17 }
+2026-08-01T07:04:21.557Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=17 }
+2026-08-01T07:04:21.567Z [error] [ConversationController] tts_synthesis_failed  { error=GPT-SoVITS 500: Internal Server Error stack=Error: GPT-SoVITS 500: Internal Server Error
+    at GptSoVitsTtsProvider.synthesize (C:\Users\lyang\Code\DC_BOT\airi\services\discord-bot\src\providers\tts\gpt-sovits.ts:97:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async ConversationController.synthesizeAndPlay (C:\Users\lyang\Code\DC_BOT\airi\services\discord-bot\src\orchestration\conversation-controller.ts:356:22)
+    at async ConversationController.generateAndSpeak (C:\Users\lyang\Code\DC_BOT\airi\services\discord-bot\src\orchestration\conversation-controller.ts:242:9)
+    at async ConversationController.handleUtterance (C:\Users\lyang\Code\DC_BOT\airi\services\discord-bot\src\orchestration\conversation-controller.ts:201:5) guildId=616847428351688705 turnId=a5374e4b-40b0-4a6f-82c3-7b5f32ee8ce2 chunkIndex=2 }
+2026-08-01T07:04:21.589Z [log] [ConversationController] response_completed  { guildId=616847428351688705 turnId=a5374e4b-40b0-4a6f-82c3-7b5f32ee8ce2 responseEpoch=3 chars=48 chunks=3 }
+2026-08-01T07:04:21.589Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=thinking to=idle reason=turn_finished }
+2026-08-01T07:04:26.697Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=8659 bytes=237440 }
+2026-08-01T07:04:26.697Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T07:04:27.145Z [log] [ConversationController] transcript_filtered  { guildId=616847428351688705 userId=502659444493123596 reason=empty chars=0 language=und }
+2026-08-01T07:04:27.145Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=idle reason=transcript_empty }

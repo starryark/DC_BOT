@@ -261,18 +261,100 @@ Set-Location airi\services\discord-bot
 pnpm start
 ```
 
+## Conversation behavior
+
+The bot is **half-duplex by default**: it handles one conversation turn at a
+time. While it is thinking or speaking, newly finalized speech is discarded
+*before* transcription — it never reaches ASR, the model, or TTS, and it is
+never queued for later. Each drop is logged:
+
+```text
+input_discarded reason=bot_speaking phase=speaking
+```
+
+A turn is not considered finished until its last audio chunk has actually
+played, so a later chunk can never cut off an earlier one and the next turn
+cannot start over an audible response.
+
+Change this with `BOT_INPUT_POLICY`:
+
+| Value | Behavior |
+|-------|----------|
+| `half_duplex` (default) | busy-state speech is dropped; no backlog |
+| `latest_wins` | at most one waiting turn, replaced by the newest |
+| `barge_in` | busy-state speech cancels the active response |
+
+Amplitude-triggered barge-in is off by default (`BARGE_IN_ENABLED=false`);
+previously a single loud packet stopped playback while generation and synthesis
+continued regardless.
+
+Before reaching the model, a transcript is normalized and must survive four
+checks — empty, too-short, filler, duplicate. Standalone fillers (`uh`, `um`,
+`嗯`, `えっと`, …) and a repeat of the same user's previous line inside
+`VOICE_DUPLICATE_WINDOW_MS` are dropped and logged as `transcript_filtered`. A
+bare `yes`/`嗯`/`うん` is still accepted when the bot's own previous reply ended
+in a question.
+
+On a Gemini `429`, the bot enters a cooldown for the retry delay the API
+reports, makes no further requests until it expires, and speaks one short
+"can't answer right now" notice at most once per
+`GEMINI_COOLDOWN_PROMPT_INTERVAL_MS`. A local limiter
+(`GEMINI_REQUESTS_PER_MINUTE`, default 4) keeps traffic below the account quota
+in the first place.
+
+The design notes, evidence, and contracts behind this behavior are in
+[`docs/voice-optimization/`](docs/voice-optimization/).
+
+## Character persona
+
+The bot speaks as the character defined by a `chara_card_v3` card. The registry
+reads `<CHARACTER_PATH>/<CHARACTER_ID>/card.json`, so `CHARACTER_PATH` is the
+directory *containing* character folders, relative to
+`airi/services/discord-bot`:
+
+```dotenv
+CHARACTER_PATH=../../..
+CHARACTER_ID=Makise Kurisu
+```
+
+The card's `description`, `personality`, `scenario`, `system_prompt` and
+`post_history_instructions` are compiled into the model's system instruction,
+preceded by delivery rules (reply in the speaker's language; plain TTS-safe
+text) that outrank the card wherever they conflict — the card sets Japanese as
+its default register, but this is a multilingual voice bot, so the persona's
+tone carries into every language while the output language follows the most
+recent speaker.
+
+`creator_notes` is never injected. Its ACT protocol is instead expressed by the
+card's output-protocol profile: the model is asked to emit
+`<|ACT:"emotion":{…}|>` markup, which is parsed out of the stream into avatar
+actions before chunking. Only clean text reaches TTS, Discord, or history.
+
+Set `CHARACTER_PATH=` (empty) to run without a persona. A missing or malformed
+card is not fatal — the bot logs the resolved path and falls back to a generic
+prompt. The card is read once at startup; restart to apply edits.
+
 ## Useful configuration
 
 The complete set of bot settings is documented in
 `airi/services/discord-bot/.env.example`. The most useful tuning values are:
 
-- `VOICE_END_SILENCE_MS`: trailing silence that ends an utterance (default 650)
+- `BOT_INPUT_POLICY`: `half_duplex` (default), `latest_wins`, or `barge_in`
+- `VOICE_END_SILENCE_MS`: trailing silence that ends an utterance (default 900)
+- `VOICE_MIN_UTTERANCE_MS`: shorter utterances are noise (default 300)
 - `VOICE_MAX_UTTERANCE_MS`: hard utterance limit (default 30000)
-- `BARGE_IN_THRESHOLD`: speech amplitude required to interrupt playback
+- `VOICE_DUPLICATE_WINDOW_MS`: same-user duplicate suppression (default 3000)
+- `BARGE_IN_ENABLED`: amplitude-triggered interruption (default `false`)
 - `CONVERSATION_MAX_MESSAGES`: retained per-server conversation history
+- `GEMINI_REQUESTS_PER_MINUTE` / `GEMINI_MAX_CONCURRENT_REQUESTS`: local limiter
+- `GEMINI_DEFAULT_COOLDOWN_MS`: cooldown when a 429 carries no retry delay
 - `GPT_SOVITS_STREAMING_MODE`: `0` for full synthesis, `1`-`3` for streaming
 - `DEBUG_DUMP_AUDIO=true`: saves finalized input WAVs under the bot's `dumps`
   directory
+
+All numeric settings are validated: negative, zero, non-numeric, or
+absurdly-large values fall back to the documented default rather than silently
+disabling endpointing or rate limiting.
 
 Qwen service settings are process environment variables: `ASR_MODEL`,
 `ASR_DEVICE`, `ASR_DTYPE`, `ASR_HOST`, and `ASR_PORT`.
@@ -309,3 +391,17 @@ pnpm --filter @proj-airi/discord-bot test
 Set-Location ..\qwen3-asr
 .\.venv\Scripts\python.exe -m pytest
 ```
+
+For the Wave 4 latency matrix, start the configured local services and run:
+
+```powershell
+Set-Location airi
+pnpm --filter @proj-airi/discord-bot benchmark:voice -- --output benchmarks/voice/latest.json
+```
+
+Add `--asr path\to\english.wav,path\to\japanese.wav` to include approved ASR
+fixtures, and label runs with `--asr-model` / `--asr-dtype`. The JSON captures
+hardware, first-byte and total latency, byte counts, and every required TTS
+mode/target/prefetch/cache combination. Listen to the generated configurations
+and record pronunciation/prosody separately; latency alone is not an audio
+quality acceptance signal.
