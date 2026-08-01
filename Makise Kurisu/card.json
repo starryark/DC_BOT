@@ -24,6 +24,16 @@
       },
       "fav": false,
       "talkativeness": 0.5,
+      "dc_bot": {
+        "interaction": {
+          "defaultResponseLanguage": "ja",
+          "pronunciationProfileVersion": "makise-v1",
+          "entities": [
+            { "id": "makise-kurisu", "canonicalName": "Makise Kurisu", "nativeName": "牧瀬紅莉栖", "kind": "character-name", "aliases": ["Makise Kurisu", "Makise", "Kurisu", "牧瀬紅莉栖", "牧瀬", "まきせくりす"], "promptDescription": "The assistant herself, Makise Kurisu.", "pronunciations": { "ja": { "speechText": "牧瀬紅莉栖" } } },
+            { "id": "christina-nickname", "canonicalName": "Christina", "nativeName": "クリスティーナ", "kind": "nickname", "aliases": ["Christina", "クリスティーナ", "克里斯蒂娜"], "promptDescription": "A nickname used for Makise Kurisu.", "pronunciations": { "ja": { "speechText": "クリスティーナ" } } }
+          ]
+        }
+      },
       "airi": {
         "modules": {
           "consciousness": {

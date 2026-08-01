@@ -22,6 +22,7 @@ function makeCharacter(overrides: Partial<CharacterRuntime> = {}): CharacterRunt
     },
     voice: { provider: 'gpt-sovits', voiceId: 'kurisu', referenceAudio: '', promptLanguage: 'ja' },
     asr: { hotwords: [] },
+    interaction: { defaultResponseLanguage: 'ja', entities: [], pronunciationProfileVersion: 'test-v1' },
     avatar: { renderer: 'live2d' },
     outputProtocol: { type: 'act-v1', emotions: ['happy', 'neutral'], allowDelay: true },
     ...overrides,

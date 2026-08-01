@@ -164,6 +164,8 @@ export function buildCharacterRuntime(
     allowDelay: dcBot.outputProtocol.allowDelay,
   }
   const lorebook: CharacterLorebook | undefined = normalizeLorebook(data.character_book)
+  const promptDefault = ['ja', 'zh', 'en'].includes(voice.promptLanguage) ? voice.promptLanguage as 'ja' | 'zh' | 'en' : 'en'
+  const interaction = dcBot.interaction ?? { defaultResponseLanguage: promptDefault, entities: [], pronunciationProfileVersion: 'default-v1' }
 
   return {
     id: characterId,
@@ -177,6 +179,7 @@ export function buildCharacterRuntime(
     },
     voice,
     asr,
+    interaction,
     avatar,
     lorebook,
     outputProtocol,

@@ -21,19 +21,23 @@ _LANGUAGE_MAP = {
     "chinese": "zh",
     "english": "en",
     "japanese": "ja",
+    "日本語": "ja",
+    "mandarin": "zh",
+    "中文": "zh",
+    "英语": "en",
+    "英語": "en",
 }
 
 
-def normalize_language(raw: str | None) -> str:
-    if not raw:
+def normalize_language(raw: object) -> str:
+    if not isinstance(raw, str) or not raw:
         return "und"
     key = raw.strip().lower()
     if key in _LANGUAGE_MAP:
         return _LANGUAGE_MAP[key]
-    # Fall back to a 2-letter code if Qwen already returned one.
-    if len(key) == 2:
+    if key in {"ja", "zh", "en"}:
         return key
-    return raw.strip().lower()[:2]
+    return "und"
 
 
 class AsrEngine:

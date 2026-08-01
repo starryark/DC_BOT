@@ -1,6 +1,7 @@
 import type { AsrInput, AsrProvider, AsrResult } from './types'
 
 import { config } from '../../config'
+import { normalizeSupportedLanguage } from '../../orchestration/input-understanding'
 
 /**
  * Talks to the local Python `qwen3-asr` service over HTTP. No temp files, no
@@ -39,7 +40,7 @@ export class QwenHttpAsrProvider implements AsrProvider {
       }
       return {
         text: json.text ?? '',
-        language: json.language ?? 'und',
+        language: normalizeSupportedLanguage(json.language) ?? 'und',
         inferenceMs: json.inference_ms ?? 0,
       }
     }

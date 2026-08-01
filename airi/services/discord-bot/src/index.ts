@@ -83,7 +83,7 @@ async function main() {
           mediaType: 'wav',
           streamingMode: cfg.tts.streamingMode,
           textSplitMethod: 'cut5',
-          relevantSynthesisParameters: {},
+          relevantSynthesisParameters: { pronunciationProfileVersion: request.pronunciationProfileVersion ?? 'default-v1' },
         }
       : null,
   })

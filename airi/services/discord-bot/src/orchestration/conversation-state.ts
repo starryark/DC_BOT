@@ -1,5 +1,7 @@
+import type { SupportedLanguage } from '../character/types'
 import type { InputPolicy } from '../config'
 import type { VoiceInputEvent } from './events'
+import type { InputUnderstanding } from './input-understanding'
 import type { RecentTranscript } from './transcript-filter'
 
 import { useLogg } from '@guiiai/logg'
@@ -47,6 +49,7 @@ export interface AcceptedTurn {
   displayName: string
   text: string
   language: string
+  understanding: InputUnderstanding
 }
 
 export interface GuildConversationSession {
@@ -73,6 +76,7 @@ export interface GuildConversationSession {
   lastCooldownPromptAt?: number
   /** True when the bot's last reply ended in a question, exempting confirmations from the filler filter. */
   awaitingConfirmation: boolean
+  lastStableResponseLanguage?: SupportedLanguage
 }
 
 const logger = useLogg('ConversationState').useGlobalConfig()

@@ -234,7 +234,7 @@ describe('conversationController — ASR→TTS language propagation', () => {
     expect(ttsRequests.every(req => req.language === 'ja')).toBe(true)
   })
 
-  it('falls back to auto when neither ASR nor text gives evidence', async () => {
+  it('falls back to the characterless English default when neither ASR nor text gives evidence', async () => {
     const { voice, ttsRequests } = buildController({
       asrLanguage: 'und',
       // NOTE: the input can no longer be a bare filler like "hmm" — the
@@ -246,7 +246,7 @@ describe('conversationController — ASR→TTS language propagation', () => {
     await settle()
 
     expect(ttsRequests.length).toBeGreaterThan(0)
-    expect(ttsRequests.every(req => req.language === 'auto')).toBe(true)
+    expect(ttsRequests.every(req => req.language === 'en')).toBe(true)
   })
 
   it('lets strong generated-text evidence override the ASR hint', async () => {

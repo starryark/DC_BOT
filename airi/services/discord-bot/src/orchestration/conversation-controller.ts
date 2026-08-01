@@ -22,6 +22,7 @@ import { config } from '../config'
 import { BrainRateLimitError, BrainRequestAbortedError } from '../providers/brain/errors'
 import { FALLBACK_SYSTEM_PROMPT } from '../providers/brain/prompt'
 import { normalizeLanguage, resolveTtsLanguage } from '../providers/tts/language'
+import { prepareSpeechText } from '../providers/tts/pronunciation'
 import { convertOpusToWav } from '../utils/audio'
 import { ConversationFloorCoordinator } from './conversation-floor-coordinator'
 import {
@@ -33,6 +34,7 @@ import {
   shouldAnnounceCooldown,
   transitionGuildPhase,
 } from './conversation-state'
+import { isStableLanguageEvidence, resolveInputUnderstanding } from './input-understanding'
 import { chunkStream } from './speech-chunker'
 import { filterTranscript } from './transcript-filter'
 import { runBoundedTtsPipeline } from './tts-pipeline'
@@ -206,6 +208,18 @@ export class ConversationController {
 
     session.recentTranscripts.set(utterance.userId, { normalizedText: verdict.normalizedText, at: Date.now() })
 
+    const previousStableLanguage = session.lastStableResponseLanguage
+    const understanding = resolveInputUnderstanding({
+      text: verdict.normalizedText,
+      asrLanguage,
+      previousStableLanguage,
+      characterInteractionProfile: this.character?.interaction ?? { defaultResponseLanguage: 'en', entities: [], pronunciationProfileVersion: 'default-v1' },
+    })
+    const stableLanguageUpdated = isStableLanguageEvidence(understanding.reason)
+    if (stableLanguageUpdated)
+      session.lastStableResponseLanguage = understanding.responseLanguage
+    this.logger.withFields({ guildId: utterance.guildId, userId: utterance.userId, turnId, asrLanguageRaw: asrLanguage, asrLanguageNormalized: understanding.asrLanguageNormalized ?? 'und', responseLanguage: understanding.responseLanguage, resolutionReason: understanding.reason, confidence: understanding.confidence, isAmbiguous: understanding.isAmbiguous, entityIds: understanding.entities.map(entity => entity.entityId), entityCount: understanding.entities.length, previousStableLanguage, stableLanguageUpdated }).log('input_understanding_resolved')
+
     this.logger.withFields({
       guildId: utterance.guildId,
       userId: utterance.userId,
@@ -230,6 +244,7 @@ export class ConversationController {
       startedAt: utterance.startedAt,
       endedAt: utterance.endedAt,
       responseEpoch: admissionEpoch,
+      understanding,
     })
     if (floorDecision.kind === 'ignored' && !this.conversationFloor.hasPending(session.guildId))
       transitionGuildPhase(session, 'idle', `conversation_floor_${floorDecision.reason}`)
@@ -252,6 +267,7 @@ export class ConversationController {
       displayName: 'Discord group',
       text: input.promptText,
       language: latest.language,
+      understanding: latest.understanding,
     })
   }
 
@@ -296,7 +312,7 @@ export class ConversationController {
     const abort = new AbortController()
     session.generationAbort = abort
 
-    const turnLang = normalizeLanguage(turn.language)
+    const turnLang = normalizeLanguage(turn.understanding.responseLanguage)
     let fullReply = ''
     let chunkIndex = 0
 
@@ -311,7 +327,7 @@ export class ConversationController {
       )
 
       const pipeline = await runBoundedTtsPipeline(stream, {
-        synthesize: (text, index) => this.synthesizeChunk(session, epoch, turn.turnId, text, index, turnLang, abort.signal),
+        synthesize: (text, index) => this.synthesizeChunk(session, epoch, turn.turnId, text, index, turnLang, turn.understanding.responseLanguage, abort.signal),
         play: chunk => this.playChunk(session, epoch, turn.turnId, chunk.audio, chunk.chunkIndex, abort.signal),
         isCancelled: () => this.isStale(session, epoch, abort),
         onChunk: (text) => {
@@ -377,6 +393,7 @@ export class ConversationController {
         room: session.history.asRoom(this.character.id),
         currentInput: turn.inputEvent,
         currentInputText: turn.text,
+        currentTurnUnderstanding: turn.understanding,
       })
       return {
         guildId: session.guildId,
@@ -391,7 +408,7 @@ export class ConversationController {
     return {
       guildId: session.guildId,
       userId: turn.userId,
-      systemInstruction: FALLBACK_SYSTEM_PROMPT,
+      systemInstruction: `${FALLBACK_SYSTEM_PROMPT}\n\n# Current-turn runtime routing\nSelected reply language: ${turn.understanding.responseLanguage}. Reply in this selected language.`,
       contents,
     }
   }
@@ -409,6 +426,7 @@ export class ConversationController {
     text: string,
     chunkIndex: number,
     turnLang: GptSoVitsLang,
+    responseLanguage: 'ja' | 'zh' | 'en',
     parentSignal: AbortSignal,
   ): Promise<Readable | null> {
     if (!text.trim() || parentSignal.aborted)
@@ -419,6 +437,7 @@ export class ConversationController {
       inputLanguageHint: turnLang === 'auto' ? undefined : turnLang,
       textLangFallback: config().tts.textLangFallback,
     })
+    const prepared = prepareSpeechText({ text, language: resolved.language === 'auto' ? responseLanguage : resolved.language, entities: this.character?.interaction.entities ?? [] })
 
     try {
       const synthesisStartedAt = Date.now()
@@ -429,10 +448,13 @@ export class ConversationController {
         chunkIndex,
         targetLanguage: resolved.language,
         resolution: resolved.source,
+        responseLanguageHint: responseLanguage,
+        pronunciationSubstitutions: prepared.substitutions.length,
+        pronunciationProfileVersion: this.character?.interaction.pronunciationProfileVersion ?? 'default-v1',
         chars: text.length,
       }).log('tts_synthesis_started')
 
-      const stream = await this.tts.synthesize({ text, language: resolved.language }, parentSignal)
+      const stream = await this.tts.synthesize({ text: prepared.speechText, language: resolved.language, pronunciationProfileVersion: this.character?.interaction.pronunciationProfileVersion ?? 'default-v1' }, parentSignal)
 
       // A synthesis that finished after its response was superseded must never
       // reach the speaker.

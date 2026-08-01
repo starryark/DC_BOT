@@ -37,6 +37,15 @@ def test_normalize_language() -> None:
     assert normalize_language("Chinese") == "zh"
     assert normalize_language("English") == "en"
     assert normalize_language("Japanese") == "ja"
+    assert normalize_language("日本語") == "ja"
+    assert normalize_language("Mandarin") == "zh"
+    assert normalize_language("中文") == "zh"
+    assert normalize_language("英语") == "en"
+    assert normalize_language("po") == "und"
+    assert normalize_language("pt") == "und"
+    assert normalize_language("Portuguese") == "und"
+    assert normalize_language("") == "und"
+    assert normalize_language({}) == "und"
     assert normalize_language(None) == "und"
 
 

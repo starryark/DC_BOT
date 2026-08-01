@@ -58,3 +58,8 @@ pnpm run -F @proj-airi/discord-bot start
 - Implementation of Audio handling and processing https://github.com/TheTrueSCP/CharacterAIVoice/blob/54d6a41b4e0eba9ad996c5f9ddcc6230277af2f8/src/VoiceHandler.js
 - Example of usage https://github.com/discordjs/voice-examples/blob/da0c3b419107d41053501a4dddf3826ad53c03f7/radio-bot/src/bot.ts
 - Excellent library https://github.com/discordjs/discord.js
+# Multilingual routing and pronunciation check
+
+After starting the local ASR, Gemini, GPT-SoVITS, and Discord bot services, test these voice turns in a fresh guild session: `christina`, `你是makise是吗`, `makiseって誰？`, and `Are you Makise?`. Confirm the reply languages are Japanese, Chinese, Japanese, and English respectively, and inspect `input_understanding_resolved` without enabling transcript logging.
+
+For pronunciation changes, add candidate `speechText` values to a local copy of the character interaction profile and synthesize the same short sentence at least three times per candidate through the existing `/voice-test` command. Listen for name intelligibility, natural rhythm, and voice consistency. Record the winning value only after testing it on the deployed Kurisu checkpoint; do not commit generated audio or claim an untested English romanization is validated. Increment `pronunciationProfileVersion` whenever the effective pronunciation rules change so cached audio is not reused.

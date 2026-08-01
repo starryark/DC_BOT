@@ -1,4 +1,5 @@
 import type { VoiceInputEvent } from './events'
+import type { InputUnderstanding } from './input-understanding'
 
 export interface TranscribedUtterance {
   inputEvent: VoiceInputEvent
@@ -7,6 +8,7 @@ export interface TranscribedUtterance {
   startedAt: number
   endedAt: number
   responseEpoch: number
+  understanding: InputUnderstanding
 }
 
 export interface GroupMessage {
@@ -16,6 +18,7 @@ export interface GroupMessage {
   language: string
   startedAt: number
   endedAt: number
+  understanding: InputUnderstanding
 }
 
 export interface GroupConversationInput {
@@ -51,6 +54,7 @@ export function buildGroupTurn(utterances: readonly TranscribedUtterance[], merg
       previous.endedAt = Math.max(previous.endedAt, utterance.endedAt)
       if (previous.language !== utterance.language)
         previous.language = 'und'
+      previous.understanding = utterance.understanding
       continue
     }
     messages.push({
@@ -60,6 +64,7 @@ export function buildGroupTurn(utterances: readonly TranscribedUtterance[], merg
       language: utterance.language,
       startedAt: utterance.startedAt,
       endedAt: utterance.endedAt,
+      understanding: utterance.understanding,
     })
   }
 

@@ -101,6 +101,24 @@ export interface CharacterLorebook {
   entries: LorebookEntry[]
 }
 
+export type SupportedLanguage = 'ja' | 'zh' | 'en'
+
+export interface CharacterEntityProfile {
+  id: string
+  canonicalName: string
+  nativeName?: string
+  kind: 'character-name' | 'nickname'
+  aliases: string[]
+  promptDescription?: string
+  pronunciations?: Partial<Record<SupportedLanguage, { speechText: string }>>
+}
+
+export interface CharacterInteractionProfile {
+  defaultResponseLanguage: SupportedLanguage
+  entities: CharacterEntityProfile[]
+  pronunciationProfileVersion: string
+}
+
 /**
  * The immutable, normalized character runtime (§5.1).
  *
@@ -130,6 +148,7 @@ export interface CharacterRuntime {
 
   voice: VoiceProfile
   asr: AsrCharacterProfile
+  interaction: CharacterInteractionProfile
 
   avatar?: AvatarProfile
   lorebook?: CharacterLorebook

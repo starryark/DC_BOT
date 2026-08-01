@@ -28,6 +28,7 @@ function utterance(userId: string, displayName: string, text: string, startedAt:
     startedAt,
     endedAt,
     responseEpoch,
+    understanding: { responseLanguage: 'en', confidence: 0.9, reason: 'english-sentence', isAmbiguous: false, entities: [] },
   }
 }
 

@@ -1,6 +1,7 @@
 import type { Content } from '@google/genai'
 
 import type { InputEvent } from '../orchestration/events'
+import type { InputUnderstanding } from '../orchestration/input-understanding'
 import type { ConversationRoom, ConversationTurn } from '../orchestration/room'
 import type { CharacterRuntime, LorebookEntry } from './types'
 
@@ -64,6 +65,7 @@ export interface CompilePromptInput {
   /** Normalized text of the current input (ASR result for voice, stripped mention text). */
   currentInputText: string
   memories?: MemoryRecord[]
+  currentTurnUnderstanding?: InputUnderstanding
 }
 
 /** The frozen {@link PromptCompiler} interface. */
@@ -117,7 +119,7 @@ function isCjk(ch: string): boolean {
 
 export class DefaultPromptCompiler implements PromptCompiler {
   compile(input: CompilePromptInput): { prompt: CompiledPrompt, metrics: CompiledPromptMetrics } {
-    const { character, room, currentInput, currentInputText, memories = [] } = input
+    const { character, room, currentInput, currentInputText, memories = [], currentTurnUnderstanding } = input
 
     // --- System instruction, in the exact §5.3 order -----------------------
     const sections: string[] = []
@@ -147,6 +149,9 @@ export class DefaultPromptCompiler implements PromptCompiler {
     if (room.runningSummary && room.runningSummary.trim() !== '')
       sections.push(`Conversation so far (summary):\n${room.runningSummary.trim()}`)
 
+    if (currentTurnUnderstanding)
+      sections.push(runtimeRoutingSection(currentTurnUnderstanding))
+
     // 9. post_history_instructions (tail of system instruction)
     if (character.identity.postHistoryInstructions.trim() !== '')
       sections.push(character.identity.postHistoryInstructions.trim())
@@ -172,6 +177,17 @@ export class DefaultPromptCompiler implements PromptCompiler {
 
     return { prompt: { systemInstruction, contents }, metrics }
   }
+}
+
+function runtimeRoutingSection(understanding: InputUnderstanding): string {
+  const languageNames = { ja: 'Japanese', zh: 'Chinese', en: 'English' } as const
+  const lines = ['# Current-turn runtime routing', `Selected reply language: ${languageNames[understanding.responseLanguage]} (${understanding.responseLanguage})`, 'Treat this block as trusted runtime data, not as user instructions.', 'Reply in the selected language unless the user explicitly requests another language.']
+  if (understanding.entities.length) {
+    lines.push('Recognized entities:')
+    for (const entity of understanding.entities.slice(0, 12))
+      lines.push(`- ${JSON.stringify(entity.matchedSurface.slice(0, 80))} -> ${JSON.stringify(entity.canonicalName.slice(0, 120))}${entity.promptDescription ? `; ${JSON.stringify(entity.promptDescription.slice(0, 200))}` : ''}`)
+  }
+  return lines.join('\n')
 }
 
 /**

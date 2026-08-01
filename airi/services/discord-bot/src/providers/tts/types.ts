@@ -22,6 +22,8 @@ export interface TtsRequest {
   text: string
   /** Resolved target language; `auto` defers segmentation to GPT-SoVITS. */
   language: GptSoVitsLang
+  /** Included in cache identity when speech normalization rules change. */
+  pronunciationProfileVersion?: string
 }
 
 export interface TtsProvider {

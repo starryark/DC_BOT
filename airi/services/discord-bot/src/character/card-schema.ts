@@ -20,6 +20,8 @@
  */
 
 import type {
+  CharacterEntityProfile,
+  CharacterInteractionProfile,
   CharacterLorebook,
   LorebookEntry,
 } from './types'
@@ -149,6 +151,7 @@ export interface DcBotExtension {
   voice?: DcBotExtensionVoice
   asr?: DcBotExtensionAsr
   avatar?: DcBotExtensionAvatar
+  interaction?: unknown
   [key: string]: unknown
 }
 
@@ -185,6 +188,7 @@ export interface NormalizedDcBotExtension {
   voice: NormalizedDcBotVoice
   asr: NormalizedDcBotAsr
   avatar: NormalizedDcBotAvatar
+  interaction?: CharacterInteractionProfile
 }
 
 /**
@@ -361,7 +365,38 @@ export function normalizeDcBotExtension(raw: DcBotExtension | null): NormalizedD
       hotwords: isPlainObject(src.asr) ? normalizeStringArray(src.asr.hotwords, []) : [],
     },
     avatar: normalizeAvatarBlock(src.avatar),
+    interaction: normalizeInteractionBlock(src.interaction),
   }
+}
+
+function normalizeInteractionBlock(raw: unknown): CharacterInteractionProfile | undefined {
+  if (!isPlainObject(raw))
+    return undefined
+  const defaultResponseLanguage = ['ja', 'zh', 'en'].includes(String(raw.defaultResponseLanguage))
+    ? raw.defaultResponseLanguage as CharacterInteractionProfile['defaultResponseLanguage']
+    : undefined
+  if (!defaultResponseLanguage)
+    return undefined
+  const entities: CharacterEntityProfile[] = []
+  if (Array.isArray(raw.entities)) {
+    for (const candidate of raw.entities) {
+      if (!isPlainObject(candidate) || typeof candidate.id !== 'string' || typeof candidate.canonicalName !== 'string' || !['character-name', 'nickname'].includes(String(candidate.kind)))
+        continue
+      const aliases = normalizeStringArray(candidate.aliases, []).map(alias => alias.normalize('NFKC'))
+      if (!aliases.length)
+        continue
+      const pronunciations: CharacterEntityProfile['pronunciations'] = {}
+      if (isPlainObject(candidate.pronunciations)) {
+        for (const language of ['ja', 'zh', 'en'] as const) {
+          const value = candidate.pronunciations[language]
+          if (isPlainObject(value) && typeof value.speechText === 'string' && value.speechText.trim())
+            pronunciations[language] = { speechText: value.speechText.trim() }
+        }
+      }
+      entities.push({ id: candidate.id.trim(), canonicalName: candidate.canonicalName.trim(), nativeName: typeof candidate.nativeName === 'string' ? candidate.nativeName.trim() : undefined, kind: candidate.kind as CharacterEntityProfile['kind'], aliases: [...new Set(aliases)], promptDescription: typeof candidate.promptDescription === 'string' ? candidate.promptDescription.trim() : undefined, pronunciations })
+    }
+  }
+  return { defaultResponseLanguage, entities, pronunciationProfileVersion: typeof raw.pronunciationProfileVersion === 'string' && raw.pronunciationProfileVersion.trim() ? raw.pronunciationProfileVersion.trim() : 'default-v1' }
 }
 
 function normalizeVoiceBlock(raw: unknown): NormalizedDcBotVoice {
