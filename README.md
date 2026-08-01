@@ -277,6 +277,40 @@ The complete set of bot settings is documented in
 Qwen service settings are process environment variables: `ASR_MODEL`,
 `ASR_DEVICE`, `ASR_DTYPE`, `ASR_HOST`, and `ASR_PORT`.
 
+### Character persona
+
+The bot speaks as the character defined by a `chara_card_v3` card. The bundled
+card is `Makise Kurisu/card.json`, selected by `CHARACTER_CARD_PATH` (relative
+to `airi/services/discord-bot`, empty to disable):
+
+```dotenv
+CHARACTER_CARD_PATH=../../../Makise Kurisu/card.json
+```
+
+The card's `description`, `personality`, `scenario`, `system_prompt`,
+`post_history_instructions`, and `extensions.depth_prompt.prompt` are rendered
+into the Gemini system instruction, in that order. The bot's own delivery
+rules are appended last and are declared to outrank the card, because two card
+directives would otherwise break the voice loop:
+
+- the card sets Japanese as the default register, but this is a multilingual
+  voice bot — the persona's tone carries into every language while the *output
+  language* still follows the most recent speaker (see `text_lang` above);
+- the card's `creator_notes` define `<|ACT:...|>` / `<|DELAY:n|>` stage tokens
+  for the AIRI stage avatar. Nothing in this pipeline consumes them and
+  generated text goes straight to GPT-SoVITS, so they would be read aloud.
+  They are excluded from the prompt, forbidden explicitly, and stripped from
+  the stream before chunking as a safety net.
+
+Card fields with no meaning here are ignored: `first_mes` and
+`alternate_greetings` (the bot has no greeting surface) and `extensions.airi`
+module/provider selection (ASR, brain, and TTS providers come from the env
+settings above).
+
+The card is read once at startup; edit it and restart the bot to apply changes.
+If the file is missing or malformed, the bot logs an error with the resolved
+path and runs without a persona rather than failing to start.
+
 ## Health checks and troubleshooting
 
 Check ASR readiness:
