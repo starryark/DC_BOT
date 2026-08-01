@@ -12,7 +12,7 @@ import { Readable as NodeReadable } from 'node:stream'
 
 import { useLogg } from '@guiiai/logg'
 
-export const TTS_CACHE_KEY_VERSION = 1
+export const TTS_CACHE_KEY_VERSION = 3
 
 export interface TtsCacheMetadata {
   keyVersion: number
@@ -27,15 +27,24 @@ export interface TtsCacheMetadata {
 export interface TtsCacheIdentity {
   normalizedText: string
   textLanguage: GptSoVitsLang
+  pronunciationProfileVersion?: string
   voiceModelVersion: string
+  catalogVersion: string
+  profileId: string
   referenceAudioFingerprint: string
   promptTextFingerprint: string
   promptLanguage: string
+  topK: number
+  topP: number
+  temperature: number
+  repetitionPenalty: number
   speedFactor: number
+  fragmentInterval: number
+  seed: number
+  variationIndex: number
   mediaType: string
   streamingMode: number
   textSplitMethod: string
-  relevantSynthesisParameters: Record<string, string | number | boolean | null>
 }
 
 export interface TtsCacheOptions {

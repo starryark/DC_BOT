@@ -15,6 +15,7 @@ import { QwenHttpAsrProvider } from './providers/asr/qwen-http'
 import { GeminiBrainProvider } from './providers/brain/gemini'
 import { GptSoVitsTtsProvider } from './providers/tts/gpt-sovits'
 import { CachedTtsProvider, fingerprint } from './providers/tts/tts-cache'
+import { loadVoiceProfileCatalog } from './providers/tts/voice-profile-catalog'
 import { setServices } from './services'
 
 setGlobalFormat(Format.Pretty)
@@ -49,6 +50,16 @@ function loadCharacter(): CharacterRuntime | undefined {
 
 async function main() {
   const cfg = config()
+  const voiceProfileCatalog = await loadVoiceProfileCatalog({
+    filePath: cfg.tts.voiceProfilesFile,
+    singleReference: {
+      referenceAudio: cfg.tts.refAudioPath,
+      referenceText: cfg.tts.promptText,
+      promptLanguage: cfg.tts.promptLang as 'zh' | 'en' | 'ja' | 'auto',
+      catalogVersion: cfg.tts.voiceModelVersion || undefined,
+    },
+    onWarning: warning => log.withFields(warning).warn(warning.kind === 'profile-disabled' ? 'voice_profile_disabled' : 'voice_profile_fallback'),
+  })
 
   // The VoiceManager is the shared voice transport. The DiscordAdapter owns
   // the discord.js client + AIRI server wiring; we reach into it for the
@@ -72,21 +83,35 @@ async function main() {
   const rawTts = new GptSoVitsTtsProvider()
   const tts = new CachedTtsProvider(rawTts, {
     ...cfg.ttsCache,
-    identity: request => cfg.tts.voiceModelVersion && cfg.tts.refAudioPath
-      ? {
+    identity: (request) => {
+      const conditioning = request.conditioning
+      const referenceAudio = conditioning?.referenceAudio ?? cfg.tts.refAudioPath
+      const referenceText = conditioning?.referenceText ?? cfg.tts.promptText
+      if (!cfg.tts.voiceModelVersion || !referenceAudio)
+        return null
+      return {
           normalizedText: request.text.normalize('NFKC').trim().replace(/\s+/g, ' '),
           textLanguage: request.language,
+          pronunciationProfileVersion: request.pronunciationProfileVersion,
           voiceModelVersion: cfg.tts.voiceModelVersion,
-          referenceAudioFingerprint: fingerprint(cfg.tts.refAudioPath),
-          promptTextFingerprint: fingerprint(cfg.tts.promptText),
-          promptLanguage: cfg.tts.promptLang,
-          speedFactor: 1,
+          catalogVersion: conditioning?.catalogVersion ?? voiceProfileCatalog.catalogVersion,
+          profileId: conditioning?.profileId ?? voiceProfileCatalog.defaultProfileId,
+          referenceAudioFingerprint: fingerprint(referenceAudio),
+          promptTextFingerprint: fingerprint(referenceText),
+          promptLanguage: conditioning?.promptLanguage ?? cfg.tts.promptLang,
+          topK: conditioning?.topK ?? 15,
+          topP: conditioning?.topP ?? 1,
+          temperature: conditioning?.temperature ?? 1,
+          repetitionPenalty: conditioning?.repetitionPenalty ?? 1.35,
+          speedFactor: conditioning?.speedFactor ?? 1,
+          fragmentInterval: conditioning?.fragmentInterval ?? 0.3,
+          seed: conditioning?.seed ?? -1,
+          variationIndex: conditioning?.variationIndex ?? 0,
           mediaType: 'wav',
           streamingMode: cfg.tts.streamingMode,
-          textSplitMethod: 'cut5',
-          relevantSynthesisParameters: { pronunciationProfileVersion: request.pronunciationProfileVersion ?? 'default-v1' },
+          textSplitMethod: conditioning?.textSplitMethod ?? 'cut0',
         }
-      : null,
+    },
   })
   const brain = new GeminiBrainProvider()
 
@@ -100,7 +125,9 @@ async function main() {
     // The controller subscribes to voice utterances and barge-in events; it is
     // the only orchestrator in direct mode.
     // eslint-disable-next-line no-new
-    new ConversationController({ voice, asr, brain, tts, character, promptCompiler })
+    if (cfg.tts.warmupEnabled)
+      await warmVoiceProfiles(rawTts, voiceProfileCatalog)
+    new ConversationController({ voice, asr, brain, tts, character, promptCompiler, voiceProfileCatalog })
     adapter.setMentionResponder(new MentionResponder({ brain, character, promptCompiler }))
     log.log('Direct backend active: Qwen ASR → Gemini → GPT-SoVITS, with Discord text replies.')
   }
@@ -128,6 +155,46 @@ async function main() {
   process.on('SIGTERM', async () => {
     await gracefulShutdown('SIGTERM')
   })
+}
+
+async function warmVoiceProfiles(rawTts: GptSoVitsTtsProvider, catalog: import('./providers/tts/speech-style-types').VoiceProfileCatalog): Promise<void> {
+  const profiles = [...catalog.profiles.values()]
+    .filter(profile => profile.id === catalog.defaultProfileId || profile.warmup)
+    .slice(0, 3)
+  for (const profile of profiles) {
+    const seed = profile.variationSeeds[0]
+    if (seed === undefined)
+      continue
+    try {
+      const stream = await rawTts.synthesize({
+        text: '準備はできているわ。',
+        language: 'ja',
+        conditioning: {
+          profileId: profile.id,
+          catalogVersion: catalog.catalogVersion,
+          referenceAudio: profile.referenceAudio,
+          referenceText: profile.referenceText,
+          promptLanguage: profile.promptLanguage,
+          topK: profile.sampling.topK,
+          topP: profile.sampling.topP,
+          temperature: profile.sampling.temperature,
+          repetitionPenalty: profile.sampling.repetitionPenalty,
+          speedFactor: profile.timing.speedFactor,
+          fragmentInterval: profile.timing.fragmentInterval,
+          textSplitMethod: profile.timing.textSplitMethod,
+          seed,
+          variationIndex: 0,
+        },
+      }, new AbortController().signal)
+      for await (const _chunk of stream) {
+        // Draining forces the underlying model path; a returned stream alone is not warm-up.
+      }
+      log.withFields({ profileId: profile.id }).log('voice_profile_warmed')
+    }
+    catch (error) {
+      log.withError(error).withFields({ profileId: profile.id }).warn('voice_profile_warmup_failed')
+    }
+  }
 }
 
 main().catch(err => log.withError(err).error('An error occurred'))

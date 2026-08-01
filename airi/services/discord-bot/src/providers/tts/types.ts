@@ -18,12 +18,40 @@ export type TtsLanguage = 'zh' | 'en' | 'ja'
  */
 export type GptSoVitsLang = TtsLanguage | 'auto'
 
+/** Complete acoustic conditioning resolved before crossing the provider boundary. */
+export interface TtsConditioning {
+  profileId: string
+  catalogVersion: string
+  referenceAudio: string
+  referenceText: string
+  promptLanguage: GptSoVitsLang
+  topK: number
+  topP: number
+  temperature: number
+  repetitionPenalty: number
+  speedFactor: number
+  fragmentInterval: number
+  textSplitMethod: string
+  seed: number
+  variationIndex: number
+}
+
+/** Correlation data for logs only; it must never affect synthesis or caching. */
+export interface TtsTraceContext {
+  guildId: string
+  turnId: string
+  responseEpoch: number
+  chunkIndex: number
+}
+
 export interface TtsRequest {
   text: string
   /** Resolved target language; `auto` defers segmentation to GPT-SoVITS. */
   language: GptSoVitsLang
   /** Included in cache identity when speech normalization rules change. */
   pronunciationProfileVersion?: string
+  conditioning?: TtsConditioning
+  trace?: TtsTraceContext
 }
 
 export interface TtsProvider {

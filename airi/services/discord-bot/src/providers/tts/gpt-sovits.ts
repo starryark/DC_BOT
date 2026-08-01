@@ -33,14 +33,19 @@ export class GptSoVitsTtsProvider implements TtsProvider {
   private readonly baseUrl: string
   private readonly timeoutMs: number
 
-  constructor(baseUrl?: string, timeoutMs?: number) {
+  constructor(
+    baseUrl?: string,
+    timeoutMs?: number,
+    private readonly timing: { now?: () => number, onEvent?: (event: TtsHttpTimingEvent) => void } = {},
+  ) {
     this.baseUrl = (baseUrl ?? config().tts.baseUrl).replace(/\/$/, '')
     this.timeoutMs = timeoutMs ?? config().tts.requestTimeoutMs
   }
 
   async synthesize(request: TtsRequest, signal: AbortSignal): Promise<Readable> {
     const cfg = config().tts
-    if (!cfg.refAudioPath)
+    const conditioning = request.conditioning
+    if (!conditioning && !cfg.refAudioPath)
       throw new Error('GPT_SOVITS_REF_AUDIO is not set — a reference clip is required')
 
     // text_lang: the caller's resolved target language. `auto` is a first-class
@@ -51,19 +56,28 @@ export class GptSoVitsTtsProvider implements TtsProvider {
 
     // prompt_lang: always the configured Kurisu reference language, independent
     // of the synthesized target language (Language_Fix_Proposal §4, §15).
-    const promptLang = cfg.promptLang || 'ja'
+    const promptLang = conditioning?.promptLanguage ?? (cfg.promptLang || 'ja')
 
     const body = {
       text: request.text,
       text_lang: textLang,
-      ref_audio_path: cfg.refAudioPath,
-      prompt_text: cfg.promptText,
+      ref_audio_path: conditioning?.referenceAudio ?? cfg.refAudioPath,
+      prompt_text: conditioning?.referenceText ?? cfg.promptText,
       prompt_lang: promptLang,
+      top_k: conditioning?.topK ?? 15,
+      top_p: conditioning?.topP ?? 1,
+      temperature: conditioning?.temperature ?? 1,
+      repetition_penalty: conditioning?.repetitionPenalty ?? 1.35,
+      speed_factor: conditioning?.speedFactor ?? 1,
+      fragment_interval: conditioning?.fragmentInterval ?? 0.3,
+      seed: conditioning?.seed ?? -1,
       media_type: 'wav',
       // Start with whole synthesis (mode 0) for correctness (plan.md §28).
       streaming_mode: cfg.streamingMode,
-      speed_factor: 1.0,
-      text_split_method: 'cut5',
+      text_split_method: conditioning?.textSplitMethod ?? 'cut0',
+      batch_size: 1,
+      split_bucket: cfg.streamingMode === 0,
+      parallel_infer: cfg.streamingMode === 0,
     }
 
     // Distinguish the two language fields explicitly (§13, §33) — a single
@@ -71,9 +85,11 @@ export class GptSoVitsTtsProvider implements TtsProvider {
     this.logger.withFields({
       textLanguage: textLang,
       promptLanguage: promptLang,
+      profileId: conditioning?.profileId ?? 'single-reference',
       streamingMode: cfg.streamingMode,
       chars: request.text.length,
     }).log('Synthesizing')
+    const requestStarted = (this.timing.now ?? Date.now)()
 
     // Combine the caller's abort with our timeout so a stuck GPT-SoVITS can't
     // hang a guild's playback queue.
@@ -97,14 +113,33 @@ export class GptSoVitsTtsProvider implements TtsProvider {
         throw new Error(this.describeHttpError(res.status, detail))
       }
 
+      const commonFields = { profileId: conditioning?.profileId ?? 'single-reference', streamingMode: cfg.streamingMode, chars: request.text.length }
+      const headersMs = (this.timing.now ?? Date.now)() - requestStarted
+      this.emitTiming('tts_http_headers_received', { ...commonFields, headersMs })
+
       // Stream the audio bytes back to the voice transport. `res.body` is a
       // web ReadableStream; wrap it as a Node Readable for @discordjs/voice.
-      const stream = NodeReadable.fromWeb(res.body as unknown as import('node:stream/web').ReadableStream<Uint8Array>)
+      const responseBody = res.body
+      const timing = this.timing
+      const emitTiming = this.emitTiming.bind(this)
+      const stream = NodeReadable.from((async function* () {
+        let sawAudio = false
+        for await (const chunk of responseBody) {
+          if (!sawAudio && chunk.byteLength > 0) {
+            sawAudio = true
+            emitTiming('tts_first_audio_byte', { ...commonFields, headersMs, firstByteMs: (timing.now ?? Date.now)() - requestStarted })
+          }
+          yield chunk
+        }
+      })())
       const cleanup = () => {
         clearTimeout(timer)
         signal.removeEventListener('abort', onAbort)
       }
-      stream.once('end', cleanup)
+      stream.once('end', () => {
+        this.emitTiming('tts_audio_stream_completed', { ...commonFields, headersMs, totalStreamMs: (this.timing.now ?? Date.now)() - requestStarted })
+        cleanup()
+      })
       // A transport may close before emitting `end`. It is still terminal and
       // must release the timeout and parent abort listener.
       stream.once('close', cleanup)
@@ -119,6 +154,11 @@ export class GptSoVitsTtsProvider implements TtsProvider {
       signal.removeEventListener('abort', onAbort)
       throw this.wrapNetworkError(err)
     }
+  }
+
+  private emitTiming(event: TtsHttpTimingEvent['event'], fields: TtsHttpTimingEvent['fields']): void {
+    this.logger.withFields(fields).log(event)
+    this.timing.onEvent?.({ event, fields })
   }
 
   /** Turn an HTTP failure into an actionable, non-secret-bearing message (§34). */
@@ -143,4 +183,9 @@ export class GptSoVitsTtsProvider implements TtsProvider {
     }
     return err
   }
+}
+
+export interface TtsHttpTimingEvent {
+  event: 'tts_http_headers_received' | 'tts_first_audio_byte' | 'tts_audio_stream_completed'
+  fields: Record<string, string | number>
 }

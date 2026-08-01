@@ -224,6 +224,8 @@ function runtimeSafetySection(character: CharacterRuntime): string {
     lines.push('Output protocol — ACT tokens:')
     lines.push(`Begin every response with one ACT token marking the current emotion, of the form <|ACT:"emotion":{"name":"<emotion>","intensity":<0..1>},"motion":"<short motion or expression>"|>.`)
     lines.push(`Allowed <emotion> values: ${emotions}.`)
+    lines.push('Place each ACT token immediately before the complete clause it governs. After the first ACT token, produce a short, immediately speakable clause before the remaining explanation.')
+    lines.push('Do not emit a standalone introductory fragment such as “Well” or “Okay”; combine it with the first meaningful clause.')
     lines.push('Change the ACT token mid-response only when the emotion clearly shifts.')
     if (op.allowDelay) {
       lines.push('You may insert a brief dramatic beat with <|DELAY:1|> or <|DELAY:3|>, but do not overuse ACT or DELAY tokens.')

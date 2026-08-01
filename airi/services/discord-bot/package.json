@@ -39,7 +39,8 @@
     "libsodium-wrappers": "catalog:",
     "opusscript": "catalog:",
     "tsx": "catalog:",
-    "wavefile": "catalog:",
-    "vitest": "catalog:vitest"
+    "valibot": "catalog:",
+    "vitest": "catalog:vitest",
+    "wavefile": "catalog:"
   }
 }

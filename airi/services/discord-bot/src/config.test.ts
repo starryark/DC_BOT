@@ -28,4 +28,25 @@ describe('runtime config numeric bounds', () => {
     resetConfigCache()
     expect(config().tts.streamingMode).toBe(0)
   })
+
+  it('configures catalog mode, pause capping, and warmup independently', () => {
+    vi.stubEnv('GPT_SOVITS_VOICE_PROFILES_FILE', ' ../../../voice-profiles.local.json ')
+    vi.stubEnv('GPT_SOVITS_MAX_MODEL_PAUSE_MS', '600')
+    vi.stubEnv('GPT_SOVITS_WARMUP_ENABLED', 'false')
+    resetConfigCache()
+
+    expect(config().tts.voiceProfilesFile).toBe('../../../voice-profiles.local.json')
+    expect(config().tts.maxModelPauseMs).toBe(600)
+    expect(config().tts.warmupEnabled).toBe(false)
+  })
+
+  it('uses safe defaults for invalid voice-style settings', () => {
+    vi.stubEnv('GPT_SOVITS_MAX_MODEL_PAUSE_MS', '-1')
+    vi.stubEnv('GPT_SOVITS_WARMUP_ENABLED', 'maybe')
+    resetConfigCache()
+
+    expect(config().tts.voiceProfilesFile).toBe('')
+    expect(config().tts.maxModelPauseMs).toBe(350)
+    expect(config().tts.warmupEnabled).toBe(true)
+  })
 })

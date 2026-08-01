@@ -46,15 +46,24 @@ async function fixture(overrides: Partial<ConstructorParameters<typeof CachedTts
   const identity = (request: TtsRequest) => ({
     normalizedText: request.text,
     textLanguage: request.language,
+    pronunciationProfileVersion: request.pronunciationProfileVersion,
     voiceModelVersion: 'voice-v1',
+    catalogVersion: request.conditioning?.catalogVersion ?? 'single-reference-v1',
+    profileId: request.conditioning?.profileId ?? 'neutral',
     referenceAudioFingerprint: fingerprint('ref-a'),
     promptTextFingerprint: fingerprint('prompt'),
     promptLanguage: 'ja',
-    speedFactor: 1,
+    topK: request.conditioning?.topK ?? 15,
+    topP: request.conditioning?.topP ?? 1,
+    temperature: request.conditioning?.temperature ?? 1,
+    repetitionPenalty: request.conditioning?.repetitionPenalty ?? 1.35,
+    speedFactor: request.conditioning?.speedFactor ?? 1,
+    fragmentInterval: request.conditioning?.fragmentInterval ?? 0.3,
+    seed: request.conditioning?.seed ?? -1,
+    variationIndex: request.conditioning?.variationIndex ?? 0,
     mediaType: 'wav',
     streamingMode: 0,
     textSplitMethod: 'cut5',
-    relevantSynthesisParameters: {},
   })
   const options = { enabled: true, directory, maxBytes: 1024 * 1024, maxItems: 10, ttlMs: 60_000, memoryItems: 2, identity, ...overrides }
   return { directory, synthesize, options, cache: new CachedTtsProvider(provider, options) }
@@ -87,6 +96,22 @@ describe('cachedTtsProvider', () => {
     const base = options.identity(request)!
     expect(cacheKey({ ...base, voiceModelVersion: 'voice-v2' })).not.toBe(cacheKey(base))
     expect(cacheKey({ ...base, referenceAudioFingerprint: fingerprint('ref-b') })).not.toBe(cacheKey(base))
+  })
+
+  it('keys every audio-affecting conditioning field but ignores trace context', async () => {
+    const { options } = await fixture()
+    const conditioned = {
+      ...request,
+      conditioning: {
+        profileId: 'analytical', catalogVersion: 'v2', referenceAudio: 'think.wav', referenceText: 'exact words', promptLanguage: 'ja' as const,
+        topK: 12, topP: 0.9, temperature: 0.74, repetitionPenalty: 1.38, speedFactor: 0.99, fragmentInterval: 0.16,
+        textSplitMethod: 'cut0', seed: 12002, variationIndex: 1,
+      },
+    }
+    const base = options.identity(conditioned)!
+    expect(cacheKey({ ...base, seed: 12003 })).not.toBe(cacheKey(base))
+    expect(cacheKey({ ...base, temperature: 0.75 })).not.toBe(cacheKey(base))
+    expect(options.identity({ ...conditioned, trace: { guildId: 'other', turnId: 'other', responseEpoch: 9, chunkIndex: 4 } })).toEqual(base)
   })
 
   it('does not read partial entries', async () => {

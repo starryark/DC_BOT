@@ -7,6 +7,7 @@ import { arch, argv, env, platform, stdout } from 'node:process'
 interface Measurement {
   kind: 'tts' | 'asr'
   label: string
+  headersMs: number
   firstByteMs: number
   totalMs: number
   bytes: number
@@ -15,6 +16,7 @@ interface Measurement {
   prefetch?: number
   cache?: 'cold' | 'warm'
   language?: string
+  profile?: string
 }
 
 /**
@@ -63,7 +65,7 @@ async function runTtsMatrix(args: Record<string, string>): Promise<Measurement[]
     throw new Error('GPT_SOVITS_REF_AUDIO is required for the TTS benchmark')
   const measurements: Measurement[] = []
   const targets = [{ language: 'en', sizes: [40, 75, 100] }, { language: 'ja', sizes: [14, 28, 45] }]
-  for (const streamingMode of [0, 2, 3]) {
+  for (const streamingMode of [0, 1, 2, 3]) {
     for (const target of targets) {
       for (const targetChars of target.sizes) {
         for (const prefetch of [0, 1]) {
@@ -77,14 +79,14 @@ async function runTtsMatrix(args: Record<string, string>): Promise<Measurement[]
               prompt_lang: env.GPT_SOVITS_PROMPT_LANG ?? 'ja',
               media_type: 'wav',
               streaming_mode: streamingMode,
-              text_split_method: 'cut5',
+              text_split_method: 'cut0',
             }
             // A repeated request is the warm-cache observation. Cache clearing
             // is intentionally operator-controlled to avoid destructive IO.
             if (cache === 'warm')
               await measureResponse(`${baseUrl}/tts`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
             const measured = await measureResponse(`${baseUrl}/tts`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-            measurements.push({ kind: 'tts', label: `${target.language}-${targetChars}`, ...measured, streamingMode, targetChars, prefetch, cache, language: target.language })
+            measurements.push({ kind: 'tts', label: `${target.language}-${targetChars}`, ...measured, streamingMode, targetChars, prefetch, cache, language: target.language, profile: 'neutral' })
           }
         }
       }
@@ -108,9 +110,10 @@ async function runAsrSamples(list: string, args: Record<string, string>): Promis
   return measurements
 }
 
-async function measureResponse(url: string, init: RequestInit): Promise<{ firstByteMs: number, totalMs: number, bytes: number }> {
+async function measureResponse(url: string, init: RequestInit): Promise<{ headersMs: number, firstByteMs: number, totalMs: number, bytes: number }> {
   const started = performance.now()
   const response = await fetch(url, init)
+  const headersMs = performance.now() - started
   if (!response.ok || !response.body)
     throw new Error(`${url} returned HTTP ${response.status}: ${await response.text()}`)
   const reader = response.body.getReader()
@@ -124,7 +127,7 @@ async function measureResponse(url: string, init: RequestInit): Promise<{ firstB
       firstByteMs = performance.now() - started
     bytes += chunk.value.byteLength
   }
-  return { firstByteMs, totalMs: performance.now() - started, bytes }
+  return { headersMs, firstByteMs, totalMs: performance.now() - started, bytes }
 }
 
 function sampleText(language: string, targetChars: number): string {

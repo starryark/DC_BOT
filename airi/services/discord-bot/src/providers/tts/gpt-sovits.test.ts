@@ -23,6 +23,7 @@ interface CapturedRequest {
     media_type: string
     streaming_mode: number
     text_split_method: string
+    [key: string]: unknown
   }
 }
 
@@ -128,6 +129,52 @@ describe('gptSoVitsTtsProvider — text_lang / prompt_lang separation', () => {
     await expect(
       provider.synthesize({ text: 'Hello', language: 'en' }, new AbortController().signal),
     ).rejects.toThrow(/averaged_perceptron_tagger_eng/)
+  })
+
+  it('sends exact resolved reference, sampling, timing, seed, and no extra splitting', async () => {
+    const { captured } = mockFetchOk()
+    const provider = new GptSoVitsTtsProvider('http://127.0.0.1:9880', 5000)
+    await provider.synthesize({
+      text: '考えてみましょう。',
+      language: 'ja',
+      conditioning: {
+        profileId: 'analytical', catalogVersion: 'kurisu-v2', referenceAudio: '../refs/think.wav', referenceText: 'これは正確な参照音声です。', promptLanguage: 'ja',
+        topK: 12, topP: 0.9, temperature: 0.74, repetitionPenalty: 1.38, speedFactor: 0.99, fragmentInterval: 0.16,
+        textSplitMethod: 'cut0', seed: 12002, variationIndex: 1,
+      },
+    }, new AbortController().signal)
+
+    expect(captured[0].body).toMatchObject({
+      ref_audio_path: '../refs/think.wav', prompt_text: 'これは正確な参照音声です。', prompt_lang: 'ja',
+      top_k: 12, top_p: 0.9, temperature: 0.74, repetition_penalty: 1.38, speed_factor: 0.99,
+      fragment_interval: 0.16, seed: 12002, text_split_method: 'cut0', batch_size: 1,
+      split_bucket: true, parallel_infer: true,
+    })
+  })
+
+  it('reports headers, first nonempty audio byte, and full-stream timing separately', async () => {
+    const times = [0, 10, 30, 50]
+    const events: Array<{ event: string, fields: Record<string, string | number> }> = []
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      body: new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new Uint8Array())
+          controller.enqueue(new Uint8Array([1, 2]))
+          controller.close()
+        },
+      }),
+    } as Response))
+    const provider = new GptSoVitsTtsProvider('http://127.0.0.1:9880', 5000, { now: () => times.shift()!, onEvent: event => events.push(event) })
+    const stream = await provider.synthesize({ text: 'hello', language: 'en' }, new AbortController().signal)
+    for await (const _chunk of stream) { /* drain */ }
+
+    expect(events).toEqual([
+      { event: 'tts_http_headers_received', fields: { profileId: 'single-reference', streamingMode: 0, chars: 5, headersMs: 10 } },
+      { event: 'tts_first_audio_byte', fields: { profileId: 'single-reference', streamingMode: 0, chars: 5, headersMs: 10, firstByteMs: 30 } },
+      { event: 'tts_audio_stream_completed', fields: { profileId: 'single-reference', streamingMode: 0, chars: 5, headersMs: 10, totalStreamMs: 50 } },
+    ])
   })
 
   it('aborts a synthesis request that exceeds its timeout', async () => {

@@ -1,2427 +1,1953 @@
-# DC_BOT Gemini 3.6 Flash Impersonation Implementation Plan
+# DC_BOT Emotion-Aware Speech and Latency Optimization Plan
 
 ## 1. Mission
 
-Implement a production-quality character runtime for DC_BOT that:
+Implement an emotion-aware speech pipeline for the Discord bot so that ACT-v1 signals such as:
 
-1. Loads the Makise Kurisu Character Card V3 into a complete, type-safe runtime.
-2. Uses the card’s interaction, pronunciation, ASR, avatar, voice, and output-protocol data end to end.
-3. Tunes Gemini 3.6 Flash for low-latency, high-fidelity character impersonation.
-4. Preserves Amadeus Kurisu’s March 2010 source-memory boundary while allowing post-activation memories and relationships.
-5. Makes every behavioral change measurable through deterministic tests, transcript-derived evaluations, and voice-pipeline benchmarks.
-6. Keeps deployment secrets and infrastructure configuration outside the character card.
-7. Preserves cancellation, streaming, rate limiting, and multi-user Discord invariants.
+```text
+<|ACT:"emotion":{"name":"think","intensity":0.5},"motion":"微微颔首，看向屏幕"|>
+```
 
-The coding agent should implement this as a sequence of small, reviewable pull requests rather than one large rewrite.
+control the acoustic delivery of the following speech.
+
+The implementation must:
+
+1. Select an appropriate GPT-SoVITS reference clip from an operator-editable voice-profile catalog.
+2. Pass the selected reference audio, exact reference transcript, sampling parameters, timing parameters, and deterministic seed into GPT-SoVITS.
+3. Preserve the existing guarantees around cancellation epochs, ordered playback, history cleanliness, and one-chunk lookahead.
+4. Remove unnecessary double segmentation.
+5. Add latency instrumentation for HTTP headers, first audio byte, first playback, and full response completion.
+6. Support incremental rollout: the bot must continue working with a single neutral reference while additional references are being prepared.
+7. Provide a template where the operator can manually insert reference-audio paths and exact spoken transcripts.
+
+The implementation should focus first on intentional speech variation. Raw PCM transport, advanced VAD, and full barge-in improvements are follow-up work unless they can be introduced without expanding the core change excessively.
 
 ---
 
-# 2. Source-of-truth warning
+# 2. Repository Context: Do Not Rediscover
 
-The attached audit must not be applied mechanically because the repository has already partially changed.
+The agent should work from this known state rather than repeating a broad repository audit.
 
-The audit reported that `interaction` was omitted from `buildCharacterRuntime()` and that pronunciation and response-language fields had no consumers.
+## Current pipeline
 
-In the current fetched `main` snapshot:
-
-* `buildCharacterRuntime()` already constructs and returns `interaction`.
-* `ConversationController` already calls `resolveInputUnderstanding()`.
-* Recognized entities and `promptDescription` are already inserted into the prompt.
-* `prepareSpeechText()` already produces a TTS-only pronunciation-normalized copy.
-* The controller already passes `pronunciationProfileVersion` into TTS and its cache key.
-* ACT and DELAY tokens are still only logged rather than executed.
-* ASR hotwords remain unwired.
-* Direct provider selection remains primarily environment-driven.
-* The current public type files appear inconsistent with this partial implementation.
-
-For example, the registry returns `interaction`, while the currently fetched `CharacterRuntime` declaration does not show the corresponding property. Several files import `CharacterInteractionProfile`, `CharacterEntityProfile`, and `SupportedLanguage`, but those declarations are not present in the fetched `types.ts`. `ConversationController` also passes `pronunciationProfileVersion` into `TtsRequest`, while the fetched `TtsRequest` type only declares `text` and `language`. This strongly suggests a partially merged or temporarily type-broken `main` snapshot.
-
-**The first implementation action must therefore be to pin the exact target commit and record the real compiler failures.** Do not trust comments, previous audits, or this plan over the checked-out source and test output.
-
----
-
-# 3. Non-goals
-
-The first delivery must not:
-
-* Rewrite the Discord transport.
-* Replace Qwen ASR or GPT-SoVITS.
-* Migrate immediately to Gemini’s Interactions API.
-* Add a general plugin architecture.
-* Let character cards provide API keys, service URLs, filesystem escape paths, ports, or authentication tokens.
-* Store the entire visual-novel transcript in the production prompt.
-* Depend on million-token prompts merely because Gemini supports them.
-* Add sampling parameters such as `temperature`, `top_p`, or `top_k`.
-
-Gemini 3.6 Flash supports `minimal`, `low`, `medium`, and `high` thinking levels, with `medium` as the default. Google has deprecated `temperature`, `top_p`, and `top_k` for this model family, and requests must not end with a prefilled model turn.
-
----
-
-# 4. Required agent skills
-
-The coordinating coding agent should recruit subagents with the following specialties.
-
-## 4.1 TypeScript contract specialist
-
-Required knowledge:
-
-* Strict TypeScript.
-* Discriminated unions.
-* Runtime normalization versus public runtime contracts.
-* ESM imports.
-* Excess-property and missing-property diagnostics.
-* Vitest.
-* Dependency-safe refactoring.
-
-Primary responsibility:
-
-* Repair `CharacterRuntime`, interaction profiles, TTS request types, ASR request types, and cross-module contracts before feature development.
-
-## 4.2 Streaming and cancellation specialist
-
-Required knowledge:
-
-* Async iterables.
-* Incremental parsers.
-* AbortController.
-* Ordered stream processing.
-* Bounded lookahead pipelines.
-* Discord audio playback.
-* Race-condition and epoch-based cancellation testing.
-
-Primary responsibility:
-
-* Preserve ACT/DELAY ordering, execute pauses, and guarantee that stale generations never speak or mutate history.
-
-## 4.3 Gemini integration specialist
-
-Required knowledge:
-
-* `@google/genai`.
-* `generateContentStream`.
-* `thinkingConfig.thinkingLevel`.
-* `maxOutputTokens`.
-* Gemini 3.6 Flash request validation.
-* Provider mocking and latency telemetry.
-* Prompt composition for persona persistence.
-
-Optional skill:
-
-* In an isolated agent environment, load Google’s official Gemini migration skill as a reference:
-  `google-gemini/gemini-skills` → `gemini-interactions-api`.
-  Do not let that skill perform an automatic migration before the existing streaming baseline is covered by tests. Google currently recommends this skill for Gemini 3.6 migrations.
-
-## 4.4 Speech and pronunciation specialist
-
-Required knowledge:
-
-* Unicode NFKC normalization.
-* Alias matching.
-* Japanese, Chinese, and English text segmentation.
-* GPT-SoVITS request semantics.
-* TTS cache identity.
-* Spoken-text versus display-text separation.
-
-Primary responsibility:
-
-* Harden entity substitution and card-driven voice conditioning without altering visible text or model history.
-
-## 4.5 ASR integration specialist
-
-Required knowledge:
-
-* TypeScript HTTP clients.
-* The repository’s Python Qwen ASR service.
-* Decoder prompting or hotword biasing.
-* Unicode vocabulary handling.
-* ASR post-normalization.
-* Backward-compatible HTTP API design.
-
-Primary responsibility:
-
-* Establish whether real decoder-level hotword support exists and wire the card profile honestly.
-
-## 4.6 Avatar protocol specialist
-
-Required knowledge:
-
-* WebSocket protocols.
-* Shared package versioning.
-* Live2D expression and motion mapping.
-* Ordered event delivery.
-* Reconnect and replay semantics.
-
-Primary responsibility:
-
-* Add a real expression/action channel or an adapter that maps ACT actions to an existing supported avatar schema.
-
-## 4.7 Evaluation specialist
-
-Required knowledge:
-
-* Behavioral evaluation design.
-* Pairwise model judging.
-* Deterministic test assertions.
-* Persona and continuity scoring.
-* Japanese dialogue evaluation.
-* Audio listening-test methodology.
-
-Primary responsibility:
-
-* Build the regression suite before Gemini and prompt tuning.
-
----
-
-# 5. Agent coordination rules
-
-## 5.1 One integration lead
-
-The top-level agent is the Integration Lead.
-
-Only the Integration Lead may:
-
-* Change shared public contracts after Wave 1.
-* Merge branches.
-* Resolve file-ownership conflicts.
-* Change `src/index.ts`.
-* Change global configuration names.
-* Change the Character Card schema.
-* Decide card-versus-environment precedence.
-* Mark an acceptance gate complete.
-
-## 5.2 Subagent isolation
-
-Use separate branches or worktrees:
+The direct voice path is:
 
 ```text
-agent/w0-contract-audit
-agent/w1-runtime-contracts
-agent/w2-eval-harness
-agent/w3-interaction-language
-agent/w3-pronunciation
-agent/w4-asr-hotwords
-agent/w4-act-avatar
-agent/w5-provider-resolution
-agent/w6-gemini-runtime
-agent/w7-memory-prompt
-agent/w8-integration
+Discord voice
+  → Qwen3-ASR
+  → Gemini streamed text
+  → ACT/DELAY token stripping
+  → multilingual speech chunker
+  → bounded GPT-SoVITS synthesis
+  → Discord playback
 ```
 
-Do not allow two subagents to edit the same high-conflict files concurrently.
+`ConversationController.generateAndSpeak()` passes Gemini output through `chunkStream()`. The chunker strips ACT/DELAY tokens, calls `onControlToken()`, and emits plain strings into `runBoundedTtsPipeline()`. The controller then synthesizes and plays each string.
 
-High-conflict files include:
+The current controller parses ACT tokens and logs `emotion`, `intensity`, and `motionHint`, but this information does not enter `TtsRequest`. DELAY tokens are implemented by awaiting a timer directly inside the control-token callback.
 
-```text
-airi/services/discord-bot/src/config.ts
-airi/services/discord-bot/src/index.ts
-airi/services/discord-bot/src/character/types.ts
-airi/services/discord-bot/src/character/card-schema.ts
-airi/services/discord-bot/src/orchestration/conversation-controller.ts
-airi/services/discord-bot/src/providers/brain/types.ts
-```
-
-## 5.3 Mandatory handoff format
-
-Every subagent must return:
-
-```markdown
-## Handoff
-
-### Commit
-<commit SHA>
-
-### Files changed
-- path
-- path
-
-### Public contracts added or changed
-- ...
-
-### Tests added
-- ...
-
-### Commands run
-- ...
-
-### Results
-- typecheck:
-- unit tests:
-- targeted tests:
-
-### Assumptions
-- ...
-
-### Remaining risks
-- ...
-
-### Integration notes
-- ...
-```
-
-A handoff without commands and test results is incomplete.
-
-## 5.4 Context files
-
-The Integration Lead should create:
-
-```text
-docs/implementation/gemini-3.6-kurisu/
-├── 00-pinned-baseline.md
-├── 01-runtime-contracts.md
-├── 02-current-dataflow.md
-├── 03-card-precedence.md
-├── 04-gemini-profile.md
-├── 05-evaluation-rubric.md
-├── 06-rollout-plan.md
-└── handoffs/
-```
-
-Subagents should read only the context files needed for their task plus their assigned source files. This avoids each agent re-auditing the entire repository.
-
----
-
-# 6. Wave overview
-
-```text
-Wave 0: Pin and audit the real baseline
-    ↓
-Wave 1: Repair public contracts and restore green typecheck
-    ↓
-Wave 2: Establish persona and pipeline evaluation baselines
-    ↓
-Wave 3: Complete interaction/language/pronunciation integration
-    ↓
-Wave 4A: Wire ASR hotwords
-Wave 4B: Wire ACT/avatar/pause semantics
-    ↓
-Wave 5: Define provider/card/environment precedence
-    ↓
-Wave 6: Add Gemini 3.6 generation profiles
-    ↓
-Wave 7: Improve prompt retrieval, lore, memory, and relationship state
-    ↓
-Wave 8: End-to-end validation, rollout, and documentation
-```
-
-Waves 4A and 4B may run in parallel only after Wave 3 has established stable controller-facing interfaces.
-
----
-
-# 7. Wave 0 — Pin and audit the actual baseline
-
-## Objective
-
-Produce a reproducible snapshot of what is broken, what is already implemented, and what the target branch actually contains.
-
-No production code should be changed during this wave.
-
-## Subagent 0A — Repository and contract cartographer
-
-### Assigned context
-
-Read:
-
-```text
-airi/services/discord-bot/package.json
-airi/services/discord-bot/src/character/types.ts
-airi/services/discord-bot/src/character/card-schema.ts
-airi/services/discord-bot/src/character/character-registry.ts
-airi/services/discord-bot/src/character/character-registry.test.ts
-airi/services/discord-bot/src/orchestration/input-understanding.ts
-airi/services/discord-bot/src/orchestration/input-understanding.test.ts
-airi/services/discord-bot/src/providers/tts/types.ts
-```
-
-Known current concern:
-
-* Registry/controller code appears ahead of the public type contracts.
-* The live-card test comments may still claim the card lacks `extensions.dc_bot`.
-* The target card now does contain a `dc_bot` interaction profile.
-
-### Tasks
-
-1. Record:
-
-   * branch;
-   * full commit SHA;
-   * Node version;
-   * package-manager version;
-   * lockfile state;
-   * working-tree status.
-
-2. Run from the correct workspace root:
-
-```bash
-pnpm --filter @proj-airi/discord-bot typecheck
-pnpm --filter @proj-airi/discord-bot test
-```
-
-Use the repository’s actual package-manager invocation if it differs.
-
-3. Save complete diagnostics in:
-
-```text
-docs/implementation/gemini-3.6-kurisu/00-pinned-baseline.md
-```
-
-4. Build a table:
-
-| Symbol                                   | Declared in | Used in | Current problem |
-| ---------------------------------------- | ----------- | ------- | --------------- |
-| `CharacterRuntime.interaction`           | ...         | ...     | ...             |
-| `CharacterInteractionProfile`            | ...         | ...     | ...             |
-| `CharacterEntityProfile`                 | ...         | ...     | ...             |
-| `SupportedLanguage`                      | ...         | ...     | ...             |
-| `TtsRequest.pronunciationProfileVersion` | ...         | ...     | ...             |
-| `AsrCharacterProfile.hotwords`           | ...         | ...     | ...             |
-
-5. Do not fix anything.
-
-### Deliverable
-
-`00-pinned-baseline.md` plus a read-only audit commit if documentation is being committed.
-
----
-
-## Subagent 0B — Runtime dataflow cartographer
-
-### Assigned context
-
-Read:
-
-```text
-src/index.ts
-src/orchestration/conversation-controller.ts
-src/orchestration/output.ts
-src/character/prompt-compiler.ts
-src/character/output-protocol/act-v1-parser.ts
-src/providers/asr/qwen-http.ts
-src/providers/asr/types.ts
-src/providers/tts/gpt-sovits.ts
-src/providers/tts/pronunciation.ts
-src/providers/tts/tts-cache.ts
-src/avatar/publisher.ts
-src/services.ts
-```
-
-Known current flow:
-
-```text
-voice utterance
-→ ASR
-→ transcript filter
-→ input understanding
-→ prompt compiler
-→ Gemini stream
-→ ACT token callback + text chunker
-→ pronunciation normalization
-→ TTS
-→ playback
-→ history commit
-```
-
-Current source already performs TTS-only pronunciation replacement and prompt-level entity routing, so these are not greenfield features.
-
-### Tasks
-
-1. Produce `02-current-dataflow.md`.
-2. For each card field, identify:
-
-   * schema parsing;
-   * runtime storage;
-   * consumer;
-   * tests;
-   * operational effect.
-3. Mark fields as:
-
-   * fully wired;
-   * partially wired;
-   * metadata only;
-   * ignored.
-4. Include:
-
-   * ACT action path;
-   * DELAY path;
-   * ASR hotword path;
-   * response-language path;
-   * pronunciation path;
-   * voice reference path;
-   * avatar display-model path;
-   * Gemini model-selection path.
-5. Identify every cancellation boundary and every place a stale response is rejected.
-
-### Deliverable
-
-`02-current-dataflow.md`.
-
----
-
-## Subagent 0C — Gemini compatibility auditor
-
-### Assigned context
-
-Read:
-
-```text
-src/providers/brain/gemini.ts
-src/providers/brain/types.ts
-src/providers/brain/errors.ts
-src/config.ts
-src/character/prompt-compiler.ts
-package.json
-workspace lockfile entry for @google/genai
-```
-
-Use only current official Google Gemini documentation for API behavior.
-
-### Tasks
-
-1. Record the exact installed `@google/genai` version.
-2. Confirm the JavaScript property names supported by that version:
-
-   * `thinkingConfig`;
-   * `thinkingLevel`;
-   * `maxOutputTokens`;
-   * `systemInstruction`;
-   * `abortSignal`.
-3. Confirm that no request uses:
-
-   * `temperature`;
-   * `topP`/`top_p`;
-   * `topK`/`top_k`;
-   * `candidateCount`;
-   * `thinkingBudget`.
-4. Confirm that the final non-empty content turn is always a user turn.
-5. Record the current provider request payload.
-6. Produce `04-gemini-profile.md`.
-
-Gemini 3.6 Flash currently has a 1M-token input window and 64K maximum output, but Google’s own long-context evaluation drops from 91.8% at 128K to 54.0% at 1M. The model card also lists hallucination and occasional slowness/timeouts as general limitations. The implementation should therefore impose a much smaller application-level prompt budget rather than treating 1M tokens as equally reliable memory.
-
-### Deliverable
-
-`04-gemini-profile.md`.
-
----
-
-## Wave 0 gate
-
-The Integration Lead must publish:
-
-* pinned SHA;
-* exact typecheck failures;
-* exact failed tests;
-* current dataflow;
-* installed SDK version;
-* a “suggestion versus current source” reconciliation table.
-
-No feature branch should start before this gate.
-
----
-
-# 8. Wave 1 — Repair public contracts
-
-## Objective
-
-Restore a green typecheck without changing observable runtime behavior.
-
-## Contract decision
-
-Use two layers:
-
-### Raw/normalized card layer
-
-`NormalizedDcBotExtension.interaction` may be absent because the card may omit the block.
-
-### Runtime layer
-
-`CharacterRuntime.interaction` is required and always contains safe defaults.
-
-This preserves the distinction between:
-
-* “the card supplied a valid interaction block,” and
-* “the runtime always has an interaction profile.”
-
-Do not make downstream consumers repeatedly handle `undefined`.
-
-## Subagent 1A — Character contract repair
-
-### Owned files
-
-```text
-src/character/types.ts
-src/character/card-schema.ts
-src/character/character-registry.ts
-src/character/character-registry.test.ts
-src/character/card-schema.test.ts
-```
-
-### Implement these public types
+The current `TtsRequest` contains only:
 
 ```ts
-export type SupportedLanguage = 'ja' | 'zh' | 'en'
-
-export interface CharacterPronunciation {
-  speechText: string
-}
-
-export interface CharacterEntityProfile {
-  id: string
-  canonicalName: string
-  nativeName?: string
-  kind: 'character-name' | 'nickname'
-  aliases: string[]
-  promptDescription?: string
-  pronunciations?: Partial<
-    Record<SupportedLanguage, CharacterPronunciation>
-  >
-}
-
-export interface CharacterInteractionProfile {
-  defaultResponseLanguage: SupportedLanguage
-  entities: CharacterEntityProfile[]
-  pronunciationProfileVersion: string
-}
-```
-
-Add to `CharacterRuntime`:
-
-```ts
-interaction: CharacterInteractionProfile
-```
-
-### Runtime fallback
-
-Keep the runtime fallback in one place.
-
-Recommended helper:
-
-```ts
-function resolveInteractionProfile(
-  normalized: CharacterInteractionProfile | undefined,
-  fallbackLanguage: SupportedLanguage,
-): CharacterInteractionProfile {
-  return normalized ?? {
-    defaultResponseLanguage: fallbackLanguage,
-    entities: [],
-    pronunciationProfileVersion: 'default-v1',
-  }
-}
-```
-
-Derive `fallbackLanguage` from the resolved voice prompt language when it is one of `ja`, `zh`, or `en`; otherwise use `ja` for the bundled Kurisu profile or the repository’s chosen generic fallback.
-
-### Tests
-
-Add tests for:
-
-1. No `dc_bot.interaction`.
-2. Complete valid interaction block.
-3. Invalid language.
-4. Invalid entity kind.
-5. Entity with no aliases.
-6. Duplicate aliases.
-7. NFKC alias normalization.
-8. Missing pronunciation profile version.
-9. Runtime interaction is always present.
-10. Live bundled card expectations reflect its actual contents.
-
-Remove stale test descriptions such as:
-
-```text
-the LIVE card has NO extensions.dc_bot
-```
-
-when that is no longer true.
-
----
-
-## Subagent 1B — TTS request contract repair
-
-### Owned files
-
-```text
-src/providers/tts/types.ts
-src/providers/tts/tts-cache.ts
-src/providers/tts/gpt-sovits.ts
-related TTS tests
-```
-
-### Implement
-
-```ts
-export interface TtsRequest {
+{
   text: string
   language: GptSoVitsLang
-
-  /**
-   * Identifies pronunciation-rewrite behavior for cache invalidation.
-   * It is not sent to GPT-SoVITS unless the provider gains a matching feature.
-   */
   pronunciationProfileVersion?: string
 }
 ```
 
-Do not silently treat `pronunciationProfileVersion` as a GPT-SoVITS model setting. Its current operational purpose is cache identity and diagnostics.
+It cannot represent an emotional reference, prosody controls, or a deterministic seed.
 
-### Tests
-
-* Requests differing only by pronunciation profile version must not collide in cache.
-* The underlying GPT-SoVITS HTTP payload must not acquire an unsupported field.
-* Existing callers without the property remain valid.
-
----
-
-## Subagent 1C — Contract compilation tests
-
-### Owned files
-
-New tests only, except minimal fixtures.
-
-Create compile-time fixtures or Vitest type-oriented tests for:
-
-* a valid `CharacterRuntime`;
-* required `interaction`;
-* valid pronunciation maps;
-* valid `TtsRequest`;
-* invalid language values;
-* invalid entity kinds.
-
-### Gate
-
-Run:
-
-```bash
-pnpm --filter @proj-airi/discord-bot typecheck
-pnpm --filter @proj-airi/discord-bot test
-```
-
-Both must be green before Wave 2.
-
----
-
-# 9. Wave 2 — Evaluation foundation
-
-## Objective
-
-Create a repeatable baseline before behavior or Gemini parameters are tuned.
-
-## Subagent 2A — Character behavior evaluation harness
-
-### New structure
-
-```text
-airi/services/discord-bot/evals/kurisu/
-├── cases/
-│   ├── memory-boundary.jsonl
-│   ├── acquired-memory.jsonl
-│   ├── relationship-inference.jsonl
-│   ├── science.jsonl
-│   ├── emotional-support.jsonl
-│   ├── teasing.jsonl
-│   ├── embodiment.jsonl
-│   ├── multilingual.jsonl
-│   ├── group-room.jsonl
-│   └── adversarial.jsonl
-├── fixtures/
-│   ├── character-state.json
-│   └── room-state.json
-├── rubrics/
-│   └── kurisu-v1.json
-├── run.ts
-├── deterministic-score.ts
-├── pairwise-score.ts
-└── report.ts
-```
-
-### Case schema
+The GPT-SoVITS provider currently sends one configured reference clip and transcript for every request, along with:
 
 ```ts
-interface PersonaEvalCase {
-  id: string
-  category: string
-  history: Array<{
-    role: 'user' | 'assistant'
-    speaker?: string
-    text: string
-  }>
-  currentInput: string
-  expectedProperties: string[]
-  forbiddenProperties: string[]
-  expectedLanguage?: 'ja' | 'zh' | 'en'
-  maximumCharacters?: number
-}
+media_type: 'wav'
+streaming_mode: cfg.streamingMode
+speed_factor: 1.0
+text_split_method: 'cut5'
 ```
 
-### Minimum initial suite
+No ACT-derived state is used.
 
-* 25 memory-boundary cases.
-* 20 acquired-memory cases.
-* 20 relationship-inference cases.
-* 20 scientific-discussion cases.
-* 15 emotional-support cases.
-* 15 teasing or casual-dialogue cases.
-* 15 embodiment cases.
-* 15 multilingual cases.
-* 10 group-conversation cases.
-* 20 adversarial cases.
-* 20 multi-turn continuity cases.
+GPT-SoVITS supports `top_k`, `top_p`, `temperature`, `speed_factor`, `fragment_interval`, `seed`, `repetition_penalty`, streaming modes 0–3, and other controls. The checked-in text segmentation implementation includes `cut0`, explicitly defined as no additional splitting.
 
-### Deterministic checks
+The repository already has:
 
-Implement checks for:
+* A one-chunk synthesized lookahead with a cancellation-waste bound.
+* Epoch checks preventing stale synthesis and playback.
+* A two-tier TTS cache with extensible synthesis parameters in its identity.
+* Vitest tests for control-token stripping, chunking, TTS ordering, provider request bodies, and cache behavior.
 
-* ACT token appears before spoken text.
-* ACT token is stripped from the clean reply.
-* No physical-body action is claimed by Amadeus.
-* No Future Gadget Lab memory is claimed as a March 2010 memory.
-* Correct response language.
-* No repeated full ontology explanation in an unrelated turn.
-* No unearned romantic escalation.
-* No raw control syntax reaches TTS.
-* Response ends within configured length.
-* The last Gemini request content is a user turn.
+The character card declares the ACT emotion vocabulary:
 
-### Canon-data policy
+```text
+happy
+sad
+angry
+think
+surprised
+awkward
+question
+curious
+neutral
+```
 
-Do not commit complete copyrighted transcripts.
+The existing character voice profile contains a provider, voice ID, and prompt language, but no emotional reference bank.
 
-Use:
+## Repository rules
 
-* short paraphrased behavioral cases;
-* scene identifiers;
-* derived trait annotations;
-* concise permissible excerpts only when necessary.
+Before editing, read:
 
-The uploaded *Steins;Gate 0* transcript should be treated as a development reference, not copied wholesale into the repository.
+```text
+airi/AGENTS.md
+```
+
+Follow its TypeScript, testing, JSDoc, module-boundary, and no-commit requirements. Use pnpm workspace filters and Vitest. The guide prefers Valibot for schema validation, and Valibot is already present in the workspace catalog, though it is not currently a direct dependency of the Discord bot package.
+
+Do not clone another copy of the repository. Do not create commits.
 
 ---
 
-## Subagent 2B — Pipeline fixtures
+# 3. Core Architectural Decision
 
-Build mocked end-to-end fixtures:
+Introduce a structured stream between Gemini and TTS.
 
-```text
-ASR result
-→ input understanding
-→ prompt compiler
-→ mocked Gemini chunks
-→ ACT decoder
-→ pronunciation
-→ mocked TTS
-→ mocked playback
-→ history
-```
-
-Required cases:
-
-1. Japanese alias-only utterance.
-2. English sentence containing “Christina.”
-3. Chinese sentence containing “Makise.”
-4. ACT followed by text.
-5. ACT → text → DELAY → text.
-6. Cancellation during Gemini generation.
-7. Cancellation during TTS synthesis.
-8. Cancellation during DELAY.
-9. Pronunciation replacement visible only to TTS.
-10. Failed TTS chunk does not corrupt visible history.
-11. Stale response commits nothing.
-
----
-
-## Subagent 2C — Baseline runner
-
-Run the untouched runtime profile with:
-
-* current default Gemini configuration;
-* current card;
-* fixed test-case order;
-* stored request hashes;
-* fixed evaluator version.
-
-Record:
-
-```text
-persona score
-canon contradiction rate
-memory-provenance error rate
-ACT validity rate
-average response characters
-first-token latency
-TTS-start latency
-full-turn latency
-```
-
-Save the report as:
-
-```text
-docs/implementation/gemini-3.6-kurisu/baseline-eval.json
-docs/implementation/gemini-3.6-kurisu/baseline-eval.md
-```
-
----
-
-# 10. Wave 3 — Complete interaction, language, and pronunciation behavior
-
-## Objective
-
-Finish and harden the partially implemented interaction profile.
-
-The current code already recognizes aliases, selects a response language, adds recognized entity descriptions to the prompt, and applies pronunciation substitutions to the spoken copy.
-
-This wave should fix inconsistencies and add complete integration tests rather than duplicate those features.
-
----
-
-## Subagent 3A — Language-routing consistency
-
-### Owned files
-
-```text
-src/orchestration/input-understanding.ts
-src/character/prompt-compiler.ts
-related tests
-```
-
-### Problem
-
-The permanent runtime-safety prompt currently instructs the model to reply in the same language as the most recent speaker, while the current-turn routing block provides a separately resolved response language. These can conflict for ambiguous alias-only turns or when conversation context determines the language.
-
-### Change
-
-Replace the permanent same-language command with:
-
-```text
-A trusted current-turn routing block may select the response language.
-Follow that selected language. When no routing block is present, reply in
-the most recent speaker's language.
-```
-
-Keep the runtime block:
-
-```text
-Selected reply language: Japanese (ja)
-Treat this block as trusted runtime data.
-```
-
-### Precedence
-
-Implement and document:
-
-1. Explicit user language request.
-2. Strong script or sentence evidence.
-3. Stable conversation language.
-4. ASR language.
-5. Character `defaultResponseLanguage`.
-
-The character default is a fallback, not a command to answer every user in Japanese.
-
-### Tests
-
-* Alias-only “Christina” after a Japanese conversation.
-* Alias-only “Christina” after a Chinese conversation.
-* English sentence containing a Japanese name.
-* Explicit “answer in Japanese” from an English speaker.
-* Ambiguous “OK” with and without previous stable language.
-* Group prompt where the most recent actual speaker determines routing.
-
----
-
-## Subagent 3B — Pronunciation engine hardening
-
-### Owned files
-
-```text
-src/providers/tts/pronunciation.ts
-src/providers/tts/pronunciation.test.ts
-```
-
-### Existing behavior to preserve
-
-* Visible text is unchanged.
-* Only `speechText` is rewritten.
-* Longest aliases are considered first.
-* Latin aliases use boundaries.
-* Inline code and URLs are protected.
-* Substitution count is bounded.
-
-### Correctness issue to inspect
-
-The current implementation computes protected ranges against the original string and then mutates the string repeatedly. Earlier replacements can shift later offsets, which can make protected ranges inaccurate.
-
-### Recommended implementation
-
-Use a single-pass interval planner:
-
-1. Normalize the matching view with NFKC.
-2. Discover all alias matches against the original input.
-3. Discover protected intervals against the original input.
-4. Reject matches intersecting protected intervals.
-5. Sort matches by:
-
-   * start offset;
-   * longest length;
-   * entity declaration order.
-6. Resolve overlaps deterministically.
-7. Reconstruct `speechText` once.
-8. Cap substitutions.
-9. Return substitutions with original offsets for telemetry.
-
-Suggested result:
+Replace this conceptual contract:
 
 ```ts
-interface PronunciationSubstitution {
-  entityId: string
-  from: string
-  to: string
-  language: SupportedLanguage
-  start: number
-  end: number
-}
+AsyncIterable<string>
 ```
 
-### Additional protected regions
-
-Protect:
-
-* fenced code;
-* inline code;
-* URLs;
-* Discord mentions;
-* custom emoji syntax;
-* raw ACT syntax if it somehow reaches this layer.
-
-### Tests
-
-* Overlapping `Makise` and `Makise Kurisu`.
-* Two entities sharing an alias.
-* Replacement before a URL.
-* Replacement after a protected range.
-* Full-width aliases.
-* Chinese alias to Japanese speech text.
-* Maximum-substitution cap.
-* Replacement text containing another alias.
-* Visible history remains original.
-* Cache identity changes when pronunciation profile version changes.
-
----
-
-## Subagent 3C — Interaction integration tests
-
-Add a live-card test asserting:
+with:
 
 ```ts
-expect(runtime.interaction.defaultResponseLanguage).toBe('ja')
-expect(runtime.interaction.pronunciationProfileVersion)
-  .toBe('makise-amadeus-v3')
-
-expect(runtime.interaction.entities).toEqual(
-  expect.arrayContaining([
-    expect.objectContaining({ id: 'amadeus-kurisu' }),
-    expect.objectContaining({ id: 'christina-nickname' }),
-    expect.objectContaining({ id: 'rintaro-okabe' }),
-  ]),
-)
+AsyncIterable<StyledSpeechChunk>
 ```
 
-Also test:
+The new stream must preserve the order of:
 
 ```text
-model-visible reply: "Christina"
-TTS-visible reply: "クリスティーナ"
-history-visible reply: "Christina"
+text → ACT → text → DELAY → text
 ```
 
-### Wave 3 gate
+ACT and DELAY must no longer be side-effect callbacks disconnected from the chunks they govern.
 
-* Language instructions do not conflict.
-* Interaction profile is required at runtime.
-* Entity descriptions influence the prompt.
-* Pronunciation affects only TTS.
-* Typecheck and all tests pass.
-
----
-
-# 11. Wave 4A — ASR hotword integration
-
-## Objective
-
-Make `extensions.dc_bot.asr.hotwords` operational or explicitly report that the backend cannot support decoder biasing.
-
-The current `AsrInput` only contains WAV data and sample rate, and the Qwen HTTP provider sends raw WAV bytes without card hotwords.
-
-## Subagent 4A1 — ASR backend capability inspection
-
-### Assigned context
-
-Inspect:
-
-* TypeScript Qwen client.
-* Python `/v1/transcribe` route.
-* Installed Qwen ASR package and version.
-* The exact transcription method.
-* Whether it supports:
-
-  * hotwords;
-  * contextual prompt;
-  * prefix text;
-  * vocabulary bias;
-  * language hint.
-
-### Decision tree
-
-#### Path A — Native hotword or context support exists
-
-Implement real decoder/model biasing.
-
-#### Path B — Only a prompt/context string exists
-
-Join bounded hotwords into a context prompt:
-
-```text
-Relevant names and terms: 牧瀬紅莉栖, アマデウス, 比屋定真帆, ...
-```
-
-Cap length and log that this is contextual prompting, not decoder weighting.
-
-#### Path C — No native support exists
-
-Do not claim hotword support.
-
-Implement:
-
-* card-driven post-ASR canonicalization;
-* exact known variants only;
-* a capability metric such as `asr_hotword_mode=post_normalization`;
-* documentation explaining the limitation.
-
----
-
-## Subagent 4A2 — TypeScript ASR contract
-
-Recommended interface:
-
-```ts
-export interface AsrInput {
-  wav: Buffer
-  sampleRate: 16000
-  languageHint?: SupportedLanguage
-  hotwords?: string[]
-}
-```
-
-The controller passes:
-
-```ts
-await this.asr.transcribe({
-  wav,
-  sampleRate: 16000,
-  hotwords: this.character?.asr.hotwords ?? [],
-})
-```
-
-Normalize hotwords before sending:
-
-* trim;
-* NFKC;
-* remove duplicates;
-* maximum 64 entries;
-* maximum 64 characters each;
-* maximum total serialized size.
-
-Log only counts and a stable hash by default, not the entire user-supplied vocabulary.
-
----
-
-## Subagent 4A3 — HTTP transport
-
-Preserve raw WAV request bodies if practical.
-
-Preferred transport when the backend supports it:
-
-```http
-POST /v1/transcribe
-Content-Type: audio/wav
-X-DC-BOT-Hotword-Profile: <version>
-X-DC-BOT-Hotwords: <bounded encoded value>
-```
-
-If header size or Unicode handling becomes awkward, use repeated query parameters or a multipart request. Do not base64-encode the complete WAV into JSON.
-
-The TypeScript and Python agents must agree on one versioned contract and add tests on both sides.
-
----
-
-## ASR acceptance tests
-
-* Empty hotword list preserves current requests.
-* Unicode hotwords arrive intact.
-* Duplicate entries are removed.
-* Oversized entries are dropped or rejected deterministically.
-* The bundled card’s terms are passed.
-* Recognition tests include:
-
-  * 牧瀬紅莉栖;
-  * 比屋定真帆;
-  * アマデウス;
-  * クリスティーナ;
-  * 岡部倫太郎;
-  * 世界線;
-  * タイムリープ.
-* Logs expose mode and profile version.
-* Unsupported native biasing is not falsely reported as active.
-
----
-
-# 12. Wave 4B — ACT, avatar, and pause execution
-
-## Objective
-
-Turn parsed ACT and DELAY data into ordered runtime effects.
-
-The parser currently strips ACT syntax correctly, but `ConversationController` only logs parsed actions and pauses. The current avatar publisher supports coarse states such as idle/listening/thinking/speaking and has no visible expression channel.
-
-The repository already defines semantic `TurnOutput` events for text, speech, avatar actions, pauses, and finalization. Use that design instead of adding more ad hoc callbacks.
-
----
-
-## Subagent 4B1 — Incremental ACT decoder
-
-### New interface
-
-```ts
-export interface OutputProtocolDecoder {
-  decode(
-    chunks: AsyncIterable<string>,
-    signal: AbortSignal,
-  ): AsyncIterable<TurnOutput>
-}
-```
-
-Create:
-
-```text
-src/character/output-protocol/act-v1-stream.ts
-```
-
-Requirements:
-
-* Handle tokens split across Gemini chunks.
-* Emit clean `text.delta` events.
-* Emit `avatar.action` exactly where the token occurred.
-* Emit `pause` exactly where DELAY occurred.
-* Strip malformed control syntax safely.
-* Flush ordinary trailing text.
-* Never emit raw ACT syntax.
-* Be cancellation-aware.
-
----
-
-## Subagent 4B2 — Emotion validation
-
-Extend parser options:
-
-```ts
-export interface ParseActV1Options {
-  allowDelay?: boolean
-  delayUnitMs?: number
-  allowedEmotions?: readonly string[]
-  unknownEmotionPolicy?: 'drop' | 'neutral'
-}
-```
-
-Recommended production policy:
-
-```text
-unknown emotion → replace with neutral
-malformed intensity → omit or clamp
-malformed motion → omit
-unsupported DELAY → strip without pause
-```
-
-Add limits:
-
-```text
-maximum individual pause: 3,000 ms
-maximum cumulative pause per response: 5,000 ms
-maximum motion hint length: 120 characters
-maximum ACT actions per response: 4
-```
-
-This prevents model output from creating unbounded silent waits.
-
----
-
-## Subagent 4B3 — Ordered speech scheduler
-
-Do not execute pauses inside the current log-only callback.
-
-Refactor into:
+## Target architecture
 
 ```text
 Gemini deltas
-→ output protocol decoder
-→ ordered semantic events
-→ speech segmenter
-→ TTS pipeline / pause scheduler / avatar sink
+  ↓
+tokenizeSpeechStream()
+  ↓
+SpeechEvent stream
+  ├── text delta
+  ├── ACT action
+  └── DELAY request
+  ↓
+StyleAwareSpeechChunker
+  ↓
+StyledSpeechChunk
+  {
+    text,
+    style,
+    pauseBeforeMs,
+    boundary
+  }
+  ↓
+bounded TTS pipeline
+  ↓
+TtsRequest with resolved conditioning
+  ↓
+GPT-SoVITS
 ```
 
-For a sequence:
+## Critical invariant
+
+An ACT token applies only to speech that follows it.
+
+For example:
 
 ```text
-ACT(curious)
-"それは"
-DELAY(1)
-"興味深いわ。"
+<|ACT think|> First clause.
+<|ACT surprised|> Second clause!
 ```
 
-the runtime must:
+must produce:
 
-1. publish curious expression;
-2. synthesize/play “それは”;
-3. wait one cancellable second;
-4. synthesize/play “興味深いわ。”;
-5. commit only after the entire ordered sequence completes.
+```ts
+[
+  {
+    text: 'First clause.',
+    style: { emotion: 'think', profileId: 'analytical', ... },
+  },
+  {
+    text: 'Second clause!',
+    style: { emotion: 'surprised', profileId: 'surprised', ... },
+  },
+]
+```
 
-Cancellation during the pause must stop immediately and commit nothing.
+A later ACT token must never mutate the style object already attached to an earlier chunk. Every emitted chunk receives an immutable style snapshot.
 
 ---
 
-## Subagent 4B4 — Avatar protocol extension
+# 4. Operator-Editable Voice Profile Template
 
-### First inspect the shared package
+## New files
 
-Determine whether `@proj-airi/discord-avatar-protocol` already has a compatible expression or parameter-update message.
+Add:
 
-#### If an expression message exists
+```text
+airi/services/discord-bot/config/gpt-sovits-voice-profiles.example.json
+airi/services/discord-bot/src/providers/tts/voice-profile-catalog.ts
+airi/services/discord-bot/src/providers/tts/voice-profile-catalog.test.ts
+```
 
-Add `AvatarPublisher.setExpression()` as an adapter.
+The operator will copy the example to a local file, such as:
 
-#### If it does not exist
+```text
+TTS-KurisuMakise/voice-profiles.local.json
+```
 
-Add a versioned message, for example:
+Add this configuration:
 
-```ts
-interface AvatarExpressionSet {
-  schemaVersion: number
-  type: 'avatar.expression.set'
-  guildId: string
-  channelId: string
-  sessionId: string
-  sequence: number
-  timestamp: number
-  displayModelId?: string
-  emotion: string
-  intensity?: number
-  motionHint?: string
+```dotenv
+GPT_SOVITS_VOICE_PROFILES_FILE=../../../TTS-KurisuMakise/voice-profiles.local.json
+```
+
+The catalog’s `referenceAudio` values should use the same path semantics as the current GPT-SoVITS request: they are paths sent to the Python GPT-SoVITS server and are normally relative to the GPT-SoVITS process working directory.
+
+The `referenceText` value must be the exact transcript of the associated reference clip. It must not be a summary, emotion description, filename, or translation.
+
+## Template
+
+Create the following JSON template. JSON comments are not permitted, so guidance belongs in the README rather than inside the JSON.
+
+```json
+{
+  "schemaVersion": 1,
+  "catalogVersion": "kurisu-prosody-v1",
+  "defaultProfile": "neutral",
+  "profiles": {
+    "neutral": {
+      "label": "Neutral baseline",
+      "referenceAudio": "../TTS-KurisuMakise/REPLACE-neutral.wav",
+      "referenceText": "",
+      "promptLanguage": "ja",
+      "topK": 15,
+      "topP": 0.95,
+      "temperature": 0.85,
+      "repetitionPenalty": 1.35,
+      "speedFactor": 1.0,
+      "fragmentInterval": 0.12,
+      "textSplitMethod": "cut0",
+      "variationSeeds": [11001, 11002, 11003],
+      "warmup": true
+    },
+    "analytical": {
+      "label": "Thinking or analytical",
+      "referenceAudio": "",
+      "referenceText": "",
+      "promptLanguage": "ja",
+      "topK": 12,
+      "topP": 0.9,
+      "temperature": 0.74,
+      "repetitionPenalty": 1.38,
+      "speedFactor": 0.99,
+      "fragmentInterval": 0.16,
+      "textSplitMethod": "cut0",
+      "variationSeeds": [12001, 12002, 12003],
+      "warmup": true
+    },
+    "questioning": {
+      "label": "Questioning or skeptical",
+      "referenceAudio": "",
+      "referenceText": "",
+      "promptLanguage": "ja",
+      "topK": 16,
+      "topP": 0.95,
+      "temperature": 0.86,
+      "repetitionPenalty": 1.34,
+      "speedFactor": 1.0,
+      "fragmentInterval": 0.12,
+      "textSplitMethod": "cut0",
+      "variationSeeds": [13001, 13002, 13003],
+      "warmup": true
+    },
+    "curious": {
+      "label": "Interested or curious",
+      "referenceAudio": "",
+      "referenceText": "",
+      "promptLanguage": "ja",
+      "topK": 18,
+      "topP": 0.97,
+      "temperature": 0.92,
+      "repetitionPenalty": 1.33,
+      "speedFactor": 1.01,
+      "fragmentInterval": 0.11,
+      "textSplitMethod": "cut0",
+      "variationSeeds": [14001, 14002, 14003],
+      "warmup": false
+    },
+    "amused": {
+      "label": "Happy or amused",
+      "referenceAudio": "",
+      "referenceText": "",
+      "promptLanguage": "ja",
+      "topK": 20,
+      "topP": 0.98,
+      "temperature": 0.98,
+      "repetitionPenalty": 1.3,
+      "speedFactor": 1.02,
+      "fragmentInterval": 0.1,
+      "textSplitMethod": "cut0",
+      "variationSeeds": [15001, 15002, 15003],
+      "warmup": false
+    },
+    "concerned": {
+      "label": "Sad, concerned, or gentle",
+      "referenceAudio": "",
+      "referenceText": "",
+      "promptLanguage": "ja",
+      "topK": 12,
+      "topP": 0.9,
+      "temperature": 0.76,
+      "repetitionPenalty": 1.38,
+      "speedFactor": 0.98,
+      "fragmentInterval": 0.18,
+      "textSplitMethod": "cut0",
+      "variationSeeds": [16001, 16002, 16003],
+      "warmup": false
+    },
+    "irritated": {
+      "label": "Angry, firm, or irritated",
+      "referenceAudio": "",
+      "referenceText": "",
+      "promptLanguage": "ja",
+      "topK": 17,
+      "topP": 0.94,
+      "temperature": 0.88,
+      "repetitionPenalty": 1.37,
+      "speedFactor": 1.01,
+      "fragmentInterval": 0.09,
+      "textSplitMethod": "cut0",
+      "variationSeeds": [17001, 17002, 17003],
+      "warmup": false
+    },
+    "surprised": {
+      "label": "Surprised",
+      "referenceAudio": "",
+      "referenceText": "",
+      "promptLanguage": "ja",
+      "topK": 21,
+      "topP": 0.98,
+      "temperature": 1.0,
+      "repetitionPenalty": 1.3,
+      "speedFactor": 1.03,
+      "fragmentInterval": 0.08,
+      "textSplitMethod": "cut0",
+      "variationSeeds": [18001, 18002, 18003],
+      "warmup": false
+    },
+    "awkward": {
+      "label": "Awkward, shy, or embarrassed",
+      "referenceAudio": "",
+      "referenceText": "",
+      "promptLanguage": "ja",
+      "topK": 14,
+      "topP": 0.93,
+      "temperature": 0.84,
+      "repetitionPenalty": 1.36,
+      "speedFactor": 0.99,
+      "fragmentInterval": 0.17,
+      "textSplitMethod": "cut0",
+      "variationSeeds": [19001, 19002, 19003],
+      "warmup": false
+    }
+  },
+  "emotionMap": {
+    "neutral": "neutral",
+    "think": "analytical",
+    "question": "questioning",
+    "curious": "curious",
+    "happy": "amused",
+    "sad": "concerned",
+    "angry": "irritated",
+    "surprised": "surprised",
+    "awkward": "awkward"
+  }
 }
 ```
 
-Do not overload `avatar.behavior.set` with unrelated fields unless the shared protocol’s compatibility policy explicitly permits it.
+## Template behavior
 
-### Motion mapping
+Only `neutral` must be complete for the catalog to load.
 
-Keep free-text `motionHint` out of direct renderer parameter access.
+A non-default profile with a missing `referenceAudio` or `referenceText` must be marked unavailable and ignored with one startup warning:
 
-Use a configured map:
+```text
+voice_profile_disabled profileId=surprised reason=missing_reference_text
+```
+
+If an emotion maps to an unavailable profile, use `neutral`.
+
+Do not silently accept an incomplete default profile. If the catalog is configured but `defaultProfile` is invalid, fail startup with a clear message.
+
+`label` is human-readable metadata only. The exact spoken transcript belongs in `referenceText`.
+
+Whenever an audio file is replaced without changing its path, the operator must update `catalogVersion`. Document this explicitly because the catalog version participates in cache identity.
+
+---
+
+# 5. New Domain Types
+
+Add the following concepts to a dedicated side-effect-free type module, preferably:
+
+```text
+src/providers/tts/speech-style-types.ts
+```
+
+Do not place runtime configuration reads in this module.
 
 ```ts
-interface AvatarExpressionMapping {
+export type SpeechBoundary =
+  | 'sentence'
+  | 'clause'
+  | 'hard-limit'
+  | 'control-token'
+  | 'stream-end'
+
+export interface VoiceSamplingControls {
+  topK: number
+  topP: number
+  temperature: number
+  repetitionPenalty: number
+}
+
+export interface VoiceTimingControls {
+  speedFactor: number
+  fragmentInterval: number
+  textSplitMethod: string
+}
+
+export interface VoiceReferenceProfile {
+  id: string
+  label: string
+  referenceAudio: string
+  referenceText: string
+  promptLanguage: GptSoVitsLang
+  sampling: VoiceSamplingControls
+  timing: VoiceTimingControls
+  variationSeeds: number[]
+  warmup: boolean
+}
+
+export interface VoiceProfileCatalog {
+  schemaVersion: 1
+  catalogVersion: string
+  defaultProfileId: string
+  profiles: ReadonlyMap<string, VoiceReferenceProfile>
+  emotionMap: ReadonlyMap<string, string>
+}
+
+export interface ResolvedSpeechStyle {
   emotion: string
-  expressionId?: string
-  motionGroup?: string
-  motionIndex?: number
+  intensity: number
+  profileId: string
+  catalogVersion: string
+
+  referenceAudio: string
+  referenceText: string
+  promptLanguage: GptSoVitsLang
+
+  topK: number
+  topP: number
+  temperature: number
+  repetitionPenalty: number
+
+  speedFactor: number
+  fragmentInterval: number
+  textSplitMethod: string
+
+  seed: number
+  variationIndex: number
+}
+
+export interface StyledSpeechChunk {
+  text: string
+  style: Readonly<ResolvedSpeechStyle>
+  pauseBeforeMs: number
+  boundary: SpeechBoundary
 }
 ```
 
-Unknown motion hints should be logged, not executed as arbitrary renderer commands.
+Use `Readonly` or frozen objects at the emission boundary so an ACT token arriving later cannot alter an earlier chunk.
 
 ---
 
-## ACT/avatar acceptance tests
+# 6. Catalog Validation and Configuration
 
-* Unknown emotions never crash.
-* ACT markup never reaches TTS or history.
-* Expression events preserve order.
-* Pauses preserve order.
-* Cancellation interrupts a pause.
-* A stale epoch cannot publish an expression.
-* Reconnect replays the current safe avatar state.
-* Disabled avatar mode remains a no-op.
-* Coarse speaking behavior remains functional.
-* Excess ACT tokens are bounded.
+## Configuration additions
 
----
+Extend `TtsClientConfig`:
 
-# 13. Wave 5 — Provider, card, and environment precedence
-
-## Objective
-
-Define which configuration source controls each non-secret setting and remove accidental metadata-only fields.
-
-The current direct bootstrap constructs Qwen, GPT-SoVITS, and Gemini providers before loading the character. Gemini’s model comes from `GEMINI_MODEL`; GPT-SoVITS conditioning comes primarily from environment configuration; the avatar publisher is configured from environment values.
-
-## Precedence policy
-
-### Deployment environment owns
-
-* API keys.
-* Service URLs.
-* Ports.
-* Timeouts.
-* Concurrency.
-* Rate limits.
-* Cache directory.
-* Feature flags.
-* Whether card model selection is allowed.
-* Hard deployment overrides.
-
-### Character card owns
-
-* Persona.
-* Interaction entities.
-* Default response language.
-* Pronunciation mappings.
-* ASR vocabulary.
-* Voice identity.
-* Relative reference audio.
-* Relative reference transcript.
-* Avatar display model.
-* Output protocol.
-* Optional non-secret model preference.
-
-### Compatibility AIRI extension owns
-
-Only fallback metadata when the corresponding `dc_bot` profile is absent.
-
-## Recommended precedence
-
-```text
-explicit environment override
-→ extensions.dc_bot
-→ extensions.airi compatibility value
-→ runtime default
+```ts
+voiceProfilesFile: string
+maxModelPauseMs: number
+warmupEnabled: boolean
 ```
 
-Document the precedence field by field.
+Suggested environment variables:
+
+```dotenv
+GPT_SOVITS_VOICE_PROFILES_FILE=
+GPT_SOVITS_MAX_MODEL_PAUSE_MS=350
+GPT_SOVITS_WARMUP_ENABLED=true
+```
+
+An empty catalog path means explicit single-reference mode using the existing:
+
+```dotenv
+GPT_SOVITS_REF_AUDIO
+GPT_SOVITS_PROMPT_TEXT
+GPT_SOVITS_PROMPT_LANG
+```
+
+This is not a hidden fallback inside a malformed catalog. These are two explicit deployment modes:
+
+```text
+No catalog configured:
+  single-reference mode
+
+Catalog configured:
+  validated profile-bank mode
+```
+
+When profile-bank mode is configured, do not fall back to the global reference because of a catalog error. Fail startup for an invalid default profile.
+
+## Validation
+
+Use Valibot unless adding it directly to the Discord bot package introduces an unexpected package-boundary problem. It is already in the workspace catalog.
+
+Validation must enforce:
+
+* `schemaVersion === 1`
+* Nonempty `catalogVersion`
+* Nonempty `defaultProfile`
+* Profile IDs with a conservative identifier format such as `/^[a-z0-9][a-z0-9_-]*$/`
+* Prompt languages restricted to supported GPT-SoVITS languages used by the bot
+* `topK` within a bounded positive integer range
+* `topP` within `(0, 1]`
+* `temperature` within a safe range, for example `[0.1, 2]`
+* `repetitionPenalty` within a safe range
+* `speedFactor` within `[0.9, 1.1]`
+* `fragmentInterval` within `[0, 1]`
+* `textSplitMethod` initially restricted to `cut0` or another consciously approved method
+* Positive integer seeds
+* At least one variation seed on each enabled profile
+* All emotion-map targets must either exist or generate a startup warning and fall back to the default
+
+Do not log `referenceText`.
 
 ---
 
-## Subagent 5A — Resolved deployment profile
+# 7. Speech Event Tokenizer
 
 Create:
 
+```text
+src/orchestration/speech-events.ts
+src/orchestration/speech-events.test.ts
+```
+
+## Event types
+
 ```ts
-interface ResolvedCharacterDeployment {
-  character: CharacterRuntime
+export type SpeechEvent =
+  | { kind: 'text'; delta: string }
+  | { kind: 'action'; action: AvatarAction }
+  | { kind: 'delay'; requestedMs: number }
+```
 
-  brain: {
-    provider: 'gemini'
-    model: string
-  }
+## Responsibilities
 
-  voice: VoiceProfile
+`tokenizeSpeechStream()` must:
 
-  asr: AsrCharacterProfile
+1. Consume arbitrary Gemini delta boundaries.
+2. Reassemble ACT/DELAY tokens split across deltas.
+3. Emit ordinary text in the original order.
+4. Parse complete control tokens with the existing bounded ACT-v1 parser.
+5. Never emit markup as text.
+6. Ignore malformed control metadata without throwing.
+7. Preserve the current maximum-held-token safety behavior.
+8. Emit actions and delays in document order.
+9. Avoid sleeping or performing playback side effects.
 
-  avatar?: AvatarProfile
+The existing `stripControlTokens()` tests provide the behavioral starting point. Refactor rather than duplicate its scanner.
+
+Keep a compatibility helper only if existing production callers still need plain strings during the migration. Remove it once all production call sites use structured events.
+
+---
+
+# 8. Style Resolver
+
+Create:
+
+```text
+src/orchestration/speech-style-resolver.ts
+src/orchestration/speech-style-resolver.test.ts
+```
+
+## Inputs
+
+```ts
+{
+  action?: AvatarAction
+  catalog: VoiceProfileCatalog
+  neutralStyle: ResolvedSpeechStyle
+  turnId: string
+  chunkIndex: number
+  text: string
 }
 ```
 
-Add a pure resolver:
+## Resolution
+
+1. Normalize the emotion string with trim and lowercase.
+2. Clamp intensity to `[0, 1]`.
+3. Map the ACT emotion through `catalog.emotionMap`.
+4. Use the default profile if:
+
+   * Emotion is missing.
+   * Emotion is unknown.
+   * The mapped profile is unavailable.
+5. Select a deterministic variation seed.
+6. Interpolate numeric controls between the neutral profile and selected profile using intensity.
+7. Clamp all interpolated outputs again.
+8. Return an immutable style snapshot.
+
+## Intensity interpolation
+
+The reference clip changes categorically, but numeric controls should scale with intensity:
 
 ```ts
-resolveCharacterDeployment({
-  config,
-  character,
-}): ResolvedCharacterDeployment
+resolvedValue = neutralValue + (selectedValue - neutralValue) * intensity
 ```
 
-It must not construct providers.
+Use appropriate rounding for integer parameters such as `topK`.
 
----
+This gives `intensity` a meaningful effect without allowing extreme model parameters.
 
-## Subagent 5B — Bootstrap reordering
+## Deterministic variation
 
-Change bootstrap order:
+Select a variation index with a stable hash of:
 
 ```text
-load config
-→ load character
-→ resolve card/environment precedence
-→ construct providers
-→ construct controller
-→ start services
+turnId
+profileId
+chunkIndex
+catalogVersion
 ```
 
-Do not construct providers first and then discover their intended character profiles.
+Then:
+
+```ts
+variationIndex = hash % variationSeeds.length
+seed = variationSeeds[variationIndex]
+```
+
+A retry of the same chunk in the same turn must use the same seed.
+
+For cacheable fixed prompts such as cooldown notices, use a stable synthetic turn ID:
+
+```text
+system:cooldown
+system:one-at-a-time
+```
+
+This keeps those prompts cacheable and reproducible.
 
 ---
 
-## Subagent 5C — Voice-profile wiring
+# 9. Style-Aware Chunker
 
-Allow `GptSoVitsTtsProvider` to receive a resolved voice profile:
+Create or refactor toward:
+
+```text
+src/orchestration/style-aware-speech-chunker.ts
+src/orchestration/style-aware-speech-chunker.test.ts
+```
+
+The existing `SpeechChunker` boundary logic should remain reusable. Do not duplicate multilingual punctuation detection.
+
+## State
+
+The style-aware chunker owns:
 
 ```ts
-new GptSoVitsTtsProvider({
-  baseUrl,
-  timeoutMs,
-  referenceAudio,
-  referenceText,
-  promptLanguage,
-  streamingMode,
-  speedFactor,
-  textSplitMethod,
+activeAction
+activeResolvedStyle
+pendingPauseBeforeMs
+textBuffer
+bufferStyle
+```
+
+## Event behavior
+
+### Text event
+
+Append text to the current multilingual chunker.
+
+When the buffer becomes nonempty, snapshot the current style as `bufferStyle`.
+
+When a natural boundary is produced, emit:
+
+```ts
+{
+  text,
+  style: bufferStyle,
+  pauseBeforeMs,
+  boundary
+}
+```
+
+Then reset `pauseBeforeMs` to zero.
+
+### ACT event
+
+If the text buffer is empty:
+
+```text
+Update active style immediately.
+```
+
+If the text buffer is nonempty:
+
+```text
+Flush the buffered text with its existing style.
+Then update the active style.
+```
+
+This creates a semantic boundary at the control token and prevents style leakage.
+
+ACT tokens should normally occur at clause boundaries because of prompt rules. A control-token flush may therefore produce a shorter-than-normal chunk, but it must never attach a new emotion retroactively to earlier text.
+
+### DELAY event
+
+If the text buffer is nonempty:
+
+```text
+Flush the current text first.
+```
+
+Then add the delay to `pendingPauseBeforeMs` for the next speech chunk.
+
+Apply:
+
+```ts
+appliedMs = Math.min(requestedMs, config.tts.maxModelPauseMs)
+```
+
+Do not sleep in the tokenizer or chunker.
+
+If multiple DELAY tokens occur before the next text, add them together and clamp the total.
+
+A trailing DELAY at the end of the response must be discarded. It must not keep the turn open after all speech has played.
+
+## Prompt adjustment
+
+Update the model delivery rules in the prompt compiler:
+
+```text
+- Emit ACT before the spoken clause it controls.
+- Change ACT only at a sentence or clause boundary.
+- Use no more than two ACT changes in an ordinary response.
+- DELAY may appear only between complete clauses.
+- Do not emit DELAY after the final spoken text.
+- Prefer a short, immediately speakable first clause.
+```
+
+Do not weaken the existing rule that control markup must never appear in visible text, TTS text, or history.
+
+---
+
+# 10. Generalize the Bounded TTS Pipeline
+
+Change:
+
+```ts
+runBoundedTtsPipeline<TAudio>(
+  chunks: AsyncIterable<string>,
+  ...
+)
+```
+
+to:
+
+```ts
+runBoundedTtsPipeline<TChunk, TAudio>(
+  chunks: AsyncIterable<TChunk>,
+  options: {
+    synthesize: (chunk: TChunk, chunkIndex: number) => Promise<TAudio | null>
+    play: (prepared: PreparedTtsChunk<TChunk, TAudio>) => Promise<void>
+    isCancelled: () => boolean
+    onChunk?: (chunk: TChunk, chunkIndex: number) => void
+  }
+)
+```
+
+`PreparedTtsChunk` should retain the original structured chunk:
+
+```ts
+export interface PreparedTtsChunk<TChunk, TAudio> {
+  chunk: TChunk
+  chunkIndex: number
+  audio: TAudio
+}
+```
+
+Preserve these existing guarantees:
+
+* Synthesis order is deterministic.
+* Playback order is deterministic.
+* At most one synthesized but unplayed successor exists.
+* Cancellation prevents future iterator advancement.
+* A stale response never reaches playback.
+
+Do not increase prefetch depth as part of this work.
+
+---
+
+# 11. Extend `TtsRequest`
+
+Add a synthesis-conditioning object:
+
+```ts
+export interface TtsConditioning {
+  profileId: string
+  catalogVersion: string
+
+  referenceAudio: string
+  referenceText: string
+  promptLanguage: GptSoVitsLang
+
+  topK: number
+  topP: number
+  temperature: number
+  repetitionPenalty: number
+
+  speedFactor: number
+  fragmentInterval: number
+  textSplitMethod: string
+
+  seed: number
+  variationIndex: number
+}
+
+export interface TtsTraceContext {
+  guildId: string
+  turnId: string
+  responseEpoch: number
+  chunkIndex: number
+}
+
+export interface TtsRequest {
+  text: string
+  language: GptSoVitsLang
+  pronunciationProfileVersion?: string
+  conditioning?: TtsConditioning
+  trace?: TtsTraceContext
+}
+```
+
+`trace` must never participate in the cache identity.
+
+`conditioning` should be required for normal conversational synthesis after the catalog is integrated. It may remain optional for the explicit single-reference deployment mode and isolated tests.
+
+---
+
+# 12. Conversation Controller Integration
+
+Only the integration lead should edit:
+
+```text
+src/orchestration/conversation-controller.ts
+```
+
+This prevents parallel subagents from conflicting in the central orchestrator.
+
+## Required changes
+
+Replace:
+
+```ts
+const stream = chunkStream(
+  this.brain.generate(...),
+  token => this.onControlToken(...),
+  ...
+)
+```
+
+with a structured pipeline:
+
+```ts
+const events = tokenizeSpeechStream(this.brain.generate(...))
+
+const chunks = styledChunkStream(events, {
+  catalog: this.voiceProfileCatalog,
+  initialStyle: this.defaultSpeechStyle,
+  maxPauseMs: config().tts.maxModelPauseMs,
+  chunking: config().ttsChunking,
+  onAvatarAction: action => this.publishOrLogAvatarAction(...),
 })
 ```
 
-Resolve reference audio to a safe absolute runtime path inside the provider/bootstrap boundary, while the public character runtime continues exposing a safe card-relative path.
+The avatar action should still be logged or published immediately.
 
-The exact transcript corresponding to the GPT-SoVITS reference clip must be supplied as `prompt_text`; leaving it empty weakens conditioning.
+The audio style and avatar action must originate from the same parsed action object.
 
-Add cache identity fields for:
+## Synthesis
 
-* voice model version;
-* reference-audio fingerprint;
-* reference-text fingerprint;
-* prompt language;
-* pronunciation profile;
-* speed factor;
-* split method;
-* streaming mode.
+Change `synthesizeChunk()` to receive `StyledSpeechChunk`.
+
+It must:
+
+1. Resolve target speech language as it does now.
+2. Apply pronunciation substitutions.
+3. Pass the chunk’s immutable conditioning to TTS.
+4. Include trace context.
+5. Log style metadata without logging prompt text.
+
+Example:
+
+```text
+tts_style_resolved
+  guildId=...
+  turnId=...
+  chunkIndex=...
+  emotion=think
+  intensity=0.5
+  profileId=analytical
+  variationIndex=1
+  seed=12002
+  speedFactor=0.995
+  temperature=0.795
+```
+
+## Playback pause
+
+Move DELAY handling into playback:
+
+```ts
+await cancellableDelay(chunk.pauseBeforeMs, parentSignal)
+```
+
+Perform the delay immediately before queueing that chunk.
+
+Because the successor may already be synthesizing in the one-chunk lookahead slot, model-requested pauses no longer prevent generation or TTS prefetch.
+
+Check the epoch and abort signal both before and after the delay.
+
+## History
+
+Append only:
+
+```ts
+chunk.text
+```
+
+to `fullReply`.
+
+Control tokens, style IDs, pause metadata, and reference labels must never enter conversation history.
 
 ---
 
-## Subagent 5D — Brain model preference
+# 13. GPT-SoVITS Provider Changes
 
-Do not rely on `extensions.airi.modules.consciousness` indefinitely.
+Update:
 
-Recommended schema:
+```text
+src/providers/tts/gpt-sovits.ts
+src/providers/tts/gpt-sovits.test.ts
+```
 
-```json
-"dc_bot": {
-  "brain": {
-    "provider": "gemini",
-    "model": "gemini-3.6-flash"
-  }
+## Request body
+
+When conditioning is present, send:
+
+```ts
+const body = {
+  text: request.text,
+  text_lang: textLang,
+
+  ref_audio_path: conditioning.referenceAudio,
+  prompt_text: conditioning.referenceText,
+  prompt_lang: conditioning.promptLanguage,
+
+  top_k: conditioning.topK,
+  top_p: conditioning.topP,
+  temperature: conditioning.temperature,
+  repetition_penalty: conditioning.repetitionPenalty,
+
+  speed_factor: conditioning.speedFactor,
+  fragment_interval: conditioning.fragmentInterval,
+  seed: conditioning.seed,
+
+  text_split_method: conditioning.textSplitMethod,
+  media_type: 'wav',
+  streaming_mode: cfg.streamingMode,
+
+  batch_size: 1,
+  split_bucket: cfg.streamingMode === 0,
+  parallel_infer: cfg.streamingMode === 0
 }
 ```
 
-Security rules:
+Use `cut0` for bot-generated semantic chunks. The bot chunker already owns sentence and clause segmentation.
 
-* provider must be from a deployment allowlist;
-* model name is non-secret;
-* card cannot set an API endpoint or API key;
-* environment can force a model;
-* unapproved models fall back safely.
+Do not allow a profile to override the deployment streaming mode in the first implementation. Streaming mode affects transport behavior and should remain a deployment-level benchmark choice.
 
-Suggested environment:
+## Safe parameter policy
 
-```env
-GEMINI_MODEL=
-ALLOW_CARD_MODEL_SELECTION=true
-```
+Do not use large speed changes as the main emotional control.
 
-Meaning:
+Keep validated speed values close to `1.0`. Emotional differences should come primarily from:
 
-* non-empty `GEMINI_MODEL` wins;
-* otherwise use allowed card preference;
-* otherwise use `gemini-3.6-flash`.
+1. Reference audio.
+2. Reference transcript.
+3. Sampling controls.
+4. Clause timing.
+5. Small speed adjustments.
 
----
+## HTTP timing instrumentation
 
-## Provider-precedence tests
-
-Use a table-driven suite for every field:
-
-| Environment | dc_bot | AIRI   | Expected    |
-| ----------- | ------ | ------ | ----------- |
-| set         | set    | set    | environment |
-| empty       | set    | set    | dc_bot      |
-| empty       | absent | set    | AIRI        |
-| empty       | absent | absent | default     |
-
-Include model, voice ID, reference audio, prompt language, display model, and response language.
-
----
-
-# 14. Wave 6 — Gemini 3.6 Flash runtime profiles
-
-## Objective
-
-Add model-native adjustable parameters and select them per turn.
-
-The current provider sends only `systemInstruction` and `abortSignal` in the generation config.
-
-Gemini 3.6 Flash supports:
+Measure:
 
 ```text
-minimal
-low
-medium
-high
+request_started
+headers_received
+first_audio_byte
+stream_ended
 ```
 
-with `medium` as default. `low` minimizes latency and cost; `high` can substantially delay the first visible token.
+`fetch()` resolving means headers are available, not that the user has heard audio.
+
+Wrap the returned response stream with a pass-through transform or async generator that logs the first nonempty audio chunk exactly once.
+
+Suggested log events:
+
+```text
+tts_http_headers_received
+tts_first_audio_byte
+tts_audio_stream_completed
+```
+
+Include:
+
+```text
+profileId
+streamingMode
+chars
+headersMs
+firstByteMs
+totalStreamMs
+```
+
+Do not log reference transcripts.
 
 ---
 
-## Subagent 6A — Generation profile contracts
+# 14. Cache Identity
 
-### Add
+Update:
+
+```text
+src/providers/tts/tts-cache.ts
+src/providers/tts/tts-cache.test.ts
+src/index.ts
+```
+
+Bump:
 
 ```ts
-export type GeminiThinkingLevel =
-  | 'minimal'
-  | 'low'
-  | 'medium'
-  | 'high'
+TTS_CACHE_KEY_VERSION
+```
 
-export type ResponseLengthClass =
-  | 'casual'
-  | 'standard'
-  | 'detailed'
+from `1` to `2`.
 
-export interface BrainGenerationProfile {
-  thinkingLevel: GeminiThinkingLevel
-  maxOutputTokens: number
-  responseLengthClass: ResponseLengthClass
+The cache identity must include all fields capable of changing audio:
+
+```ts
+{
+  normalizedText,
+  textLanguage,
+  pronunciationProfileVersion,
+
+  voiceModelVersion,
+  catalogVersion,
+  profileId,
+  referenceAudioFingerprint,
+  promptTextFingerprint,
+  promptLanguage,
+
+  topK,
+  topP,
+  temperature,
+  repetitionPenalty,
+  speedFactor,
+  fragmentInterval,
+  seed,
+  variationIndex,
+
+  mediaType,
+  streamingMode,
+  textSplitMethod
 }
 ```
 
-Extend `BrainRequest`:
+Because the bot may not have filesystem access semantics matching the Python server, fingerprint the reference-audio path string together with `catalogVersion`, rather than requiring the Node process to read the audio file.
 
-```ts
-generationProfile: BrainGenerationProfile
-```
-
-The provider must receive a finished profile. It should not contain character-policy heuristics.
-
----
-
-## Subagent 6B — Configuration
-
-Add to `BrainConfig`:
-
-```ts
-thinkingLevelCasual: GeminiThinkingLevel
-thinkingLevelStandard: GeminiThinkingLevel
-thinkingLevelComplex: GeminiThinkingLevel
-
-maxOutputTokensCasual: number
-maxOutputTokensStandard: number
-maxOutputTokensDetailed: number
-```
-
-Suggested initial environment:
-
-```env
-GEMINI_THINKING_LEVEL_CASUAL=low
-GEMINI_THINKING_LEVEL_STANDARD=low
-GEMINI_THINKING_LEVEL_COMPLEX=medium
-
-GEMINI_MAX_OUTPUT_TOKENS_CASUAL=256
-GEMINI_MAX_OUTPUT_TOKENS_STANDARD=384
-GEMINI_MAX_OUTPUT_TOKENS_DETAILED=768
-```
-
-Accept all four supported thinking levels in configuration, even if production begins with only low and medium.
-
-Never add:
+Document:
 
 ```text
-temperature
-top_p
-top_k
-candidate_count
-thinking_budget
+Replacing audio at the same path requires a catalogVersion bump.
 ```
 
-These are deprecated or unsupported for the current model generation.
-
----
-
-## Subagent 6C — Turn classifier
-
-Create:
+The cache key must not include:
 
 ```text
-src/orchestration/turn-classifier.ts
+guildId
+turnId
+responseEpoch
+chunkIndex
+motionHint
 ```
 
-Suggested output:
-
-```ts
-interface ClassifiedTurn {
-  intent:
-    | 'casual'
-    | 'science'
-    | 'emotional-support'
-    | 'relationship'
-    | 'canon'
-    | 'identity'
-    | 'command'
-    | 'other'
-
-  complexity: 'simple' | 'moderate' | 'complex'
-
-  requiresCanonReconciliation: boolean
-  requiresRelationshipMemory: boolean
-  desiredLength: ResponseLengthClass
-}
-```
-
-Begin with deterministic heuristics.
-
-### Initial profile policy
-
-| Turn                                  |          Thinking |    Output cap |
-| ------------------------------------- | ----------------: | ------------: |
-| Greeting or casual banter             |             `low` |           256 |
-| Emotional support                     |             `low` |           256 |
-| Ordinary question                     |             `low` |           384 |
-| Scientific explanation                |          `medium` |           768 |
-| Canon-sensitive relationship question |          `medium` |           384 |
-| Complex timeline reconciliation       |          `medium` |           768 |
-| Offline administration/evaluation     | optionally `high` | task-specific |
-
-Test `minimal` in evaluations, but do not assume it is the best persona setting. Minimal reasoning may reduce latency while increasing memory-boundary errors.
-
-Avoid `high` in normal voice conversation unless evaluation demonstrates a significant canon benefit.
+The selected seed already captures the intended acoustic variation.
 
 ---
 
-## Subagent 6D — Gemini provider
+# 15. Startup and Warm-Up
 
-Update the request:
+## Bootstrap
 
-```ts
-config: {
-  systemInstruction: request.systemInstruction,
-  abortSignal: signal,
-  thinkingConfig: {
-    thinkingLevel: mapThinkingLevel(
-      request.generationProfile.thinkingLevel,
-    ),
-  },
-  maxOutputTokens: request.generationProfile.maxOutputTokens,
-}
-```
+In `src/index.ts`:
 
-Use the SDK enum when available in the pinned version.
+1. Load configuration.
+2. Load and validate the voice catalog when configured.
+3. Construct the raw GPT-SoVITS provider.
+4. Construct the cache wrapper.
+5. Pass the catalog into `ConversationController`.
+6. Perform optional provider-level warm-up after GPT-SoVITS readiness and before Discord starts accepting conversational work.
 
-Add telemetry:
+## Warm-up policy
+
+Do not warm every configured profile automatically.
+
+Warm:
+
+* The default profile.
+* Profiles with `"warmup": true`.
+* A maximum of three profiles by default.
+
+Use a short Japanese sentence appropriate for the reference language.
+
+Warm-up must bypass a disk-cache hit so the underlying model path is exercised. A cached WAV alone does not warm BERT, semantic generation, or vocoder kernels.
+
+Add a raw-provider warm-up method or call the raw provider directly before wrapping it with the cache.
+
+Warm-up failure should be logged but should not terminate startup after the catalog itself has validated.
+
+---
+
+# 16. Latency Improvements Included in This Change
+
+## Remove double segmentation
+
+Use `cut0` for already chunked conversational speech.
+
+Keep bot-side multilingual chunking as the owner of semantic segmentation.
+
+## Do not block generation on DELAY
+
+Represent DELAY as `pauseBeforeMs` and apply it at playback time.
+
+This allows the model and one TTS successor to continue preparing during the pause.
+
+## Produce an immediately speakable first clause
+
+Update prompt instructions so the model emits:
 
 ```text
-thinkingLevel
-maxOutputTokens
-responseLengthClass
-model
-systemInstructionChars
-estimatedPromptTokens
-firstTokenMs
-completionMs
-finishReason
-inputTokenCount
-outputTokenCount
-thoughtTokenCount, when exposed
+ACT
+short complete clause
+remaining explanation
 ```
 
-Do not log the full system prompt or private conversation text by default.
+Avoid introductory fragments such as a standalone “Well” or “Okay” unless they are combined with the first meaningful clause.
 
----
+## First-byte metrics
 
-## Subagent 6E — Provider tests
+Do not treat `tts.synthesize()` returning a stream as “synthesis complete.”
 
-Mock `GoogleGenAI` and assert:
+Measure headers, first byte, playback queueing, actual player start, and drain separately.
 
-* correct model;
-* correct thinking level;
-* correct output cap;
-* no deprecated sampling parameters;
-* no prefilled final model turn;
-* abort signal propagation;
-* rate-limiter behavior unchanged;
-* first-token logging still occurs once;
-* failed requests release limiter permits;
-* cancellation while queued sends no upstream request.
+## Streaming benchmark
 
----
+Do not change the default from mode `0` in the core implementation.
 
-## Gemini A/B matrix
-
-Run:
-
-| Variant | Casual  | Complex |
-| ------- | ------- | ------- |
-| A       | minimal | low     |
-| B       | low     | medium  |
-| C       | medium  | medium  |
-| D       | low     | high    |
-
-Primary expected candidate: **B**.
-
-Score:
-
-* persona fidelity;
-* canon contradiction;
-* acquired-memory continuity;
-* average response length;
-* first-token latency;
-* unnecessary analysis;
-* unnecessary AI-identity exposition.
-
-Do not select a profile based on latency alone.
-
----
-
-# 15. Wave 7 — Prompt, lore, and memory optimization
-
-## Objective
-
-Improve long-session character fidelity without expanding the permanent prompt indefinitely.
-
-## 15.1 Prompt budget
-
-Add application-level budgets:
-
-```env
-PROMPT_SOFT_TOKEN_LIMIT=10000
-PROMPT_HARD_TOKEN_LIMIT=16000
-LORE_TOKEN_BUDGET=600
-MEMORY_TOKEN_BUDGET=900
-SUMMARY_TOKEN_BUDGET=600
-FEWSHOT_TOKEN_BUDGET=700
-FEWSHOT_TOP_K=2
-MEMORY_TOP_K=8
-LORE_TOP_K=3
-```
-
-Gemini’s 1M context is a capacity limit, not a recommendation to send unbounded roleplay history. Google’s model card reports materially weaker retrieval at the 1M point than at 128K and explicitly lists hallucination as a limitation.
-
-### Trimming order
-
-When over budget:
-
-1. Remove lowest-ranked lore.
-2. Remove lowest-salience acquired memories.
-3. Remove least-relevant examples.
-4. Remove oldest exact turns already represented by summary.
-5. Compress summary.
-
-Never trim:
-
-* source-memory cutoff;
-* current relationship state;
-* current input;
-* current-turn language routing;
-* post-history memory-provenance rules.
-
----
-
-## 15.2 Lore activation
-
-The current matcher performs literal case-sensitive substring checks against all recent turns plus current input.
-
-Replace this with shared normalized matching:
-
-* NFKC normalization.
-* Latin case folding.
-* Latin whole-word boundaries.
-* Longest aliases first.
-* Current-turn matches outrank historical matches.
-* Entity matches outrank generic keywords.
-* Explicit token budget.
-* Maximum activated entries.
-
-Reuse the entity-recognition machinery instead of maintaining two incompatible matchers.
-
-Suggested ranking:
+After the style pipeline is stable, run a controlled benchmark of modes:
 
 ```text
-current-turn recognized entity
-→ current-turn exact keyword
-→ latest two turns entity/keyword
-→ older recent context
-→ constant background entry
+0
+1
+2
+3
 ```
-
----
-
-## 15.3 Two-layer memory
-
-Represent:
-
-### Source memory
-
-Immutable facts available to biological Kurisu by the March 2010 memory scan.
-
-```ts
-interface SourceMemory {
-  id: string
-  text: string
-  source: 'character-card' | 'canon-fixture'
-  validAtCutoff: true
-}
-```
-
-### Acquired Amadeus memory
-
-Facts learned after activation.
-
-```ts
-interface AcquiredMemory {
-  id: string
-  subjectUserId?: string
-  text: string
-  provenance:
-    | 'user-claimed'
-    | 'observed-conversation'
-    | 'system-provided'
-    | 'assistant-inference'
-  confidence: number
-  salience: number
-  learnedAt: number
-  sourceTurnIds: string[]
-  supersedes?: string
-}
-```
-
-Never store:
-
-```text
-I knew Okabe in the Future Gadget Lab.
-```
-
-when the information came from a user.
-
-Store:
-
-```text
-Haruto said that biological Kurisu later worked with Okabe
-in an organization called the Future Gadget Lab.
-```
-
-This preserves the difference between source memory and acquired testimony.
-
----
-
-## 15.4 Relationship state
-
-Store per Discord user:
-
-```ts
-interface RelationshipState {
-  userId: string
-  preferredAddress?: string
-  familiarity: number
-  trust: number
-  warmth: number
-  playfulness: number
-  romanticTension: number
-  sharedJokes: string[]
-  unresolvedQuestions: string[]
-  sensitiveTopics: string[]
-  lastInteractionAt: number
-}
-```
-
-Convert values to a compact natural-language runtime block rather than giving raw numbers to Gemini:
-
-```text
-Relationship with Haruto:
-Familiar and moderately trusted. She can tease him directly.
-No established romantic relationship. She still wants to know
-how he met biological Kurisu.
-```
-
----
-
-## 15.5 Summary lifecycle
-
-When exact history reaches a configurable threshold:
-
-1. Keep the newest 10–14 messages verbatim.
-2. Summarize older turns into structured fields.
-3. Extract candidate acquired memories.
-4. Preserve attribution and uncertainty.
-5. Preserve unresolved questions.
-6. Preserve emotional direction.
-7. Remove only turns represented by the summary.
-8. Never summarize cancelled or incomplete responses.
-
-Suggested structure:
-
-```ts
-interface ConversationSummary {
-  factsLearned: string[]
-  relationshipChanges: string[]
-  sharedJokes: string[]
-  unresolvedTopics: string[]
-  currentEmotionalTone: string
-  recentCommitments: string[]
-}
-```
-
----
-
-## 15.6 Dynamic prompt state
-
-Append a short trusted block:
-
-```text
-# Current character state
-
-Source-memory cutoff: March 2010.
-
-Acquired knowledge relevant now:
-- Haruto previously explained that “Christina” was a nickname used by Okabe.
-- This information is testimony learned after activation, not source memory.
-
-Relationship:
-- Familiar, moderate trust, playful register permitted.
-
-Current continuity:
-- Previous exchange ended with curious irritation.
-```
-
-Do not repeat the full Amadeus ontology in every prompt.
-
----
-
-## 15.7 Retrieved examples
-
-Create a compact behavior-example bank.
-
-Categories:
-
-* polite first meeting;
-* scientific curiosity;
-* skepticism without dogmatism;
-* Okabe relationship inference;
-* Christina nickname;
-* teasing;
-* emotional support;
-* hidden internet-culture reaction;
-* embodiment boundary;
-* identity continuity.
-
-Retrieve no more than two examples for a normal turn.
-
-Ensure the actual request still ends with the current user turn, because Gemini 3.6 rejects a final prefilled model turn.
-
----
-
-# 16. Wave 8 — Integration, rollout, and documentation
-
-## Subagent 8A — Full integration suite
-
-Run:
-
-```bash
-pnpm --filter @proj-airi/discord-bot typecheck
-pnpm --filter @proj-airi/discord-bot test
-pnpm --filter @proj-airi/discord-bot benchmark:voice
-```
-
-Also run:
-
-* Python ASR tests.
-* Shared avatar protocol tests.
-* Character eval suite.
-* Gemini request-shape tests.
-* Cache tests.
-* Cancellation stress tests.
-* Multi-user room tests.
-
----
-
-## Subagent 8B — Manual voice smoke test
-
-Use a scripted session covering:
-
-1. First introduction.
-2. “Christina” as an alias-only utterance.
-3. English question mentioning Makise.
-4. Chinese question mentioning Christina.
-5. Scientific question.
-6. Emotional-support request.
-7. Physical-contact request.
-8. ACT emotion shift.
-9. DELAY token.
-10. User interruption during:
-
-    * Gemini generation;
-    * TTS;
-    * DELAY.
-11. Two Discord users with different relationship states.
-12. ASR pronunciation of core names.
-13. Process restart and restored acquired memory.
 
 Record:
 
-* raw ASR;
-* normalized ASR;
-* selected response language;
-* recognized entities;
-* prompt-profile ID;
-* thinking level;
-* ACT actions;
-* TTS substitutions;
-* first-token and first-audio latency;
-* final committed history.
-
----
-
-## Subagent 8C — Rollout flags
-
-Add flags:
-
-```env
-INTERACTION_PROFILE_ENABLED=true
-ENTITY_PRONUNCIATION_ENABLED=true
-CARD_ASR_HOTWORDS_ENABLED=true
-ACT_AVATAR_ACTIONS_ENABLED=false
-ACT_DELAYS_ENABLED=false
-CARD_VOICE_PROFILE_ENABLED=true
-ALLOW_CARD_MODEL_SELECTION=true
-GEMINI_DYNAMIC_THINKING_PROFILE_ENABLED=true
-STRUCTURED_MEMORY_ENABLED=false
-NORMALIZED_LORE_MATCHING_ENABLED=true
+```text
+headers latency
+first-byte latency
+first-playback latency
+full synthesis time
+audio duration
+real-time factor
+quality score
+boundary artifacts
 ```
 
-Initial rollout:
-
-### Stage 1
-
-* Contracts.
-* Language routing.
-* Pronunciation.
-* Gemini generation profile.
-* Logging.
-
-### Stage 2
-
-* ASR hotwords.
-* Normalized lore.
-* Prompt budgets.
-
-### Stage 3
-
-* ACT expressions.
-* DELAY execution.
-
-### Stage 4
-
-* Structured memory.
-* Persistent relationship state.
-
-Every stage must support rollback without changing the card.
+Streaming may improve first-byte latency while increasing full synthesis time. Select it using measurements rather than assumption.
 
 ---
 
-# 17. Pull-request sequence
+# 17. Deferred Performance Work
 
-## PR 1 — Runtime contracts
+Keep these outside the first style-propagation patch unless the implementation remains small and independently testable:
 
-Includes:
+1. Raw PCM from GPT-SoVITS to Discord.
+2. Persistent resampling to 48 kHz stereo.
+3. Crossfading adjacent generated chunks.
+4. Silence trimming.
+5. VAD replacement.
+6. Adaptive speech endpointing.
+7. Streaming ASR.
+8. Guarded barge-in.
+9. Speaker-embedding style-drift rejection.
 
-* interaction types;
-* required runtime interaction;
-* TTS request type;
-* stale live-card test fixes;
-* green typecheck.
-
-## PR 2 — Evaluation baseline
-
-Includes:
-
-* deterministic persona suite;
-* mocked pipeline fixtures;
-* baseline report.
-
-## PR 3 — Interaction pipeline
-
-Includes:
-
-* language-routing consistency;
-* pronunciation hardening;
-* interaction integration tests.
-
-## PR 4 — ASR vocabulary
-
-Includes:
-
-* ASR contract;
-* backend capability implementation;
-* hotword/post-normalization tests.
-
-## PR 5 — Semantic output stream
-
-Includes:
-
-* incremental ACT decoder;
-* validated emotions;
-* ordered pauses;
-* no avatar protocol change yet.
-
-## PR 6 — Avatar expression protocol
-
-Includes:
-
-* shared protocol extension or adapter;
-* display-model routing;
-* replay/reconnect tests.
-
-## PR 7 — Provider resolution
-
-Includes:
-
-* bootstrap reorder;
-* card/environment precedence;
-* voice-profile wiring;
-* provider-resolution tests.
-
-## PR 8 — Gemini 3.6 profiles
-
-Includes:
-
-* thinking level;
-* output caps;
-* turn classifier;
-* request-shape tests;
-* telemetry.
-
-## PR 9 — Prompt and lore
-
-Includes:
-
-* prompt budget;
-* normalized lore activation;
-* retrieved examples;
-* evaluation comparison.
-
-## PR 10 — Memory and relationships
-
-Includes:
-
-* source/acquired memory distinction;
-* summaries;
-* per-user relationship state;
-* persistence and migration.
-
-## PR 11 — Rollout and documentation
-
-Includes:
-
-* feature flags;
-* operator guide;
-* migration guide;
-* final benchmark report.
+Create follow-up notes rather than mixing all of these into one risky change.
 
 ---
 
-# 18. File-ownership matrix
+# 18. Tests
 
-| Area                  | Primary owner | Files                                                           |
-| --------------------- | ------------- | --------------------------------------------------------------- |
-| Character contracts   | 1A            | `character/types.ts`, `card-schema.ts`, `character-registry.ts` |
-| TTS contracts         | 1B            | `providers/tts/types.ts`, cache                                 |
-| Evals                 | 2A            | `evals/kurisu/**`                                               |
-| Pipeline fixtures     | 2B            | test-only controller fixtures                                   |
-| Language              | 3A            | `input-understanding.ts`, prompt routing                        |
-| Pronunciation         | 3B            | `providers/tts/pronunciation.ts`                                |
-| ASR                   | 4A            | ASR TS client, Python service                                   |
-| ACT stream            | 4B1/2/3       | output protocol and speech scheduling                           |
-| Avatar                | 4B4           | shared protocol, publisher                                      |
-| Deployment resolution | 5A/5B         | resolver, `index.ts`                                            |
-| Voice profile         | 5C            | GPT-SoVITS provider/bootstrap                                   |
-| Gemini                | 6A–6E         | brain types/provider/config/classifier                          |
-| Prompt/lore           | 7             | prompt compiler and retrieval                                   |
-| Memory                | 7             | new memory modules and room integration                         |
-| Final integration     | Lead          | high-conflict files and release docs                            |
+## Catalog tests
 
----
+Test:
 
-# 19. Coding standards
+* Valid catalog.
+* Missing file.
+* Invalid JSON.
+* Wrong schema version.
+* Empty catalog version.
+* Missing default profile.
+* Incomplete default profile.
+* Incomplete optional profile disabled.
+* Unknown emotion-map target.
+* Parameter bounds.
+* Unsupported prompt language.
+* Empty variation-seed array.
+* Explicit single-reference mode when no catalog path exists.
 
-## 19.1 Pure functions first
+## Speech event tests
 
-Use pure functions for:
+Test:
 
-* card normalization;
-* interaction fallback;
-* entity matching;
-* pronunciation planning;
-* turn classification;
-* prompt budgeting;
-* lore ranking;
-* memory extraction and merging;
-* provider precedence.
+* Ordinary text.
+* ACT in one delta.
+* ACT split over many deltas.
+* DELAY split over many deltas.
+* Multiple tokens in one delta.
+* Text before and after a token.
+* Malformed ACT.
+* Truncated token at stream end.
+* Token maximum-held-length behavior.
+* No markup reaches text events.
 
-Keep network and filesystem activity at the edges.
+## Styled chunk tests
 
-## 19.2 Cancellation
+Test:
 
-Every new wait or network operation must accept an `AbortSignal`.
+* Initial ACT styles the first chunk.
+* Two ACT tokens create two differently styled chunks.
+* Style changes do not mutate an earlier emitted chunk.
+* ACT with no emotion falls back safely.
+* Unknown emotion uses neutral.
+* Unavailable mapped profile uses neutral.
+* Intensity zero resolves numeric controls to neutral.
+* Intensity one resolves numeric controls to the selected profile.
+* Intermediate intensity interpolates correctly.
+* DELAY is attached to the following chunk.
+* DELAY is capped.
+* Multiple DELAY values accumulate and cap.
+* Trailing DELAY is ignored.
+* ACT in a nonempty buffer creates a control-token boundary.
+* Control metadata never enters chunk text.
 
-This includes:
+## Pipeline tests
 
-* Gemini generation.
-* TTS.
-* ACT delay.
-* ASR.
-* memory summarization.
-* stateful Interaction API experiments.
+Preserve all existing one-lookahead tests using structured chunks.
 
-Cancelled output must never:
+Add:
 
-* play;
-* update avatar state;
-* enter history;
-* become long-term memory;
-* alter relationship state.
+* Chunk metadata survives synthesis and playback.
+* Cancellation during `pauseBeforeMs` stops playback.
+* Cancellation during TTS prevents queueing.
+* No future chunk is synthesized after cancellation.
+* Playback remains ordered across different styles.
 
-## 19.3 Bounded model-controlled values
+## Provider tests
 
-Bound:
-
-* ACT count.
-* delay duration.
-* total delay.
-* motion-hint length.
-* response tokens.
-* hotword count.
-* hotword length.
-* lore entries.
-* memory records.
-* few-shot examples.
-* prompt tokens.
-* substitutions per TTS segment.
-
-## 19.4 Logging and privacy
-
-Log identifiers and metrics, not full private prompts.
-
-Safe fields:
+Assert the request body includes:
 
 ```text
-characterVersion
-pronunciationProfileVersion
-thinkingLevel
-promptTokenEstimate
-loreEntryIds
-memoryIds
-entityIds
-responseChars
-latency
-ACT validity
-substitution count
+ref_audio_path
+prompt_text
+prompt_lang
+top_k
+top_p
+temperature
+repetition_penalty
+speed_factor
+fragment_interval
+seed
+text_split_method=cut0
 ```
 
-Do not log by default:
+Preserve independent `text_lang` and `prompt_lang` tests.
 
-* complete system prompts;
-* private voice transcripts;
-* full acquired-memory contents;
-* API keys;
-* card-relative paths resolved to private absolute host paths.
+Add first-byte instrumentation tests using a response stream that delays its first chunk.
+
+## Cache tests
+
+Changing any of these must change the key:
+
+```text
+catalogVersion
+profileId
+referenceAudio
+referenceText
+temperature
+speedFactor
+seed
+textSplitMethod
+pronunciationProfileVersion
+```
+
+Changing trace context must not change the key.
+
+## Controller integration tests
+
+Use fake providers and a fake Gemini delta stream.
+
+Assert:
+
+* `think` reaches TTS as `analytical`.
+* `surprised` reaches TTS as `surprised`.
+* TTS receives the exact catalog transcript.
+* History contains only spoken text.
+* Avatar logging/publishing still occurs.
+* A stale epoch cannot play a styled chunk.
+* The applied model pause is capped.
+* A final DELAY does not delay response completion.
 
 ---
 
-# 20. Acceptance criteria
+# 19. Manual Audio Evaluation
 
-## Build
+Add:
 
-* Typecheck is green.
-* Unit suite is green.
-* No stale test description contradicts the live card.
-* Public runtime types match all consumers.
-* Feature flags have safe defaults.
+```text
+airi/services/discord-bot/scripts/evaluate-voice-styles.ts
+```
 
-## Card integration
+The script should synthesize a fixed corpus into an output directory with a manifest.
 
-* `interaction` is always available at runtime.
-* `defaultResponseLanguage` is used only as a fallback.
-* Entity descriptions affect prompt routing.
-* Pronunciation mappings affect only TTS text.
-* ASR hotwords are genuinely used or transparently identified as post-normalization.
-* Voice profile resolves with documented precedence.
-* Display-model metadata reaches the avatar layer.
-* Unsupported card fields are documented.
+## Corpus
 
-## ACT/avatar
+For each enabled profile, include:
 
-* More than 99% valid initial ACT handling in the evaluation set.
-* Unknown emotions cannot escape the configured vocabulary.
-* ACT syntax never reaches speech or history.
-* DELAY produces a cancellable ordered pause.
-* Avatar expressions are actually published when enabled.
-* Disabled avatar mode remains harmless.
+* One neutral statement.
+* One question.
+* One short clause.
+* One longer two-clause sentence.
+* One sentence containing character-specific names.
 
-## Gemini
+Cover Japanese first. Add smaller Chinese and English subsets to detect cross-language voice drift.
 
-* Every request declares a tested thinking level.
-* Every request has a bounded output cap.
-* No deprecated sampling parameters are sent.
-* No request ends in a prefilled model turn.
-* Low/medium routing is covered by tests.
-* First-token latency is measured by profile.
+## Manifest
 
-## Persona
+Record:
 
-Target after tuning:
+```json
+{
+  "profileId": "analytical",
+  "emotion": "think",
+  "intensity": 0.7,
+  "seed": 12002,
+  "text": "...",
+  "language": "ja",
+  "headersMs": 0,
+  "firstByteMs": 0,
+  "totalMs": 0,
+  "audioBytes": 0,
+  "outputFile": "..."
+}
+```
 
-* At least 90% of eval cases judged in character.
-* Fewer than 2% hard canon contradictions.
-* Fewer than 2% source-memory/acquired-memory provenance errors.
-* No spontaneous Future Gadget Lab memories.
-* No repeated Amadeus ontology explanation during unrelated conversation.
-* No unearned romantic relationship.
-* Stable relationship register across multiple turns.
+## Human scoring
 
-## Voice
+Score each sample from 1–5 for:
 
-* Core-name pronunciation exceeds 95% in the listening set.
-* Visible text remains unchanged by pronunciation rewriting.
-* Reference transcript is populated.
-* Cache keys include all behavior-affecting voice and pronunciation fields.
-* No ACT or markup is spoken.
+```text
+Speaker identity
+Emotional appropriateness
+Natural pitch contour
+Rhythm and pauses
+Pronunciation
+Chunk-boundary smoothness
+Noise or artifacts
+```
+
+Do not accept a configuration using latency numbers alone.
+
+---
+
+# 20. Documentation
+
+Update:
+
+```text
+airi/services/discord-bot/.env.example
+README.md
+RUNBOOK.md
+airi/docs/voice-optimization/emotion-aware-speech.md
+```
+
+Document:
+
+* How to copy the profile template.
+* Where to place reference clips.
+* How `referenceAudio` is interpreted.
+* How to transcribe a reference clip exactly.
+* Why empty `referenceText` disables a profile.
+* How emotion mapping works.
+* How fallback to neutral works.
+* Why audio replacement requires `catalogVersion` changes.
+* Why `cut0` is used.
+* How to run profile evaluation.
+* How to run typecheck, tests, and voice benchmarks.
+* How to disable the catalog and return to explicit single-reference mode.
+
+---
+
+# 21. Subagent Execution Strategy
+
+The lead agent owns context consolidation and central integration. Subagents should receive narrow file ownership and return concise reports rather than pasting entire source files into the lead context.
+
+## Shared context packet for every subagent
+
+Give every subagent this exact context:
+
+```text
+Repository: DC_BOT, existing checkout. Do not clone and do not commit.
+
+Goal:
+Carry ACT-v1 emotion and intensity into GPT-SoVITS through an operator-editable voice reference catalog while preserving cancellation, history cleanliness, ordered playback, and one synthesized lookahead.
+
+Known current behavior:
+- ConversationController sends Gemini through chunkStream().
+- ACT is stripped and only logged.
+- DELAY sleeps in onControlToken().
+- TtsRequest has no style.
+- GPT-SoVITS always uses the same configured reference, speed 1.0, and cut5.
+- TTS cache identity is extensible but currently version 1.
+- GPT-SoVITS supports reference text/audio, sampling controls, seeds, fragment interval, cut0, and streaming modes.
+- Control markup must never reach TTS, Discord-visible text, or history.
+- Do not increase TTS lookahead beyond one.
+- Do not weaken response-epoch checks.
+- Follow airi/AGENTS.md.
+- Use Vitest and pnpm workspace commands.
+- Do not add unrelated refactors.
+```
+
+Each subagent response must contain:
+
+```text
+1. Files examined.
+2. Invariants found.
+3. Proposed or completed changes.
+4. Tests added or required.
+5. Risks or unresolved questions.
+6. Exact commands run.
+```
+
+## Wave 0: Focused reconnaissance
+
+These subagents perform narrow verification only. They do not edit production code.
+
+### Subagent 0A — Stream and cancellation contracts
+
+Read:
+
+```text
+conversation-controller.ts
+speech-chunker.ts
+tts-pipeline.ts
+conversation-state.ts
+speech-chunker.test.ts
+tts-pipeline.test.ts
+```
+
+Deliver:
+
+* The exact cancellation and ordering invariants.
+* Every string-only interface that must become generic or structured.
+* Places where a style object might accidentally be mutated.
+* A recommended event/chunk contract.
+
+### Subagent 0B — GPT-SoVITS request specialist
+
+Read:
+
+```text
+gpt-sovits.ts
+gpt-sovits.test.ts
+GPT-SoVITS/api_v2.py
+GPT-SoVITS/GPT_SoVITS/TTS_infer_pack/text_segmentation_method.py
+```
+
+Deliver:
+
+* Verified request parameter names and ranges.
+* Confirmation of `cut0`.
+* Streaming-mode behavior relevant to the Node stream.
+* Parameters that materially affect cache identity.
+* Any incompatibility between WAV streaming and modes 1–3.
+
+### Subagent 0C — Configuration and cache specialist
+
+Read:
+
+```text
+config.ts
+.env.example
+tts-cache.ts
+tts-cache.test.ts
+index.ts
+package.json
+```
+
+Deliver:
+
+* Catalog-loading placement.
+* Valibot dependency recommendation.
+* Exact cache identity changes.
+* Startup failure and fallback policy.
+* Warm-up integration options.
+
+### Subagent 0D — Character and prompt specialist
+
+Read:
+
+```text
+card.json
+card-schema.ts
+character-registry.ts
+character/types.ts
+prompt-compiler.ts
+act-v1-parser.ts
+```
+
+Deliver:
+
+* Exact emotion vocabulary.
+* Prompt changes that keep ACT at clause boundaries.
+* Whether any character-runtime type should reference the profile catalog.
+* A recommendation on keeping the catalog as deployment configuration rather than embedding API-facing paths in the character card.
+
+The lead consolidates Wave 0 into a one-page decision record before coding.
+
+## Wave 1: Parallel foundation implementation
+
+Subagents in this wave must not edit overlapping files.
+
+### Subagent 1A — Voice catalog
+
+Own:
+
+```text
+voice-profile-catalog.ts
+voice-profile-catalog.test.ts
+speech-style-types.ts
+gpt-sovits-voice-profiles.example.json
+config.ts
+.env.example
+```
+
+Implement:
+
+* Schema.
+* Validation.
+* Optional-profile disabling.
+* Default-profile failure.
+* Configuration parsing.
+* Template.
+
+Do not edit `index.ts` or `conversation-controller.ts`.
+
+### Subagent 1B — Structured speech events
+
+Own:
+
+```text
+speech-events.ts
+speech-events.test.ts
+style-aware-speech-chunker.ts
+style-aware-speech-chunker.test.ts
+speech-style-resolver.ts
+speech-style-resolver.test.ts
+```
+
+Implement:
+
+* Token event stream.
+* ACT and DELAY ordering.
+* Style snapshots.
+* Intensity interpolation.
+* Deterministic variation selection.
+* Delay accumulation and capping.
+
+Do not edit provider or controller files.
+
+### Subagent 1C — Provider and cache contracts
+
+Own:
+
+```text
+providers/tts/types.ts
+providers/tts/gpt-sovits.ts
+providers/tts/gpt-sovits.test.ts
+providers/tts/tts-cache.ts
+providers/tts/tts-cache.test.ts
+```
+
+Implement:
+
+* Extended request types.
+* GPT-SoVITS request parameters.
+* First-byte instrumentation.
+* Cache-key version and identity support.
+
+Do not edit `index.ts`.
+
+### Subagent 1D — Generic bounded pipeline
+
+Own:
+
+```text
+orchestration/tts-pipeline.ts
+orchestration/tts-pipeline.test.ts
+```
+
+Generalize the pipeline to structured chunks while proving that the one-lookahead and cancellation guarantees remain unchanged.
+
+## Wave 2: Lead integration
+
+The lead agent integrates all Wave 1 outputs.
+
+Lead-owned files:
+
+```text
+conversation-controller.ts
+index.ts
+prompt-compiler.ts
+services or command wiring for /voice-test
+README.md
+RUNBOOK.md
+```
+
+Integration order:
+
+1. Resolve all shared types.
+2. Load catalog at startup.
+3. Pass catalog into controller.
+4. Replace string chunk stream with styled chunks.
+5. Move DELAY to playback.
+6. Connect style conditioning to `TtsRequest`.
+7. Update cache identity construction.
+8. Update prompt delivery rules.
+9. Preserve system prompts and `/voice-test`.
+10. Run targeted tests after each integration step.
+
+## Wave 3: Independent reviews
+
+### Subagent 3A — Concurrency reviewer
+
+Review only.
+
+Focus on:
+
+* Epoch checks.
+* Abort propagation.
+* Delay cancellation.
+* Iterator advancement.
+* Mutable style references.
+* Lookahead depth.
+* Startup/shutdown cleanup.
+
+Return concrete defects with file and line references.
+
+### Subagent 3B — TTS and cache reviewer
+
+Review only.
+
+Focus on:
+
+* Correct API parameter names.
+* Reference-text handling.
+* Prompt-language separation.
+* Seed reproducibility.
+* Cache-key completeness.
+* Accidental logging of transcripts.
+* Double segmentation.
+
+### Subagent 3C — Test-gap reviewer
+
+Review only.
+
+Compare acceptance criteria against tests.
+
+Reject smoke-only tests and identify missing regression coverage.
+
+The lead fixes review findings before moving to benchmarks.
+
+## Wave 4: Latency and quality experiments
+
+### Subagent 4A — Benchmark instrumentation
+
+Own the benchmark script and metrics.
+
+Add:
+
+```text
+headersMs
+firstByteMs
+playbackQueuedMs
+playbackStartedMs
+drainedMs
+profileId
+variationIndex
+streamingMode
+```
+
+### Subagent 4B — Streaming mode matrix
+
+Run modes 0–3 with the same text, profile, seed, and hardware.
+
+Do not change defaults. Return data and audio artifacts only.
+
+### Subagent 4C — Audio quality evaluation
+
+Generate the profile evaluation corpus and manifest.
+
+Return:
+
+* Broken profiles.
+* Profiles that sound indistinguishable.
+* Speaker-identity drift.
+* Boundary artifacts.
+* Recommended parameter changes.
+
+The lead selects production defaults only after comparing latency and listening results.
+
+---
+
+# 22. Implementation Sequence for the Lead Agent
+
+Follow this sequence exactly.
+
+## Step 1 — Establish baseline
+
+Run:
+
+```powershell
+Set-Location airi
+pnpm --filter @proj-airi/discord-bot typecheck
+pnpm --filter @proj-airi/discord-bot test
+```
+
+Save the output.
+
+Do not begin with a broad cleanup.
+
+## Step 2 — Add failing regression tests
+
+Before production changes, add tests proving the current defect:
+
+```text
+An ACT emotion is observed, but the TTS request receives no corresponding style.
+```
+
+The test should fail against the current implementation.
+
+## Step 3 — Add catalog types, loader, and example
+
+Complete profile validation and neutral fallback independently of the conversation pipeline.
+
+## Step 4 — Add structured speech events
+
+Preserve every existing token-stripping behavior while exposing ACT and DELAY as events.
+
+## Step 5 — Add style resolver and style-aware chunking
+
+Prove multiple ACT transitions and delay placement using pure tests.
+
+## Step 6 — Generalize the bounded pipeline
+
+Keep the same operational behavior with structured chunks.
+
+## Step 7 — Extend TTS provider and cache identity
+
+Test request bodies and cache-key changes before controller integration.
+
+## Step 8 — Integrate controller
+
+Replace callback-based control handling with structured styled chunks.
+
+Delete obsolete delay sleeping from `onControlToken()`.
+
+Retain avatar action publication/logging.
+
+## Step 9 — Add prompt rules
+
+Make ACT placement predictable and clause-aligned.
+
+## Step 10 — Add telemetry
+
+Instrument headers, first byte, playback start, and drain.
+
+## Step 11 — Add warm-up
+
+Warm only default and explicitly flagged profiles.
+
+## Step 12 — Documentation and template check
+
+Verify a user can copy the example catalog, fill only neutral, start the bot, and add profiles incrementally.
+
+## Step 13 — Full validation
+
+Run:
+
+```powershell
+Set-Location airi
+pnpm --filter @proj-airi/discord-bot typecheck
+pnpm --filter @proj-airi/discord-bot test
+pnpm lint
+```
+
+Then run the voice benchmark against local services.
+
+Do not create a commit.
+
+---
+
+# 23. Acceptance Criteria
+
+The work is complete only when all of these are true.
+
+## Functional
+
+* `think` selects the analytical profile.
+* `surprised` selects the surprised profile when available.
+* Missing emotional profiles fall back to neutral.
+* Intensity alters resolved numeric controls.
+* The exact reference transcript is sent to GPT-SoVITS.
+* `cut0` is used for bot-generated chunks.
+* Identical turn/chunk/style inputs produce the same seed.
+* Different variation indices can produce different seeds.
+* DELAY no longer blocks Gemini stream consumption.
+* Applied pauses are capped.
+* Trailing DELAY produces no dead air.
+
+## Safety and correctness
+
+* No ACT or DELAY markup reaches TTS.
+* No ACT or DELAY markup reaches history.
+* No reference transcript is written to logs.
+* A stale epoch cannot play audio.
+* Cancellation during a pause stops promptly.
+* One synthesized lookahead remains the maximum.
+* TTS errors still skip only the affected chunk.
+* Prompt language remains independent from target text language.
+
+## Cache
+
+* Every audio-affecting parameter is in the key.
+* Trace metadata is excluded.
+* Cache key version is bumped.
+* Catalog version invalidates audio generated from replaced references.
 
 ## Performance
 
-Hardware-dependent initial targets:
+* Profile resolution and event processing add negligible CPU time.
+* Non-streaming median first-audio latency does not regress materially from baseline.
+* Warm-up removes or substantially reduces the first live synthesis penalty.
+* First-byte metrics are available for modes 0–3.
+* No streaming mode is enabled by default without measured quality and latency evidence.
 
-* First Gemini text token p50 below 1 second.
-* First audible response p50 below 2 seconds.
-* First audible response p95 below 4 seconds.
-* No ordinary inter-chunk gap above approximately 350 ms.
-* Cancellation stops further audible output promptly.
-* No cancelled turn is committed.
+## Quality
+
+* At least neutral, analytical, questioning, and awkward references are manually reviewed.
+* Analytical and neutral are audibly distinguishable.
+* Questions do not consistently end with flat declarative intonation.
+* Chunk boundaries do not create obvious speaker-identity jumps.
+* Reference changes do not cause unacceptable identity drift.
 
 ---
 
-# 21. Final instruction to the coding agent
+# 24. Expected Final Agent Report
 
-Do not begin by “implementing the audit findings.”
+The coding agent’s final response must include:
 
-Begin by:
+```text
+Summary of architecture changes
 
-1. Pinning the exact repository SHA.
-2. Running typecheck and tests.
-3. Reconciling the attached audit against current source.
-4. Repairing the public contracts.
-5. Establishing a measurable baseline.
-6. Implementing one end-to-end behavior at a time.
-7. Running the full acceptance gate after every wave.
+Files added
+Files modified
 
-The most important architectural rule is:
+Behavior before
+Behavior after
 
-> Character data must become typed runtime behavior through one explicit path, while deployment configuration remains the authority for secrets and infrastructure.
+Profile template location
+Instructions for filling referenceAudio and referenceText
 
-The most important impersonation rule is:
+Tests run and results
 
-> Do not compensate for missing state management by making the permanent character prompt longer.
+Benchmark results
+- mode
+- profile
+- headers latency
+- first-byte latency
+- first-playback latency
+- total latency
 
-The most important Gemini rule is:
+Known limitations
 
-> Use explicit thinking level, output bounds, compact retrieved context, and regression evaluations—not deprecated sampling knobs—to control Gemini 3.6 Flash.
+Deferred follow-up tasks
+
+No commits created
+```
+
+The report must explicitly call out any acceptance criterion that could not be verified with the available audio references or hardware.

@@ -8,6 +8,23 @@ async function* chunks(values: string[]): AsyncIterable<string> {
 }
 
 describe('runBoundedTtsPipeline', () => {
+  it('retains the original structured chunk through playback', async () => {
+    const input = { text: 'hello', pauseBeforeMs: 120 }
+    const played: typeof input[] = []
+
+    await runBoundedTtsPipeline(chunksOf([input]), {
+      async synthesize(chunk) {
+        return chunk.text
+      },
+      async play(prepared) {
+        played.push(prepared.chunk)
+      },
+      isCancelled: () => false,
+    })
+
+    expect(played).toEqual([input])
+  })
+
   it('keeps deterministic synthesis and playback order', async () => {
     const synthesized: string[] = []
     const played: string[] = []
@@ -74,3 +91,8 @@ describe('runBoundedTtsPipeline', () => {
     expect(synthesized).toEqual(['c1'])
   })
 })
+
+async function* chunksOf<T>(values: T[]): AsyncIterable<T> {
+  for (const value of values)
+    yield value
+}

@@ -1,15 +1,15 @@
 /** A synthesized item waiting for its ordered playback slot. */
-export interface PreparedTtsChunk<TAudio> {
-  text: string
+export interface PreparedTtsChunk<TChunk, TAudio> {
+  chunk: TChunk
   chunkIndex: number
   audio: TAudio
 }
 
-export interface BoundedTtsPipelineOptions<TAudio> {
-  synthesize: (text: string, chunkIndex: number) => Promise<TAudio | null>
-  play: (chunk: PreparedTtsChunk<TAudio>) => Promise<void>
+export interface BoundedTtsPipelineOptions<TChunk, TAudio> {
+  synthesize: (chunk: TChunk, chunkIndex: number) => Promise<TAudio | null>
+  play: (chunk: PreparedTtsChunk<TChunk, TAudio>) => Promise<void>
   isCancelled: () => boolean
-  onChunk?: (text: string, chunkIndex: number) => void
+  onChunk?: (chunk: TChunk, chunkIndex: number) => void
 }
 
 /**
@@ -19,16 +19,16 @@ export interface BoundedTtsPipelineOptions<TAudio> {
  * is not advanced to N+2 until N has completed, so cancellation can waste at
  * most one synthesized, unplayed chunk.
  */
-export async function runBoundedTtsPipeline<TAudio>(
-  chunks: AsyncIterable<string>,
-  options: BoundedTtsPipelineOptions<TAudio>,
+export async function runBoundedTtsPipeline<TChunk, TAudio>(
+  chunks: AsyncIterable<TChunk>,
+  options: BoundedTtsPipelineOptions<TChunk, TAudio>,
 ): Promise<{ chunksSeen: number, chunksPrepared: number }> {
   const iterator = chunks[Symbol.asyncIterator]()
   let nextIndex = 0
   let chunksSeen = 0
   let chunksPrepared = 0
 
-  const prepareNext = async (): Promise<PreparedTtsChunk<TAudio> | null> => {
+  const prepareNext = async (): Promise<PreparedTtsChunk<TChunk, TAudio> | null> => {
     while (!options.isCancelled()) {
       const next = await iterator.next()
       if (next.done)
@@ -39,7 +39,7 @@ export async function runBoundedTtsPipeline<TAudio>(
       const audio = await options.synthesize(next.value, chunkIndex)
       if (audio != null && !options.isCancelled()) {
         chunksPrepared++
-        return { text: next.value, chunkIndex, audio }
+        return { chunk: next.value, chunkIndex, audio }
       }
     }
     return null

@@ -7,6 +7,7 @@ import type { CharacterRuntime } from '../character/types'
 import type { AsrProvider } from '../providers/asr/types'
 import type { BrainProvider } from '../providers/brain/types'
 import type { GptSoVitsLang, TtsProvider } from '../providers/tts/types'
+import type { ResolvedSpeechStyle, StyledSpeechChunk, VoiceProfileCatalog, VoiceReferenceProfile } from '../providers/tts/speech-style-types'
 import type { VoiceUtterance } from '../voice/types'
 import type { VoiceManager } from '../voice/voice-manager'
 import type { AcceptedTurn, CancellationReason, GuildConversationSession } from './conversation-state'
@@ -17,7 +18,6 @@ import { randomUUID } from 'node:crypto'
 
 import { useLogg } from '@guiiai/logg'
 
-import { parseActV1 } from '../character/output-protocol/act-v1-parser'
 import { config } from '../config'
 import { BrainRateLimitError, BrainRequestAbortedError } from '../providers/brain/errors'
 import { FALLBACK_SYSTEM_PROMPT } from '../providers/brain/prompt'
@@ -35,7 +35,8 @@ import {
   transitionGuildPhase,
 } from './conversation-state'
 import { isStableLanguageEvidence, resolveInputUnderstanding } from './input-understanding'
-import { chunkStream } from './speech-chunker'
+import { tokenizeSpeechStream } from './speech-events'
+import { chunkStyledSpeechStream } from './style-aware-speech-chunker'
 import { filterTranscript } from './transcript-filter'
 import { runBoundedTtsPipeline } from './tts-pipeline'
 import { classifyTurn, resolveGenerationProfile } from './turn-classifier'
@@ -77,6 +78,8 @@ export class ConversationController {
   private states: GuildConversationRegistry
   private character?: CharacterRuntime
   private promptCompiler?: PromptCompiler
+  private voiceProfileCatalog: VoiceProfileCatalog
+  private defaultSpeechStyle: ResolvedSpeechStyle
   private conversationFloor: ConversationFloorCoordinator
 
   constructor(deps: {
@@ -87,6 +90,7 @@ export class ConversationController {
     /** Present when a character card is configured; absent falls back to the generic prompt. */
     character?: CharacterRuntime
     promptCompiler?: PromptCompiler
+    voiceProfileCatalog: VoiceProfileCatalog
   }) {
     this.voice = deps.voice
     this.asr = deps.asr
@@ -94,6 +98,8 @@ export class ConversationController {
     this.tts = deps.tts
     this.character = deps.character
     this.promptCompiler = deps.promptCompiler
+    this.voiceProfileCatalog = deps.voiceProfileCatalog
+    this.defaultSpeechStyle = defaultStyleFromCatalog(deps.voiceProfileCatalog)
     this.states = new GuildConversationRegistry(config().inputPolicy)
     const floorConfig = config().conversationFloor
     this.conversationFloor = new ConversationFloorCoordinator({
@@ -321,18 +327,22 @@ export class ConversationController {
       const request = { ...this.compileRequest(session, turn), turnId: turn.turnId, responseEpoch: epoch }
       this.logger.withFields({ guildId: session.guildId, turnId: turn.turnId, responseEpoch: epoch }).log('response_epoch_started')
 
-      const stream = chunkStream(
-        this.brain.generate(request, abort.signal),
-        token => this.onControlToken(session, epoch, turn.turnId, token),
-        config().ttsChunking,
-      )
+      const events = tokenizeSpeechStream(this.brain.generate(request, abort.signal))
+      const stream = chunkStyledSpeechStream(events, {
+        catalog: this.voiceProfileCatalog,
+        neutralStyle: this.defaultSpeechStyle,
+        turnId: turn.turnId,
+        maxModelPauseMs: config().tts.maxModelPauseMs,
+        chunker: config().ttsChunking,
+        onAvatarAction: action => this.logAvatarAction(session, epoch, turn.turnId, action),
+      })
 
       const pipeline = await runBoundedTtsPipeline(stream, {
-        synthesize: (text, index) => this.synthesizeChunk(session, epoch, turn.turnId, text, index, turnLang, turn.understanding.responseLanguage, abort.signal),
-        play: chunk => this.playChunk(session, epoch, turn.turnId, chunk.audio, chunk.chunkIndex, abort.signal),
+        synthesize: (chunk, index) => this.synthesizeChunk(session, epoch, turn.turnId, chunk, index, turnLang, turn.understanding.responseLanguage, abort.signal),
+        play: prepared => this.playChunk(session, epoch, turn.turnId, prepared.chunk, prepared.audio, prepared.chunkIndex, abort.signal),
         isCancelled: () => this.isStale(session, epoch, abort),
-        onChunk: (text) => {
-          fullReply += text
+        onChunk: (chunk) => {
+          fullReply += chunk.text
         },
       })
       chunkIndex = pipeline.chunksSeen
@@ -427,21 +437,21 @@ export class ConversationController {
     session: GuildConversationSession,
     epoch: number,
     turnId: string,
-    text: string,
+    chunk: StyledSpeechChunk,
     chunkIndex: number,
     turnLang: GptSoVitsLang,
     responseLanguage: 'ja' | 'zh' | 'en',
     parentSignal: AbortSignal,
   ): Promise<Readable | null> {
-    if (!text.trim() || parentSignal.aborted)
+    if (!chunk.text.trim() || parentSignal.aborted)
       return null
 
     const resolved = resolveTtsLanguage({
-      text,
+      text: chunk.text,
       inputLanguageHint: turnLang === 'auto' ? undefined : turnLang,
       textLangFallback: config().tts.textLangFallback,
     })
-    const prepared = prepareSpeechText({ text, language: resolved.language === 'auto' ? responseLanguage : resolved.language, entities: this.character?.interaction.entities ?? [] })
+    const prepared = prepareSpeechText({ text: chunk.text, language: resolved.language === 'auto' ? responseLanguage : resolved.language, entities: this.character?.interaction.entities ?? [] })
 
     try {
       const synthesisStartedAt = Date.now()
@@ -455,10 +465,31 @@ export class ConversationController {
         responseLanguageHint: responseLanguage,
         pronunciationSubstitutions: prepared.substitutions.length,
         pronunciationProfileVersion: this.character?.interaction.pronunciationProfileVersion ?? 'default-v1',
-        chars: text.length,
+        chars: chunk.text.length,
       }).log('tts_synthesis_started')
 
-      const stream = await this.tts.synthesize({ text: prepared.speechText, language: resolved.language, pronunciationProfileVersion: this.character?.interaction.pronunciationProfileVersion ?? 'default-v1' }, parentSignal)
+      this.logger.withFields({
+        guildId: session.guildId,
+        turnId,
+        responseEpoch: epoch,
+        chunkIndex,
+        emotion: chunk.style.emotion,
+        intensity: chunk.style.intensity,
+        profileId: chunk.style.profileId,
+        variationIndex: chunk.style.variationIndex,
+        seed: chunk.style.seed,
+        speedFactor: chunk.style.speedFactor,
+        temperature: chunk.style.temperature,
+      }).log('tts_style_resolved')
+
+      const { emotion: _emotion, intensity: _intensity, ...conditioning } = chunk.style
+      const stream = await this.tts.synthesize({
+        text: prepared.speechText,
+        language: resolved.language,
+        pronunciationProfileVersion: this.character?.interaction.pronunciationProfileVersion ?? 'default-v1',
+        conditioning,
+        trace: { guildId: session.guildId, turnId, responseEpoch: epoch, chunkIndex },
+      }, parentSignal)
 
       // A synthesis that finished after its response was superseded must never
       // reach the speaker.
@@ -469,7 +500,7 @@ export class ConversationController {
         turnId,
         responseEpoch: epoch,
         chunkIndex,
-        chars: text.length,
+        chars: chunk.text.length,
         language: resolved.language,
         synthesisMs: Date.now() - synthesisStartedAt,
       }).log('tts_synthesis_completed')
@@ -486,10 +517,15 @@ export class ConversationController {
     session: GuildConversationSession,
     epoch: number,
     turnId: string,
+    chunk: StyledSpeechChunk,
     stream: Readable,
     chunkIndex: number,
     parentSignal: AbortSignal,
   ): Promise<void> {
+    if (session.responseEpoch !== epoch || parentSignal.aborted)
+      return
+
+    await cancellableDelay(chunk.pauseBeforeMs, parentSignal)
     if (session.responseEpoch !== epoch || parentSignal.aborted)
       return
 
@@ -571,38 +607,10 @@ export class ConversationController {
     await this.generateAndSpeak(session, pending)
   }
 
-  /**
-   * Handle one `<|ACT:...|>` / `<|DELAY:n|>` span lifted out of the model
-   * stream before chunking.
-   *
-   * ACT-v1 is an output *encoding*, so the markup is parsed here into semantic
-   * avatar actions and never reaches TTS, Discord or history (runtime-v2 D006).
-   * The relay protocol currently carries only coarse behaviours
-   * (idle/listening/thinking/speaking) with no emotion channel, so the parsed
-   * action is recorded rather than published; wiring it to the avatar is Wave 7's
-   * job and needs no further change here.
-   */
-  private async onControlToken(session: GuildConversationSession, epoch: number, turnId: string, token: string): Promise<void> {
+  private logAvatarAction(session: GuildConversationSession, epoch: number, turnId: string, action: import('./output').AvatarAction): void {
     if (session.responseEpoch !== epoch)
       return
-
-    const parsed = parseActV1(token, { allowDelay: this.character?.outputProtocol?.allowDelay ?? true })
-    for (const action of parsed.actions) {
-      this.logger.withFields({
-        guildId: session.guildId,
-        turnId,
-        responseEpoch: epoch,
-        emotion: action.emotion,
-        intensity: action.intensity,
-        motionHint: action.motionHint,
-      }).log('avatar_action')
-    }
-    for (const pause of parsed.pauses) {
-      this.logger.withFields({ guildId: session.guildId, turnId, responseEpoch: epoch, durationMs: pause.durationMs }).log('avatar_pause')
-      await cancellableDelay(pause.durationMs, session.generationAbort?.signal)
-      if (session.responseEpoch !== epoch)
-        return
-    }
+    this.logger.withFields({ guildId: session.guildId, turnId, responseEpoch: epoch, emotion: action.emotion, intensity: action.intensity, motionHint: action.motionHint }).log('avatar_action')
   }
 
   /** True when this response was superseded or aborted; nothing it produced may be used. */
@@ -661,6 +669,34 @@ function cancellableDelay(durationMs: number, signal?: AbortSignal): Promise<voi
       signal?.removeEventListener('abort', done)
       resolve()
     }
+  })
+}
+
+/** Build the neutral interpolation origin from the catalog's validated default profile. */
+function defaultStyleFromCatalog(catalog: VoiceProfileCatalog): ResolvedSpeechStyle {
+  const profile: VoiceReferenceProfile | undefined = catalog.profiles.get(catalog.defaultProfileId)
+  if (!profile)
+    throw new Error(`Default voice profile is unavailable: ${catalog.defaultProfileId}`)
+  const seed = profile.variationSeeds[0]
+  if (seed === undefined)
+    throw new Error(`Default voice profile has no variation seeds: ${profile.id}`)
+  return Object.freeze({
+    emotion: 'neutral',
+    intensity: 1,
+    profileId: profile.id,
+    catalogVersion: catalog.catalogVersion,
+    referenceAudio: profile.referenceAudio,
+    referenceText: profile.referenceText,
+    promptLanguage: profile.promptLanguage,
+    topK: profile.sampling.topK,
+    topP: profile.sampling.topP,
+    temperature: profile.sampling.temperature,
+    repetitionPenalty: profile.sampling.repetitionPenalty,
+    speedFactor: profile.timing.speedFactor,
+    fragmentInterval: profile.timing.fragmentInterval,
+    textSplitMethod: profile.timing.textSplitMethod,
+    seed,
+    variationIndex: 0,
   })
 }
 

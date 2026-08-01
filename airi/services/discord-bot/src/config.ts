@@ -1,5 +1,6 @@
 import { env } from 'node:process'
 import type { GeminiThinkingLevel } from './providers/brain/types'
+import type { GptSoVitsLang } from './providers/tts/types'
 
 /**
  * Centralized, validated runtime configuration.
@@ -96,7 +97,7 @@ export interface TtsClientConfig {
   requestTimeoutMs: number
   refAudioPath: string
   promptText: string
-  promptLang: string
+  promptLang: GptSoVitsLang
   /**
    * Fallback `text_lang` when neither the ASR-detected language nor strong text
    * evidence is available. `auto` (default) defers to GPT-SoVITS' per-segment
@@ -106,6 +107,12 @@ export interface TtsClientConfig {
   streamingMode: number
   /** Operator-managed identity of the weights loaded by GPT-SoVITS. Empty disables caching. */
   voiceModelVersion: string
+  /** Empty selects explicit single-reference mode. */
+  voiceProfilesFile: string
+  /** Hard cap applied to model-requested DELAY controls. */
+  maxModelPauseMs: number
+  /** Enables startup synthesis for the default and opted-in profiles. */
+  warmupEnabled: boolean
 }
 
 export interface TtsCacheConfig {
@@ -206,7 +213,12 @@ function parseInputPolicy(raw: string | undefined): InputPolicy {
 function parseBool(raw: string | undefined, fallback: boolean): boolean {
   if (raw == null || raw === '')
     return fallback
-  return raw === '1' || raw.toLowerCase() === 'true'
+  const normalized = raw.toLowerCase()
+  if (raw === '1' || normalized === 'true')
+    return true
+  if (raw === '0' || normalized === 'false')
+    return false
+  return fallback
 }
 
 /** Constrain GPT_SOVITS_TEXT_LANG to the GPT-SoVITS-accepted target values. */
@@ -214,6 +226,13 @@ function parseTextLangFallback(raw: string | undefined): 'zh' | 'en' | 'ja' | 'a
   const allowed = ['zh', 'en', 'ja', 'auto'] as const
   const v = (raw ?? '').trim().toLowerCase() as 'zh' | 'en' | 'ja' | 'auto'
   return (allowed as readonly string[]).includes(v) ? v : 'auto'
+}
+
+function parseGptSoVitsLang(raw: string | undefined, fallback: GptSoVitsLang): GptSoVitsLang {
+  const normalized = (raw ?? '').trim().toLowerCase()
+  return normalized === 'zh' || normalized === 'en' || normalized === 'ja' || normalized === 'auto'
+    ? normalized
+    : fallback
 }
 
 let cached: AppConfig | null = null
@@ -286,10 +305,13 @@ export function config(): AppConfig {
       requestTimeoutMs: parseBounded(env.GPT_SOVITS_REQUEST_TIMEOUT_MS, 30_000, 600_000),
       refAudioPath: env.GPT_SOVITS_REF_AUDIO || '',
       promptText: env.GPT_SOVITS_PROMPT_TEXT || '',
-      promptLang: env.GPT_SOVITS_PROMPT_LANG || 'ja',
+      promptLang: parseGptSoVitsLang(env.GPT_SOVITS_PROMPT_LANG, 'ja'),
       textLangFallback: parseTextLangFallback(env.GPT_SOVITS_TEXT_LANG),
       streamingMode: parseBoundedInteger(env.GPT_SOVITS_STREAMING_MODE, 0, 0, 3),
       voiceModelVersion: env.GPT_SOVITS_VOICE_MODEL_VERSION || '',
+      voiceProfilesFile: env.GPT_SOVITS_VOICE_PROFILES_FILE?.trim() || '',
+      maxModelPauseMs: parseBoundedInteger(env.GPT_SOVITS_MAX_MODEL_PAUSE_MS, 350, 0, 10_000),
+      warmupEnabled: parseBool(env.GPT_SOVITS_WARMUP_ENABLED, true),
     },
     ttsCache: {
       enabled: parseBool(env.TTS_CACHE_ENABLED, true),

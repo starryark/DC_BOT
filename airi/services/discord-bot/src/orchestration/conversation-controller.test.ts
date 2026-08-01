@@ -13,6 +13,8 @@ import { afterEach, describe, expect, it } from 'vitest'
 
 import { resetConfigCache } from '../config'
 import { BrainRateLimitError } from '../providers/brain/errors'
+import { createSingleReferenceCatalog, parseVoiceProfileCatalog } from '../providers/tts/voice-profile-catalog'
+import type { VoiceProfileCatalog } from '../providers/tts/speech-style-types'
 import { ConversationController } from './conversation-controller'
 
 afterEach(() => {
@@ -125,6 +127,7 @@ interface HarnessOptions {
   ttsFailures?: number
   /** Overrides BOT_INPUT_POLICY for this harness. */
   inputPolicy?: 'half_duplex' | 'latest_wins' | 'barge_in'
+  voiceProfileCatalog?: VoiceProfileCatalog
 }
 
 function buildController(opts: HarnessOptions) {
@@ -187,7 +190,8 @@ function buildController(opts: HarnessOptions) {
     },
   }
 
-  const controller = new ConversationController({ voice: voice as never, asr, brain, tts })
+  const voiceProfileCatalog = opts.voiceProfileCatalog ?? createSingleReferenceCatalog({ referenceAudio: 'neutral.wav', referenceText: 'neutral reference', promptLanguage: 'ja' })
+  const controller = new ConversationController({ voice: voice as never, asr, brain, tts, voiceProfileCatalog })
   return { controller, voice, asrCalls, brainRequests, ttsRequests, brainSignals, ttsSignals }
 }
 
@@ -196,7 +200,58 @@ async function settle(ms = 60): Promise<void> {
   await new Promise(resolve => setTimeout(resolve, ms))
 }
 
+function testStyleCatalog(): VoiceProfileCatalog {
+  const profile = (referenceAudio: string, temperature: number) => ({
+    label: referenceAudio,
+    referenceAudio,
+    referenceText: 'exact reference transcript',
+    promptLanguage: 'ja',
+    topK: 15,
+    topP: 0.95,
+    temperature,
+    repetitionPenalty: 1.35,
+    speedFactor: 1,
+    fragmentInterval: 0.12,
+    textSplitMethod: 'cut0',
+    variationSeeds: [1],
+    warmup: false,
+  })
+  return parseVoiceProfileCatalog({
+    schemaVersion: 1,
+    catalogVersion: 'test-v1',
+    defaultProfile: 'neutral',
+    profiles: {
+      neutral: profile('neutral.wav', 0.85),
+      analytical: profile('analytical.wav', 0.65),
+    },
+    emotionMap: { think: 'analytical' },
+  })
+}
+
 describe('conversationController — ASR→TTS language propagation', () => {
+  // ROOT CAUSE:
+  //
+  // ACT metadata was consumed by a side-effect callback while the chunk stream
+  // passed only plain text into TTS, so the observed emotion could not affect
+  // the synthesis request for the following speech.
+  it('attaches an ACT emotion to the following TTS request', async () => {
+    const { voice, ttsRequests } = buildController({
+      replyChunks: ['<|ACT:"emotion":{"name":"think","intensity":0.5},"motion":"looks at the screen"|>', 'Let me examine the evidence.'],
+      voiceProfileCatalog: testStyleCatalog(),
+    })
+    voice.emit('utterance', makeUtterance())
+    await settle()
+
+    expect(ttsRequests).toHaveLength(1)
+    expect(ttsRequests[0]).toMatchObject({
+      conditioning: {
+        profileId: 'analytical',
+        referenceAudio: 'analytical.wav',
+        temperature: 0.75,
+      },
+    })
+  })
+
   it('routes a Chinese turn to TTS as zh (not ja)', async () => {
     const { voice, ttsRequests } = buildController({
       asrLanguage: 'zh',

@@ -135,6 +135,24 @@
 
 > Heavily inspired by [Neuro-sama](https://www.youtube.com/@Neurosama)
 
+## Discord bot GPT-SoVITS voice profiles
+
+The direct Discord bot can condition each emotional speech style with an operator-managed GPT-SoVITS reference. Copy
+`services/discord-bot/config/gpt-sovits-voice-profiles.example.json` to a local, uncommitted file and set
+`GPT_SOVITS_VOICE_PROFILES_FILE` to that file. `referenceAudio` is sent to the Python server unchanged and is normally
+relative to the GPT-SoVITS process working directory. `referenceText` must be an exact, same-language transcript of
+the associated clip—not an emotion label, summary, filename, or translation.
+
+Only the default `neutral` profile must initially be complete. Empty `referenceAudio` or `referenceText` disables an
+optional profile with a startup warning; emotions mapped to it fall back to neutral. An incomplete default profile is
+a startup error. The catalog deliberately uses `cut0` because the bot has already split text at speech boundaries.
+Whenever audio is replaced without changing its path, update `catalogVersion`; it participates in TTS cache identity.
+
+To return to explicit single-reference mode, leave `GPT_SOVITS_VOICE_PROFILES_FILE` empty and configure
+`GPT_SOVITS_REF_AUDIO`, `GPT_SOVITS_PROMPT_TEXT`, and `GPT_SOVITS_PROMPT_LANG`. Run validation with
+`pnpm --filter @proj-airi/discord-bot typecheck` and `pnpm --filter @proj-airi/discord-bot test`; the local voice latency
+benchmark is `pnpm --filter @proj-airi/discord-bot benchmark:voice`.
+
 > [!TIP]
 > On Windows, you can also install AIRI with [winget](https://learn.microsoft.com/windows/package-manager/winget/):
 >

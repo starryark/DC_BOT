@@ -41,29 +41,51 @@ export class SpeechChunker {
 
   /** Feed a text delta; returns zero or more complete chunks ready for TTS. */
   push(delta: string): string[] {
+    return this.pushWithBoundaries(delta).map(chunk => chunk.text)
+  }
+
+  /** Feed a delta while retaining why each chunk was emitted. */
+  pushWithBoundaries(delta: string): SpeechChunk[] {
     if (!delta)
       return []
     this.buffer += delta
-    const out: string[] = []
+    const out: SpeechChunk[] = []
     while (true) {
-      const cut = this.findBoundary()
-      if (cut <= 0)
+      const boundary = this.findBoundary()
+      if (!boundary)
         break
-      out.push(this.buffer.slice(0, cut).trim())
-      this.buffer = this.buffer.slice(cut)
+      out.push({ text: this.buffer.slice(0, boundary.cut).trim(), boundary: boundary.boundary })
+      this.buffer = this.buffer.slice(boundary.cut)
     }
-    return out.filter(Boolean)
+    return out.filter(chunk => Boolean(chunk.text))
   }
 
   /** Flush whatever remains (e.g. when the stream ends). */
   flush(): string[] {
+    return this.flushWithBoundary().map(chunk => chunk.text)
+  }
+
+  /** Flush remaining text as an explicit stream-end chunk. */
+  flushWithBoundary(): SpeechChunk[] {
     const rest = this.buffer.trim()
     this.buffer = ''
-    return rest ? [rest] : []
+    return rest ? [{ text: rest, boundary: 'stream-end' }] : []
+  }
+
+  /** Flush buffered text at a semantic control-token boundary. */
+  flushForControlToken(): SpeechChunk[] {
+    const rest = this.buffer.trim()
+    this.buffer = ''
+    return rest ? [{ text: rest, boundary: 'control-token' }] : []
+  }
+
+  /** Whether non-whitespace text remains buffered after the last emission. */
+  hasPendingText(): boolean {
+    return Boolean(this.buffer.trim())
   }
 
   /** Returns the index to cut at (inclusive of the boundary char), or 0. */
-  private findBoundary(): number {
+  private findBoundary(): { cut: number, boundary: SpeechChunkBoundary } | undefined {
     const cjk = isCjkDominant(this.buffer)
     const min = cjk ? this.options.minCjkChars : this.options.minLatinChars
     const target = cjk ? this.options.targetCjkChars : this.options.targetLatinChars
@@ -73,26 +95,33 @@ export class SpeechChunker {
     // are especially expensive and sound unnatural when synthesized alone.
     const terminal = findTerminalBoundary(this.buffer, max, min)
     if (terminal > 0)
-      return terminal
+      return { cut: terminal, boundary: 'sentence' }
 
     // At the target, commas and line breaks are preferable to an arbitrary cut.
     if (this.buffer.length >= target) {
       const region = this.buffer.slice(0, Math.min(max, this.buffer.length))
       const clause = Math.max(region.lastIndexOf(','), region.lastIndexOf('，'), region.lastIndexOf(';'), region.lastIndexOf('；'), region.lastIndexOf('\n'))
       if (clause + 1 >= min)
-        return clause + 1
+        return { cut: clause + 1, boundary: 'clause' }
     }
 
     if (this.buffer.length >= max) {
       if (cjk)
-        return max
+        return { cut: max, boundary: 'hard-limit' }
       const region = this.buffer.slice(0, max)
       const word = Math.max(region.lastIndexOf(' '), region.lastIndexOf('\n'))
-      return word >= min ? word + 1 : max
+      return { cut: word >= min ? word + 1 : max, boundary: 'hard-limit' }
     }
 
-    return 0
+    return undefined
   }
+}
+
+export type SpeechChunkBoundary = 'sentence' | 'clause' | 'hard-limit' | 'control-token' | 'stream-end'
+
+export interface SpeechChunk {
+  text: string
+  boundary: SpeechChunkBoundary
 }
 
 function isCjkDominant(text: string): boolean {
@@ -141,6 +170,49 @@ const TOKEN_CLOSE = '|>'
  */
 const MAX_HELD_CHARS = 512
 
+export type ScannedSpeechPart
+  = | { kind: 'text', text: string }
+    | { kind: 'token', token: string }
+
+/** Scan arbitrary deltas without losing the document order of text and tokens. */
+export async function* scanSpeechStream(deltas: AsyncIterable<string>): AsyncIterable<ScannedSpeechPart> {
+  let held = ''
+
+  for await (const delta of deltas) {
+    held += delta
+    while (held) {
+      const open = held.indexOf(TOKEN_OPEN)
+      if (open < 0) {
+        const pending = held.endsWith('<') ? 1 : 0
+        const text = held.slice(0, held.length - pending)
+        held = held.slice(held.length - pending)
+        if (text)
+          yield { kind: 'text', text }
+        break
+      }
+
+      if (open > 0) {
+        yield { kind: 'text', text: held.slice(0, open) }
+        held = held.slice(open)
+      }
+
+      const close = held.indexOf(TOKEN_CLOSE, TOKEN_OPEN.length)
+      if (close < 0) {
+        if (held.length > MAX_HELD_CHARS) {
+          yield { kind: 'text', text: held }
+          held = ''
+        }
+        break
+      }
+      yield { kind: 'token', token: held.slice(0, close + TOKEN_CLOSE.length) }
+      held = held.slice(close + TOKEN_CLOSE.length)
+    }
+  }
+
+  if (held && !held.startsWith(TOKEN_OPEN))
+    yield { kind: 'text', text: held }
+}
+
 /** Receives each complete `<|...|>` span, including its delimiters. */
 export type ControlTokenHandler = (token: string) => unknown | Promise<unknown>
 
@@ -161,46 +233,12 @@ export type ControlTokenHandler = (token: string) => unknown | Promise<unknown>
  * regex.
  */
 export async function* stripControlTokens(deltas: AsyncIterable<string>, onToken?: ControlTokenHandler): AsyncIterable<string> {
-  // Text that may still turn out to be part of a token, carried across deltas.
-  let held = ''
-
-  for await (const delta of deltas) {
-    held += delta
-    let out = ''
-
-    while (held) {
-      const open = held.indexOf(TOKEN_OPEN)
-      if (open < 0) {
-        // A trailing '<' could be the first half of an opener split across
-        // deltas, so it stays held until the next delta disambiguates it.
-        const pending = held.endsWith('<') ? 1 : 0
-        out += held.slice(0, held.length - pending)
-        held = held.slice(held.length - pending)
-        break
-      }
-
-      out += held.slice(0, open)
-      const close = held.indexOf(TOKEN_CLOSE, open + TOKEN_OPEN.length)
-      if (close < 0) {
-        held = held.slice(open)
-        if (held.length > MAX_HELD_CHARS) {
-          out += held
-          held = ''
-        }
-        break
-      }
-      await onToken?.(held.slice(open, close + TOKEN_CLOSE.length))
-      held = held.slice(close + TOKEN_CLOSE.length)
-    }
-
-    if (out)
-      yield out
+  for await (const part of scanSpeechStream(deltas)) {
+    if (part.kind === 'text')
+      yield part.text
+    else
+      await onToken?.(part.token)
   }
-
-  // An opener still unclosed at end of stream was a truncated token; anything
-  // else held (a bare '<') is real text the user should hear.
-  if (held && !held.startsWith(TOKEN_OPEN))
-    yield held
 }
 
 /**
