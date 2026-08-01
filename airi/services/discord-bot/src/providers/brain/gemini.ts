@@ -1,7 +1,7 @@
 import type { BrainRateLimiter } from './rate-limiter'
 import type { BrainProvider, BrainRequest } from './types'
 
-import { GoogleGenAI } from '@google/genai'
+import { GoogleGenAI, ThinkingLevel } from '@google/genai'
 import { useLogg } from '@guiiai/logg'
 
 import { config } from '../../config'
@@ -41,6 +41,8 @@ export class GeminiBrainProvider implements BrainProvider {
     const cfg = config().brain
     if (!cfg.apiKey)
       throw new Error('GEMINI_API_KEY is not set')
+    if (request.contents.length === 0 || request.contents.at(-1)?.role !== 'user')
+      throw new Error('Gemini requests must end with a user turn')
 
     // Throws BrainRequestAbortedError if the turn is cancelled while queued,
     // so a barge-in during a rate-limit wait costs nothing upstream.
@@ -56,6 +58,9 @@ export class GeminiBrainProvider implements BrainProvider {
       model: this.model,
       turns: request.contents.length,
       systemInstructionChars: request.systemInstruction.length,
+      thinkingLevel: request.generationProfile.thinkingLevel,
+      maxOutputTokens: request.generationProfile.maxOutputTokens,
+      responseLengthClass: request.generationProfile.responseLengthClass,
     }).log('gemini_request_started')
 
     try {
@@ -65,6 +70,8 @@ export class GeminiBrainProvider implements BrainProvider {
         config: {
           systemInstruction: request.systemInstruction,
           abortSignal: signal,
+          thinkingConfig: { thinkingLevel: mapThinkingLevel(request.generationProfile.thinkingLevel) },
+          maxOutputTokens: request.generationProfile.maxOutputTokens,
         },
       })
 
@@ -111,4 +118,13 @@ export class GeminiBrainProvider implements BrainProvider {
       this.limiter.release()
     }
   }
+}
+
+function mapThinkingLevel(level: import('./types').GeminiThinkingLevel): ThinkingLevel {
+  return {
+    minimal: ThinkingLevel.MINIMAL,
+    low: ThinkingLevel.LOW,
+    medium: ThinkingLevel.MEDIUM,
+    high: ThinkingLevel.HIGH,
+  }[level]
 }

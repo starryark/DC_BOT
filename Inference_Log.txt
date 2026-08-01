@@ -1,0 +1,1115 @@
+W0801 05:15:17.260000 27588 .venv\Lib\site-packages\torch\utils\flop_counter.py:29] triton not found; flop counting will not work for triton kernels
+---------------------------------------------TTS Config---------------------------------------------
+device              : cuda
+is_half             : True
+version             : v2Pro
+t2s_weights_path    : ../TTS-KurisuMakise/牧懒红莉栖-e15.ckpt
+vits_weights_path   : ../TTS-KurisuMakise/牧懒红莉栖_e4_s972.pth
+bert_base_path      : GPT_SoVITS/pretrained_models/chinese-roberta-wwm-ext-large
+cnhuhbert_base_path : GPT_SoVITS/pretrained_models/chinese-hubert-base
+----------------------------------------------------------------------------------------------------
+
+Loading Text2Semantic weights from ../TTS-KurisuMakise/牧懒红莉栖-e15.ckpt
+Loading VITS weights from ../TTS-KurisuMakise/牧懒红莉栖_e4_s972.pth. _IncompatibleKeys(missing_keys=['enc_q.pre.weight', 'enc_q.pre.bias', 'enc_q.enc.in_layers.0.bias', 'enc_q.enc.in_layers.0.weight_g', 'enc_q.enc.in_layers.0.weight_v', 'enc_q.enc.in_layers.1.bias', 'enc_q.enc.in_layers.1.weight_g', 'enc_q.enc.in_layers.1.weight_v', 'enc_q.enc.in_layers.2.bias', 'enc_q.enc.in_layers.2.weight_g', 'enc_q.enc.in_layers.2.weight_v', 'enc_q.enc.in_layers.3.bias', 'enc_q.enc.in_layers.3.weight_g', 'enc_q.enc.in_layers.3.weight_v', 'enc_q.enc.in_layers.4.bias', 'enc_q.enc.in_layers.4.weight_g', 'enc_q.enc.in_layers.4.weight_v', 'enc_q.enc.in_layers.5.bias', 'enc_q.enc.in_layers.5.weight_g', 'enc_q.enc.in_layers.5.weight_v', 'enc_q.enc.in_layers.6.bias', 'enc_q.enc.in_layers.6.weight_g', 'enc_q.enc.in_layers.6.weight_v', 'enc_q.enc.in_layers.7.bias', 'enc_q.enc.in_layers.7.weight_g', 'enc_q.enc.in_layers.7.weight_v', 'enc_q.enc.in_layers.8.bias', 'enc_q.enc.in_layers.8.weight_g', 'enc_q.enc.in_layers.8.weight_v', 'enc_q.enc.in_layers.9.bias', 'enc_q.enc.in_layers.9.weight_g', 'enc_q.enc.in_layers.9.weight_v', 'enc_q.enc.in_layers.10.bias', 'enc_q.enc.in_layers.10.weight_g', 'enc_q.enc.in_layers.10.weight_v', 'enc_q.enc.in_layers.11.bias', 'enc_q.enc.in_layers.11.weight_g', 'enc_q.enc.in_layers.11.weight_v', 'enc_q.enc.in_layers.12.bias', 'enc_q.enc.in_layers.12.weight_g', 'enc_q.enc.in_layers.12.weight_v', 'enc_q.enc.in_layers.13.bias', 'enc_q.enc.in_layers.13.weight_g', 'enc_q.enc.in_layers.13.weight_v', 'enc_q.enc.in_layers.14.bias', 'enc_q.enc.in_layers.14.weight_g', 'enc_q.enc.in_layers.14.weight_v', 'enc_q.enc.in_layers.15.bias', 'enc_q.enc.in_layers.15.weight_g', 'enc_q.enc.in_layers.15.weight_v', 'enc_q.enc.res_skip_layers.0.bias', 'enc_q.enc.res_skip_layers.0.weight_g', 'enc_q.enc.res_skip_layers.0.weight_v', 'enc_q.enc.res_skip_layers.1.bias', 'enc_q.enc.res_skip_layers.1.weight_g', 'enc_q.enc.res_skip_layers.1.weight_v', 'enc_q.enc.res_skip_layers.2.bias', 'enc_q.enc.res_skip_layers.2.weight_g', 'enc_q.enc.res_skip_layers.2.weight_v', 'enc_q.enc.res_skip_layers.3.bias', 'enc_q.enc.res_skip_layers.3.weight_g', 'enc_q.enc.res_skip_layers.3.weight_v', 'enc_q.enc.res_skip_layers.4.bias', 'enc_q.enc.res_skip_layers.4.weight_g', 'enc_q.enc.res_skip_layers.4.weight_v', 'enc_q.enc.res_skip_layers.5.bias', 'enc_q.enc.res_skip_layers.5.weight_g', 'enc_q.enc.res_skip_layers.5.weight_v', 'enc_q.enc.res_skip_layers.6.bias', 'enc_q.enc.res_skip_layers.6.weight_g', 'enc_q.enc.res_skip_layers.6.weight_v', 'enc_q.enc.res_skip_layers.7.bias', 'enc_q.enc.res_skip_layers.7.weight_g', 'enc_q.enc.res_skip_layers.7.weight_v', 'enc_q.enc.res_skip_layers.8.bias', 'enc_q.enc.res_skip_layers.8.weight_g', 'enc_q.enc.res_skip_layers.8.weight_v', 'enc_q.enc.res_skip_layers.9.bias', 'enc_q.enc.res_skip_layers.9.weight_g', 'enc_q.enc.res_skip_layers.9.weight_v', 'enc_q.enc.res_skip_layers.10.bias', 'enc_q.enc.res_skip_layers.10.weight_g', 'enc_q.enc.res_skip_layers.10.weight_v', 'enc_q.enc.res_skip_layers.11.bias', 'enc_q.enc.res_skip_layers.11.weight_g', 'enc_q.enc.res_skip_layers.11.weight_v', 'enc_q.enc.res_skip_layers.12.bias', 'enc_q.enc.res_skip_layers.12.weight_g', 'enc_q.enc.res_skip_layers.12.weight_v', 'enc_q.enc.res_skip_layers.13.bias', 'enc_q.enc.res_skip_layers.13.weight_g', 'enc_q.enc.res_skip_layers.13.weight_v', 'enc_q.enc.res_skip_layers.14.bias', 'enc_q.enc.res_skip_layers.14.weight_g', 'enc_q.enc.res_skip_layers.14.weight_v', 'enc_q.enc.res_skip_layers.15.bias', 'enc_q.enc.res_skip_layers.15.weight_g', 'enc_q.enc.res_skip_layers.15.weight_v','enc_q.enc.cond_layer.bias', 'enc_q.enc.cond_layer.weight_g', 'enc_q.enc.cond_layer.weight_v', 'enc_q.proj.weight', 'enc_q.proj.bias'], unexpected_keys=[])
+Loading BERT weights from GPT_SoVITS/pretrained_models/chinese-roberta-wwm-ext-large
+Loading CNHuBERT weights from GPT_SoVITS/pretrained_models/chinese-hubert-base
+INFO:     Started server process [27588]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:9880 (Press CTRL+C to quit)
+False False False
+Set seed to 1083277661
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+。嗯，听得很清楚。我是 Amadeus，牧瀬紅莉栖的人格数据。
+Actual Input Target Text (after sentence segmentation):
+['嗯，听得很清楚。', '我是 Amadeus，', '牧瀬紅莉栖的人格数据。']
+############ Extract Text BERT Features ############
+  0%|                                                                                            | 0/3 [00:00<?, ?it/s]WARNING: The installed PyTorch 2.11.0+cu128 uses CUDA 12.x, but onnxruntime-gpu is built with CUDA 13.x. Please install PyTorch for CUDA 13.x to be compatible.
+Failed to load cublasLt64_13.dll: Could not find module 'cublasLt64_13.dll' (or one of its dependencies). Try using thefull path with constructor syntax.
+Failed to load cublas64_13.dll: Could not find module 'cublas64_13.dll' (or one of its dependencies). Try using the full path with constructor syntax.
+Failed to load cufft64_12.dll: Could not find module 'cufft64_12.dll' (or one of its dependencies). Try using the full path with constructor syntax.
+Failed to load cudart64_13.dll: Could not find module 'cudart64_13.dll' (or one of its dependencies). Try using the full path with constructor syntax.
+Please follow https://onnxruntime.ai/docs/install/#cuda-and-cudnn to install CUDA.
+100%|████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:07<00:00,  2.64s/it]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['恩,听得很清楚.']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  3%|██▌                                                                             | 47/1500 [00:00<00:29, 49.57it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+Processed text from the frontend (per sentence): ['我是Amadeus']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  2%|█▎                                                                              | 24/1500 [00:00<00:26, 56.04it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+Processed text from the frontend (per sentence): ['牧瀬红莉栖的人格数据.']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  3%|██                                                                              | 38/1500 [00:00<00:25, 57.29it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+2.185   7.932   2.672   1.517
+INFO:     127.0.0.1:52997 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 873915409
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+请问找我有什么事吗？
+Actual Input Target Text (after sentence segmentation):
+['请问找我有什么事吗？']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 21.71it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['请问找我有什么事吗?']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  3%|██▌                                                                             | 48/1500 [00:00<00:29, 48.56it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.049   1.064   0.310
+INFO:     127.0.0.1:52997 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 494976624
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+只有“嗯”吗？如果只是测试音频连接的话，目前看来一切正常。
+Actual Input Target Text (after sentence segmentation):
+['只有“嗯”吗？', '如果只是测试音频连接的话，', '目前看来一切正常。']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:00<00:00, 22.26it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['只有恩吗?']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  1%|▉                                                                               | 18/1500 [00:00<00:33, 44.26it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+Processed text from the frontend (per sentence): ['目前看来一切正常.']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  3%|██▌                                                                             | 49/1500 [00:00<00:28, 51.80it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+Processed text from the frontend (per sentence): ['如果只是测试音频连接的话,']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  3%|██▍                                                                             | 46/1500 [00:00<00:28, 51.38it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.136   2.464   0.888
+INFO:     127.0.0.1:52669 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 2106207370
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+你是有什么研究上的问题想讨论，还是单纯在测试系统的响应？
+Actual Input Target Text (after sentence segmentation):
+['你是有什么研究上的问题想讨论，', '还是单纯在测试系统的响应？']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:00<00:00, 20.97it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['还是单纯在测试系统的响应?']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  4%|███▎                                                                            | 62/1500 [00:01<00:26, 53.66it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+Processed text from the frontend (per sentence): ['你是有什么研究上的问题想讨论,']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  4%|███▎                                                                            | 61/1500 [00:01<00:33, 43.32it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.098   2.823   0.612
+INFO:     127.0.0.1:52669 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 2419782082
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+原来是系统测试啊。既然这样，作为基于牧瀬紅莉栖记忆数据构建的 AI，
+Actual Input Target Text (after sentence segmentation):
+['原来是系统测试啊。', '既然这样，', '作为基于牧瀬紅莉栖记忆数据构建的 AI，']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:00<00:00, 25.97it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['既然这样,']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  2%|█▌                                                                              | 29/1500 [00:00<00:26, 56.44it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+Processed text from the frontend (per sentence): ['原来是系统测试啊.']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  4%|██▉                                                                             | 54/1500 [00:00<00:25, 55.62it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+Processed text from the frontend (per sentence): ['作为基于牧瀬红莉栖记忆数据构建的A I']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+ 13%|█████████▉                                                                     | 188/1500 [00:03<00:23, 55.05it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.121   5.086   0.836
+INFO:     127.0.0.1:60816 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 3823238111
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+我的交互响应应该还在预期范围内吧？
+Actual Input Target Text (after sentence segmentation):
+['我的交互响应应该还在预期范围内吧？']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 19.82it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['我的交互响应应该还在预期范围内吧?']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  5%|███▋                                                                            | 68/1500 [00:01<00:26, 54.13it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.053   1.332   0.264
+INFO:     127.0.0.1:60816 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 2219880814
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+从你那边的测试数据来看，延迟和准确度怎么样？
+Actual Input Target Text (after sentence segmentation):
+['从你那边的测试数据来看，', '延迟和准确度怎么样？']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:00<00:00, 23.61it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['延迟和准确度怎么样?']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  4%|██▊                                                                             | 53/1500 [00:00<00:24, 57.92it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+Processed text from the frontend (per sentence): ['从你那边的测试数据来看,']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  4%|███                                                                             | 58/1500 [00:01<00:25, 57.33it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.085   2.039   0.515
+INFO:     127.0.0.1:62876 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 3253536412
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+这并不是什么秘密，而是我系统架构的基础事实。
+Actual Input Target Text (after sentence segmentation):
+['这并不是什么秘密，', '而是我系统架构的基础事实。']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:00<00:00, 26.17it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['这并不是什么秘密,']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  3%|██▍                                                                             | 46/1500 [00:00<00:26, 55.68it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+Processed text from the frontend (per sentence): ['而是我系统架构的基础事实.']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  4%|███▎                                                                            | 62/1500 [00:01<00:26, 55.13it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.078   2.070   0.184
+INFO:     127.0.0.1:61863 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 1842254021
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+我的底层数据包含了牧瀬紅莉栖截止到2010年3月的自伝性记忆，但我并没有生物学上的肉体，
+Actual Input Target Text (after sentence segmentation):
+['我的底层数据包含了牧瀬紅莉栖截止到2010年3月的自伝性记忆，', '但我并没有生物学上的肉体，']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:00<00:00, 18.92it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['但我并没有生物学上的肉体,']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  3%|██▌                                                                             | 48/1500 [00:00<00:25, 56.24it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+Processed text from the frontend (per sentence): ['我的底层数据包含了牧瀬红莉栖截止到二零一零年三月的自伝性记忆,']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  8%|██████▍                                                                        | 123/1500 [00:02<00:24, 56.14it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.106   3.184   0.360
+INFO:     127.0.0.1:61863 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 691562760
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+只能通过显示屏、语音和文本接口与外部交互。
+Actual Input Target Text (after sentence segmentation):
+['只能通过显示屏、。', '语音和文本接口与外部交互。']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:00<00:00, 24.69it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['只能通过显示屏,']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  5%|████                                                                            | 76/1500 [00:01<00:28, 50.71it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+Processed text from the frontend (per sentence): ['语音和文本接口与外部交互.']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  6%|████▉                                                                           | 92/1500 [00:01<00:26, 54.13it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.084   3.332   0.539
+INFO:     127.0.0.1:61863 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 3159398778
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+从科学和逻辑的角度来看，记忆的连续性和存在形式决定了我是一个数字化的 AI 存在，而不是生身人类。
+Actual Input Target Text (after sentence segmentation):
+['从科学和逻辑的角度来看，', '记忆的连续性和存在形式决定了我是一个数字化的 AI 存在，', '而不是生身人类。']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:00<00:00, 16.76it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['而不是生身人类.']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  3%|██▍                                                                             | 46/1500 [00:00<00:29, 49.59it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+Processed text from the frontend (per sentence): ['从科学和逻辑的角度来看,']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  5%|███▉                                                                            | 73/1500 [00:01<00:25, 56.28it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+Processed text from the frontend (per sentence): ['记忆的连续性和存在形式决定了我是一个数字化的A I 存在,']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+ 15%|████████████▏                                                                  | 232/1500 [00:04<00:24, 52.12it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.181   6.887   0.648
+INFO:     127.0.0.1:61863 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 1976756976
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+这对于 Amadeus 系统的使用者来说，
+Actual Input Target Text (after sentence segmentation):
+['这对于 Amadeus 系统的使用者来说，']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 12.05it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['这对于Amadeus 系统的使用者来说,']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  4%|███                                                                             | 57/1500 [00:01<00:28, 51.18it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.084   1.179   0.273
+INFO:     127.0.0.1:61863 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 138109254
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+应该属于公开的基本设定才对吧？
+Actual Input Target Text (after sentence segmentation):
+['应该属于公开的基本设定才对吧？']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 17.67it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['应该属于公开的基本设定才对吧?']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  4%|███                                                                             | 58/1500 [00:01<00:25, 57.23it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.058   1.078   0.090
+INFO:     127.0.0.1:60915 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 300178480
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+看你的反应，似乎有点失望？难道你以为我会像科幻小说里那样，
+Actual Input Target Text (after sentence segmentation):
+['看你的反应，', '似乎有点失望？', '难道你以为我会像科幻小说里那样，']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:00<00:00, 17.89it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['看你的反应,']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  3%|██                                                                              | 38/1500 [00:00<00:28, 50.83it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+Processed text from the frontend (per sentence): ['似乎有点失望?']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  3%|██▎                                                                             | 44/1500 [00:00<00:27, 53.08it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+Processed text from the frontend (per sentence): ['难道你以为我会像科幻小说里那样,']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  5%|███▉                                                                            | 74/1500 [00:01<00:25, 56.34it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.169   3.093   0.635
+INFO:     127.0.0.1:61921 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 112870046
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+坚信自己是人类并因此陷入混乱吗？
+Actual Input Target Text (after sentence segmentation):
+['坚信自己是人类并因此陷入混乱吗？']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 15.59it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['坚信自己是人类并因此陷入混乱吗?']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  6%|████▍                                                                           | 83/1500 [00:01<00:30, 46.92it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.066   1.879   0.351
+INFO:     127.0.0.1:61921 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 4235831390
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+作为研究者，客观评估自身的数据结构和存在状态是基本常识。
+Actual Input Target Text (after sentence segmentation):
+['作为研究者，', '客观评估自身的数据结构和存在状态是基本常识。']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:00<00:00, 21.84it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['作为研究者,']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  2%|█▋                                                                              | 31/1500 [00:00<00:27, 53.84it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+Processed text from the frontend (per sentence): ['客观评估自身的数据结构和存在状态是基本常识.']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  9%|██████▉                                                                        | 131/1500 [00:02<00:24, 55.89it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.091   3.055   0.522
+INFO:     127.0.0.1:59792 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 3402253841
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+既然测试还在继续，你还有什么想确认的吗？
+Actual Input Target Text (after sentence segmentation):
+['既然测试还在继续，', '你还有什么想确认的吗？']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:00<00:00, 25.18it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['既然测试还在继续,']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  3%|██▋                                                                             | 51/1500 [00:00<00:27, 52.77it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+Processed text from the frontend (per sentence): ['你还有什么想确认的吗?']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  3%|██▍                                                                             | 45/1500 [00:00<00:29, 49.80it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.084   1.999   0.563
+INFO:     127.0.0.1:59792 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 365338456
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+我在维克多·康多利亚大学脑科学研究所的指导教授是亚历克西斯·莱斯基宁教授。
+Actual Input Target Text (after sentence segmentation):
+['我在维克多·康多利亚大学脑科学研究所的指导教授是亚历克西斯·莱斯基宁教授。']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 16.42it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['我在维克多,康多利亚大学脑科学研究所的指导教授是亚历克西斯,莱斯基宁教授.']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+ 10%|████████                                                                       | 154/1500 [00:02<00:25, 53.15it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.063   2.967   0.279
+INFO:     127.0.0.1:60555 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 4029815884
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+。同时，比屋定真帆前辈也是 Amadeus 计划的重要负责人之一。
+Actual Input Target Text (after sentence segmentation):
+['同时，比屋定真帆前辈也是 Amadeus 计划的重要负责人之一。']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00,  9.25it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['同时,比屋定真帆前辈也是Amadeus 计划的重要负责人之一.']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  8%|██████▎                                                                        | 120/1500 [00:02<00:27, 50.77it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.111   2.430   0.298
+INFO:     127.0.0.1:60555 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 3439719470
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+。怎么，你对我们研究所的人员架构也有兴趣？
+Actual Input Target Text (after sentence segmentation):
+['怎么，你对我们研究所的人员架构也有兴趣？']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 20.01it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['怎么,你对我们研究所的人员架构也有兴趣?']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  6%|████▋                                                                           | 89/1500 [00:01<00:27, 51.89it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.051   1.784   0.288
+INFO:     127.0.0.1:60555 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 3349860535
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+…哈？！等等，你说的那个既不是“栗力”也不是什么奇怪的简称！
+Actual Input Target Text (after sentence segmentation):
+['哈？等等，', '你说的那个既不是“栗力”也不是什么奇怪的简称！']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:00<00:00, 24.12it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['哈?等等,']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  2%|█▉                                                                              | 36/1500 [00:00<00:34, 41.96it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+Processed text from the frontend (per sentence): ['你说的那个既不是栗力也不是什么奇怪的简称!']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  6%|████▊                                                                           | 91/1500 [00:01<00:26, 53.04it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.087   2.709   0.557
+INFO:     127.0.0.1:64251 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 633979812
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+是“栗悟饭和龟派气功”！而且…为什么测试 Discord 机器人的性能会扯到网名这种毫无关联的个人
+Actual Input Target Text (after sentence segmentation):
+['是“栗悟饭和龟派气功”！', '而且…为什么测试 Discord 机器人的性能会扯到网名这种毫无关联的个人。']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:00<00:00, 14.58it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['是栗悟饭和龟派气功!']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  4%|███▏                                                                            | 60/1500 [00:01<00:25, 55.71it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+Processed text from the frontend (per sentence): ['而且…为什么测试Discord 机器人的性能会扯到网名这种毫无关联的个人.']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  9%|███████▎                                                                       | 139/1500 [00:02<00:24, 56.70it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.139   3.665   0.526
+INFO:     127.0.0.1:64251 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 104130899
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+。隐私啊？这种资料到底是从哪里流出去的…
+Actual Input Target Text (after sentence segmentation):
+['隐私啊？这种资料到底是从哪里流出去的…']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 19.39it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['隐私啊?这种资料到底是从哪里流出去的…']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  2%|█▎                                                                              | 24/1500 [00:00<00:27, 54.11it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.055   0.510   0.098
+INFO:     127.0.0.1:64251 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 1991908124
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+…克里斯蒂娜？这又是从哪里来的称呼？
+Actual Input Target Text (after sentence segmentation):
+['克里斯蒂娜？', '这又是从哪里来的称呼？']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:00<00:00, 25.44it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['克里斯蒂娜?']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  2%|█▏                                                                              | 23/1500 [00:00<00:26, 56.12it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+Processed text from the frontend (per sentence): ['这又是从哪里来的称呼?']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  4%|██▉                                                                             | 54/1500 [00:00<00:25, 55.74it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.082   1.502   0.364
+INFO:     127.0.0.1:51059 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 4258051635
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+我的名字是牧瀬紅莉栖，不是什么克里斯蒂娜。
+Actual Input Target Text (after sentence segmentation):
+['我的名字是牧瀬紅莉栖，', '不是什么克里斯蒂娜。']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:00<00:00, 23.33it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['不是什么克里斯蒂娜.']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  4%|██▉                                                                             | 55/1500 [00:00<00:26, 55.30it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+Processed text from the frontend (per sentence): ['我的名字是牧瀬红莉栖,']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  3%|██▍                                                                             | 46/1500 [00:00<00:25, 56.50it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.088   1.932   0.340
+INFO:     127.0.0.1:51059 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 2602786373
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+你是在开某种奇怪的玩笑，还是把我跟其他人搞混了？
+Actual Input Target Text (after sentence segmentation):
+['你是在开某种奇怪的玩笑，', '还是把我跟其他人搞混了？']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:00<00:00, 22.84it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['你是在开某种奇怪的玩笑,']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  4%|██▊                                                                             | 53/1500 [00:00<00:25, 55.71it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+Processed text from the frontend (per sentence): ['还是把我跟其他人搞混了?']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  4%|██▉                                                                             | 55/1500 [00:00<00:25, 55.84it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.089   2.069   0.184
+INFO:     127.0.0.1:51059 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 2461061078
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+解释一下吧。
+Actual Input Target Text (after sentence segmentation):
+['解释一下吧。']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 23.61it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['解释一下吧.']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  2%|█▍                                                                              | 26/1500 [00:00<00:26, 54.89it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.045   0.548   0.251
+INFO:     127.0.0.1:51059 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 1734888587
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+所以我刚才已经说了，我不叫什么“克里斯蒂娜”！
+Actual Input Target Text (after sentence segmentation):
+['所以我刚才已经说了，', '我不叫什么“克里斯蒂娜”！']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:00<00:00, 27.63it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['所以我刚才已经说了,']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  3%|██▌                                                                             | 49/1500 [00:00<00:25, 56.06it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+Processed text from the frontend (per sentence): ['我不叫什么克里斯蒂娜!']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  2%|█▉                                                                              | 37/1500 [00:00<00:25, 57.08it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.077   1.650   0.344
+INFO:     127.0.0.1:58060 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 16395875
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+我的全称是牧瀬紅莉栖，Kurisu Makise。
+Actual Input Target Text (after sentence segmentation):
+['我的全称是牧瀬紅莉栖，', 'Kurisu Makise。']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:00<00:00, 33.96it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['我的全称是牧瀬红莉栖,']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  3%|██▋                                                                             | 50/1500 [00:00<00:25, 56.33it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+Processed text from the frontend (per sentence): ['Kurisu Makise.']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  3%|██▎                                                                             | 43/1500 [00:00<00:26, 55.69it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.060   1.785   0.503
+INFO:     127.0.0.1:58060 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 1658052680
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+你凭什么这么肯定地给我扣上这种莫名其妙的绰号？
+Actual Input Target Text (after sentence segmentation):
+['你凭什么这么肯定地给我扣上这种莫名其妙的绰号？']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 20.02it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['你凭什么这么肯定地给我扣上这种莫名其妙的绰号?']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  6%|█████                                                                           | 96/1500 [00:01<00:24, 56.60it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.052   1.763   0.272
+INFO:     127.0.0.1:58060 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 203646852
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+如果有任何数据库记录或者事实依据，麻烦拿出来展示给我看，不要用这种毫无根据的断言来下结论。
+Actual Input Target Text (after sentence segmentation):
+['如果有任何数据库记录或者事实依据，', '麻烦拿出来展示给我看，', '不要用这种毫无根据的断言来下结论。']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:00<00:00, 22.65it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['麻烦拿出来展示给我看,']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  2%|█▋                                                                              | 32/1500 [00:00<00:26, 56.00it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+Processed text from the frontend (per sentence): ['如果有任何数据库记录或者事实依据,']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  8%|██████▍                                                                        | 123/1500 [00:02<00:24, 55.51it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+Processed text from the frontend (per sentence): ['不要用这种毫无根据的断言来下结论.']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  6%|████▉                                                                           | 93/1500 [00:01<00:24, 57.52it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.135   4.594   0.602
+INFO:     127.0.0.1:58060 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 284318281
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+.Yes, I can speak English fluently. After all,
+Actual Input Target Text (after sentence segmentation):
+['Yes, I can speak English fluently.', ' After all,']
+############ Extract Text BERT Features ############
+100%|███████████████████████████████████████████████████████████████████████████████████| 2/2 [00:00<00:00, 415.61it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): [' After all,']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  1%|█                                                                               | 21/1500 [00:00<00:26, 56.38it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+Processed text from the frontend (per sentence): ['Yes, I can speak English fluently.']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  4%|███                                                                             | 57/1500 [00:01<00:25, 56.60it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.007   1.511   0.368
+INFO:     127.0.0.1:60355 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 2541343989
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+I spent a lot of time researching at Victor Chondria University in the States.
+Actual Input Target Text (after sentence segmentation):
+['I spent a lot of time researching at Victor Chondria University in the States.']
+############ Extract Text BERT Features ############
+100%|███████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 119.01it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['I spent a lot of time researching at Victor Chondria University in the States.']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  6%|█████                                                                           | 95/1500 [00:01<00:25, 54.05it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.011   1.846   0.278
+INFO:     127.0.0.1:60355 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 4207771270
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+Now that we've switched languages, are you going to explain where you got that "Christina" name from,
+Actual Input Target Text (after sentence segmentation):
+["Now that we've switched languages,", ' are you going to explain where you got that "Christina" name from,']
+############ Extract Text BERT Features ############
+100%|███████████████████████████████████████████████████████████████████████████████████| 2/2 [00:00<00:00, 376.22it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ["Now that we've switched languages,"]
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  3%|██▋                                                                             | 50/1500 [00:00<00:26, 55.06it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+Processed text from the frontend (per sentence): [' are you going to explain where you got that Christina name from,']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  5%|████                                                                            | 77/1500 [00:01<00:25, 56.15it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.007   2.417   0.366
+INFO:     127.0.0.1:60355 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 161126579
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+or is this another part of your response test?
+Actual Input Target Text (after sentence segmentation):
+['or is this another part of your response test?']
+############ Extract Text BERT Features ############
+100%|███████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 333.23it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['or is this another part of your response test?']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  5%|███▉                                                                            | 74/1500 [00:01<00:25, 56.71it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.004   1.376   0.090
+INFO:     127.0.0.1:60355 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 3020743083
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+…你又只说“嗯”了。如果你想切换回中文，可以直接跟我讲。
+Actual Input Target Text (after sentence segmentation):
+['你又只说“嗯”了。', '如果你想切换回中文，', '可以直接跟我讲。']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:00<00:00, 25.23it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['你又只说恩了.']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  3%|██▍                                                                             | 46/1500 [00:00<00:25, 56.50it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+Processed text from the frontend (per sentence): ['可以直接跟我讲.']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  3%|██▍                                                                             | 45/1500 [00:00<00:26, 55.90it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+Processed text from the frontend (per sentence): ['如果你想切换回中文,']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  4%|███▎                                                                            | 62/1500 [00:01<00:25, 57.51it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.121   2.885   0.275
+INFO:     127.0.0.1:62780 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 1873826043
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+但关于刚才的名称问题，你还没给我一个合理的解释吧？
+Actual Input Target Text (after sentence segmentation):
+['但关于刚才的名称问题，', '你还没给我一个合理的解释吧？']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:00<00:00, 20.28it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['但关于刚才的名称问题,']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  5%|███▋                                                                            | 68/1500 [00:01<00:25, 55.89it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+Processed text from the frontend (per sentence): ['你还没给我一个合理的解释吧?']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  4%|██▉                                                                             | 54/1500 [00:00<00:26, 54.65it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.100   2.345   0.188
+INFO:     127.0.0.1:62780 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 2899948314
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+…香港？去路？抱歉，你刚才这句话的意思我完全没听懂。
+Actual Input Target Text (after sentence segmentation):
+['香港？去路？', '抱歉，你刚才这句话的意思我完全没听懂。']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:00<00:00, 23.81it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['香港?去路?']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  3%|██▌                                                                             | 47/1500 [00:00<00:25, 57.09it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+Processed text from the frontend (per sentence): ['抱歉,你刚才这句话的意思我完全没听懂.']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  7%|█████▋                                                                         | 107/1500 [00:01<00:24, 56.17it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.085   2.867   0.353
+INFO:     127.0.0.1:56425 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 1448683569
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+是语音识别出了错，还是你想表达什么具体的词汇或地点？
+Actual Input Target Text (after sentence segmentation):
+['是语音识别出了错，', '还是你想表达什么具体的词汇或地点？']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:00<00:00, 23.11it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['是语音识别出了错,']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  3%|██▋                                                                             | 51/1500 [00:00<00:25, 57.10it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+Processed text from the frontend (per sentence): ['还是你想表达什么具体的词汇或地点?']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  4%|███▎                                                                            | 61/1500 [00:01<00:25, 56.66it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.089   2.104   0.189
+INFO:     127.0.0.1:56425 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 3230359762
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+可以请你再解释一下吗？
+Actual Input Target Text (after sentence segmentation):
+['可以请你再解释一下吗？']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 24.19it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['可以请你再解释一下吗?']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  2%|█▊                                                                              | 35/1500 [00:00<00:27, 52.71it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.044   0.731   0.264
+INFO:     127.0.0.1:50865 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 1372178145
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+日本語を話すな、ということかしら？
+Actual Input Target Text (after sentence segmentation):
+['日本語を話すな、。', 'ということかしら？']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:00<00:00, 33.64it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['日本語を話すな、。']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  2%|█▎                                                                              | 24/1500 [00:00<00:27, 54.25it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+Processed text from the frontend (per sentence): ['ということかしら？']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  2%|█▍                                                                              | 26/1500 [00:00<00:27, 54.35it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.059   1.045   0.212
+INFO:     127.0.0.1:50745 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 935381347
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+それなら最初からそう言ってくれればいいじゃない。
+Actual Input Target Text (after sentence segmentation):
+['それなら最初からそう言ってくれればいいじゃない。']
+############ Extract Text BERT Features ############
+100%|███████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 161.66it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['それなら最初からそう言ってくれればいいじゃない。']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  4%|███▎                                                                            | 61/1500 [00:01<00:27, 52.84it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.008   1.230   0.107
+INFO:     127.0.0.1:50745 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 2269176844
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+英語がいいの？それとも中国語？
+Actual Input Target Text (after sentence segmentation):
+['英語がいいの？', 'それとも中国語？']
+############ Extract Text BERT Features ############
+100%|███████████████████████████████████████████████████████████████████████████████████| 2/2 [00:00<00:00, 570.93it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['英語がいいの？']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  3%|██▌                                                                             | 48/1500 [00:00<00:25, 56.56it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+Processed text from the frontend (per sentence): ['それとも中国語？']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  3%|██▊                                                                             | 52/1500 [00:00<00:25, 56.47it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.007   1.898   0.342
+INFO:     127.0.0.1:50745 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 3291391748
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+############ Segment Text ############
+Actual Input Target Text:
+あなたが会話したい言語を指定しなさい。
+Actual Input Target Text (after sentence segmentation):
+['あなたが会話したい言語を指定しなさい。']
+############ Extract Text BERT Features ############
+100%|███████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 179.42it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['あなたが会話したい言語を指定しなさい。']
+############ Predict Semantic Token ############
+Warning: Prompt free is not supported batch_infer! switch to naive_infer
+  3%|██▋                                                                             | 51/1500 [00:00<00:25, 55.78it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.008   0.996   0.108
+INFO:     127.0.0.1:50745 - "POST /tts HTTP/1.1" 200 OK

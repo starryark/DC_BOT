@@ -1,0 +1,684 @@
+
+> @proj-airi/discord-bot@ start C:\Users\lyang\Code\DC_BOT\airi\services\discord-bot
+> tsx --env-file=.env --env-file-if-exists=.config --env-file-if-exists=.env.local src/index.ts
+
+.env.local not found. Continuing without it.
+.env.local not found. Continuing without it.
+2026-08-01T12:15:53.830Z [log] [Bot] Character loaded  { characterId=Makise Kurisu name=Makise Kurisu }
+2026-08-01T12:15:53.833Z [log] [Bot] Direct backend active: Qwen ASR → Gemini → GPT-SoVITS, with Discord text replies.
+2026-08-01T12:15:53.833Z [log] [DiscordAdapter] Starting Discord adapter...
+2026-08-01T12:15:54.841Z [log] [DiscordAdapter] Discord adapter started successfully
+2026-08-01T12:15:54.851Z [log] [DiscordAdapter] Discord bot ready! User: Makise Kurisu#9909
+2026-08-01T12:16:17.695Z [log] [DiscordAdapter] Interaction received: /summon from starrydark
+2026-08-01T12:16:18.307Z [log] [VoiceManager] Voice connection established in state  { state=ready }
+2026-08-01T12:16:18.357Z [log] [VoiceManager] User speaking: subscribing  { displayName=ратгіск тне соммцлізт звезда userId=502659444493123596 }
+2026-08-01T12:16:18.376Z [log] [VoiceManager] Monitoring user: ратгіск тне соммцлізт звезда
+2026-08-01T12:16:23.819Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=4558 bytes=126080 }
+2026-08-01T12:16:23.820Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T12:16:25.737Z [log] [ConversationController] input_understanding_resolved  { guildId=616847428351688705 userId=502659444493123596 turnId=5c6d10ab-4d76-4d31-9bba-cc024759fb23 asrLanguageRaw=zh asrLanguageNormalized=zh responseLanguage=zh resolutionReason=chinese-frame confidence=0.94 isAmbiguous=false entityIds=[] entityCount=0 previousStableLanguage=undefined stableLanguageUpdated=true }
+2026-08-01T12:16:25.737Z [log] [ConversationController] utterance_received  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда language=zh turnId=5c6d10ab-4d76-4d31-9bba-cc024759fb23 chars=11 asrLatencyMs=2822 }
+2026-08-01T12:16:25.738Z [log] [ConversationController] conversation_group_opened  { guildId=616847428351688705 responseEpoch=0 userId=502659444493123596 durationMs=800 }
+2026-08-01T12:16:25.739Z [log] [ConversationController] conversation_group_flushed  { guildId=616847428351688705 responseEpoch=0 speakers=1 utterances=1 durationMs=2824 }
+2026-08-01T12:16:25.740Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=thinking reason=generation_started }
+2026-08-01T12:16:25.743Z [log] [ConversationController] response_epoch_started  { guildId=616847428351688705 turnId=5c6d10ab-4d76-4d31-9bba-cc024759fb23 responseEpoch=1 }
+2026-08-01T12:16:25.744Z [log] [GeminiBrain] gemini_request_started  { guildId=616847428351688705 userId=502659444493123596 turnId=5c6d10ab-4d76-4d31-9bba-cc024759fb23 responseEpoch=1 model=gemini-3.6-flash turns=1 systemInstructionChars=5453 thinkingLevel=low maxOutputTokens=384 responseLengthClass=standard }
+2026-08-01T12:16:26.663Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=540 bytes=17920 }
+2026-08-01T12:16:26.664Z [log] [ConversationController] utterance_discarded  { guildId=616847428351688705 userId=502659444493123596 phase=thinking reason=bot_thinking durationMs=540 }
+2026-08-01T12:16:26.737Z [log] [GeminiBrain] gemini_first_token  { guildId=616847428351688705 userId=502659444493123596turnId=5c6d10ab-4d76-4d31-9bba-cc024759fb23 responseEpoch=1 durationMs=993 geminiFirstTokenMs=993 }
+2026-08-01T12:16:27.085Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=5c6d10ab-4d76-4d31-9bba-cc024759fb23 responseEpoch=1 chunkIndex=0 targetLanguage=zh resolution=text-detection responseLanguageHint=zh pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=30 }
+2026-08-01T12:16:27.103Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:16:27.106Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=30 }
+2026-08-01T12:16:41.967Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=5c6d10ab-4d76-4d31-9bba-cc024759fb23 responseEpoch=1 chunkIndex=0 chars=30 language=zh synthesisMs=14882 }
+2026-08-01T12:16:41.967Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=thinking to=speaking reason=first_audio_queued }
+2026-08-01T12:16:41.968Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=5c6d10ab-4d76-4d31-9bba-cc024759fb23 responseEpoch=1 chunkIndex=0 queueDepth=1 }
+2026-08-01T12:16:42.053Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=5c6d10ab-4d76-4d31-9bba-cc024759fb23 responseEpoch=1 chunkIndex=0 queueWaitMs=85 }
+2026-08-01T12:16:42.131Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=5c6d10ab-4d76-4d31-9bba-cc024759fb23 responseEpoch=1 chunkIndex=1 targetLanguage=zh resolution=text-detection responseLanguageHint=zh pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=10 }
+2026-08-01T12:16:42.141Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:16:42.142Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=10 }
+2026-08-01T12:16:44.105Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=5c6d10ab-4d76-4d31-9bba-cc024759fb23 responseEpoch=1 chunkIndex=1 chars=10 language=zh synthesisMs=1974 }
+2026-08-01T12:16:47.466Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=5c6d10ab-4d76-4d31-9bba-cc024759fb23 responseEpoch=1 chunkIndex=0 durationMs=5413 status=played }
+2026-08-01T12:16:47.466Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=5c6d10ab-4d76-4d31-9bba-cc024759fb23 responseEpoch=1 chunkIndex=1 queueDepth=1 }
+2026-08-01T12:16:47.476Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=5c6d10ab-4d76-4d31-9bba-cc024759fb23 responseEpoch=1 chunkIndex=1 queueWaitMs=10 }
+2026-08-01T12:16:49.837Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=716 bytes=23680 }
+2026-08-01T12:16:49.837Z [log] [ConversationController] utterance_discarded  { guildId=616847428351688705 userId=502659444493123596 phase=speaking reason=bot_speaking durationMs=716 }
+2026-08-01T12:16:49.905Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=5c6d10ab-4d76-4d31-9bba-cc024759fb23 responseEpoch=1 chunkIndex=1 durationMs=2429 status=played }
+2026-08-01T12:16:49.906Z [log] [ConversationController] response_completed  { guildId=616847428351688705 turnId=5c6d10ab-4d76-4d31-9bba-cc024759fb23 responseEpoch=1 chars=40 chunks=2 }
+2026-08-01T12:16:49.907Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=speaking to=idle reason=turn_finished }
+2026-08-01T12:16:52.284Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=517 bytes=17280 }
+2026-08-01T12:16:52.284Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T12:16:52.659Z [log] [ConversationController] transcript_filtered  { guildId=616847428351688705 userId=502659444493123596 reason=empty chars=0 language=und }
+2026-08-01T12:16:52.659Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=idle reason=transcript_empty }
+2026-08-01T12:16:56.023Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=498 bytes=16640 }
+2026-08-01T12:16:56.024Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T12:16:56.563Z [log] [ConversationController] input_understanding_resolved  { guildId=616847428351688705 userId=502659444493123596 turnId=2e0cac5a-2cfc-4d35-b4fc-0370aaae9e11 asrLanguageRaw=zh asrLanguageNormalized=zh responseLanguage=zh resolutionReason=asr-language confidence=0.7 isAmbiguous=true entityIds=[] entityCount=0 previousStableLanguage=zh stableLanguageUpdated=false }
+2026-08-01T12:16:56.564Z [log] [ConversationController] utterance_received  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда language=zh turnId=2e0cac5a-2cfc-4d35-b4fc-0370aaae9e11 chars=2 asrLatencyMs=1453 }
+2026-08-01T12:16:56.564Z [log] [ConversationController] conversation_group_opened  { guildId=616847428351688705 responseEpoch=1 userId=502659444493123596 durationMs=800 }
+2026-08-01T12:16:56.565Z [log] [ConversationController] conversation_group_flushed  { guildId=616847428351688705 responseEpoch=1 speakers=1 utterances=1 durationMs=1454 }
+2026-08-01T12:16:56.565Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=thinking reason=generation_started }
+2026-08-01T12:16:56.566Z [log] [ConversationController] response_epoch_started  { guildId=616847428351688705 turnId=2e0cac5a-2cfc-4d35-b4fc-0370aaae9e11 responseEpoch=2 }
+2026-08-01T12:16:56.567Z [log] [GeminiBrain] gemini_request_started  { guildId=616847428351688705 userId=502659444493123596 turnId=2e0cac5a-2cfc-4d35-b4fc-0370aaae9e11 responseEpoch=2 model=gemini-3.6-flash turns=3 systemInstructionChars=5552 thinkingLevel=low maxOutputTokens=384 responseLengthClass=standard }
+2026-08-01T12:16:57.433Z [log] [GeminiBrain] gemini_first_token  { guildId=616847428351688705 userId=502659444493123596turnId=2e0cac5a-2cfc-4d35-b4fc-0370aaae9e11 responseEpoch=2 durationMs=866 geminiFirstTokenMs=866 }
+2026-08-01T12:16:57.652Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=2e0cac5a-2cfc-4d35-b4fc-0370aaae9e11 responseEpoch=2 chunkIndex=0 targetLanguage=zh resolution=text-detection responseLanguageHint=zh pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=29 }
+2026-08-01T12:16:57.653Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:16:57.653Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=29 }
+2026-08-01T12:17:00.922Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=3585 bytes=115200 }
+2026-08-01T12:17:00.922Z [log] [ConversationController] utterance_discarded  { guildId=616847428351688705 userId=502659444493123596 phase=thinking reason=bot_thinking durationMs=3585 }
+2026-08-01T12:17:01.585Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=2e0cac5a-2cfc-4d35-b4fc-0370aaae9e11 responseEpoch=2 chunkIndex=0 chars=29 language=zh synthesisMs=3933 }
+2026-08-01T12:17:01.585Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=thinking to=speaking reason=first_audio_queued }
+2026-08-01T12:17:01.585Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=2e0cac5a-2cfc-4d35-b4fc-0370aaae9e11 responseEpoch=2 chunkIndex=0 queueDepth=1 }
+2026-08-01T12:17:01.593Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=2e0cac5a-2cfc-4d35-b4fc-0370aaae9e11 responseEpoch=2 chunkIndex=0 queueWaitMs=8 }
+2026-08-01T12:17:01.594Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=2e0cac5a-2cfc-4d35-b4fc-0370aaae9e11 responseEpoch=2 chunkIndex=1 targetLanguage=zh resolution=text-detection responseLanguageHint=zh pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=28 }
+2026-08-01T12:17:01.595Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:17:01.595Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=28 }
+2026-08-01T12:17:04.302Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=559 bytes=18560 }
+2026-08-01T12:17:04.303Z [log] [ConversationController] utterance_discarded  { guildId=616847428351688705 userId=502659444493123596 phase=speaking reason=bot_speaking durationMs=559 }
+2026-08-01T12:17:05.591Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=2e0cac5a-2cfc-4d35-b4fc-0370aaae9e11 responseEpoch=2 chunkIndex=1 chars=28 language=zh synthesisMs=3997 }
+2026-08-01T12:17:07.222Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=2e0cac5a-2cfc-4d35-b4fc-0370aaae9e11 responseEpoch=2 chunkIndex=0 durationMs=5630 status=played }
+2026-08-01T12:17:07.222Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=2e0cac5a-2cfc-4d35-b4fc-0370aaae9e11 responseEpoch=2 chunkIndex=1 queueDepth=1 }
+2026-08-01T12:17:07.237Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=2e0cac5a-2cfc-4d35-b4fc-0370aaae9e11 responseEpoch=2 chunkIndex=1 queueWaitMs=15 }
+2026-08-01T12:17:07.457Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=395 bytes=14080 }
+2026-08-01T12:17:07.457Z [log] [ConversationController] utterance_discarded  { guildId=616847428351688705 userId=502659444493123596 phase=speaking reason=bot_speaking durationMs=395 }
+2026-08-01T12:17:12.971Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=2e0cac5a-2cfc-4d35-b4fc-0370aaae9e11 responseEpoch=2 chunkIndex=1 durationMs=5734 status=played }
+2026-08-01T12:17:12.986Z [log] [ConversationController] response_completed  { guildId=616847428351688705 turnId=2e0cac5a-2cfc-4d35-b4fc-0370aaae9e11 responseEpoch=2 chars=57 chunks=2 }
+2026-08-01T12:17:12.989Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=speaking to=idle reason=turn_finished }
+2026-08-01T12:17:25.540Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=9478 bytes=264320 }
+2026-08-01T12:17:25.540Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T12:17:27.451Z [log] [ConversationController] input_understanding_resolved  { guildId=616847428351688705 userId=502659444493123596 turnId=ea06b6e6-a2fb-448c-a519-2a8e7135e26e asrLanguageRaw=zh asrLanguageNormalized=zh responseLanguage=zh resolutionReason=chinese-frame confidence=0.94 isAmbiguous=false entityIds=[] entityCount=0 previousStableLanguage=zh stableLanguageUpdated=true }
+2026-08-01T12:17:27.452Z [log] [ConversationController] utterance_received  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда language=zh turnId=ea06b6e6-a2fb-448c-a519-2a8e7135e26e chars=30 asrLatencyMs=2821 }
+2026-08-01T12:17:27.452Z [log] [ConversationController] conversation_group_opened  { guildId=616847428351688705 responseEpoch=2 userId=502659444493123596 durationMs=800 }
+2026-08-01T12:17:27.457Z [log] [ConversationController] conversation_group_flushed  { guildId=616847428351688705 responseEpoch=2 speakers=1 utterances=1 durationMs=2826 }
+2026-08-01T12:17:27.457Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=thinking reason=generation_started }
+2026-08-01T12:17:27.458Z [log] [ConversationController] response_epoch_started  { guildId=616847428351688705 turnId=ea06b6e6-a2fb-448c-a519-2a8e7135e26e responseEpoch=3 }
+2026-08-01T12:17:27.458Z [log] [GeminiBrain] gemini_request_started  { guildId=616847428351688705 userId=502659444493123596 turnId=ea06b6e6-a2fb-448c-a519-2a8e7135e26e responseEpoch=3 model=gemini-3.6-flash turns=5 systemInstructionChars=5552 thinkingLevel=medium maxOutputTokens=768 responseLengthClass=detailed }
+2026-08-01T12:17:28.012Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=436 bytes=14720 }
+2026-08-01T12:17:28.012Z [log] [ConversationController] utterance_discarded  { guildId=616847428351688705 userId=502659444493123596 phase=thinking reason=bot_thinking durationMs=436 }
+2026-08-01T12:17:31.529Z [log] [GeminiBrain] gemini_first_token  { guildId=616847428351688705 userId=502659444493123596turnId=ea06b6e6-a2fb-448c-a519-2a8e7135e26e responseEpoch=3 durationMs=4071 geminiFirstTokenMs=4071 }
+2026-08-01T12:17:31.624Z [log] [ConversationController] avatar_action  { guildId=616847428351688705 turnId=ea06b6e6-a2fb-448c-a519-2a8e7135e26e responseEpoch=3 emotion=think intensity=0.5 motionHint=微微颔首，看向屏幕 }
+2026-08-01T12:17:31.703Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=ea06b6e6-a2fb-448c-a519-2a8e7135e26e responseEpoch=3 chunkIndex=0 targetLanguage=zh resolution=text-detection responseLanguageHint=zh pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=34 }
+2026-08-01T12:17:31.703Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:17:31.703Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=34 }
+2026-08-01T12:17:38.194Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=ea06b6e6-a2fb-448c-a519-2a8e7135e26e responseEpoch=3 chunkIndex=0 chars=34 language=zh synthesisMs=6492 }
+2026-08-01T12:17:38.194Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=thinking to=speaking reason=first_audio_queued }
+2026-08-01T12:17:38.195Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=ea06b6e6-a2fb-448c-a519-2a8e7135e26e responseEpoch=3 chunkIndex=0 queueDepth=1 }
+2026-08-01T12:17:38.203Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=ea06b6e6-a2fb-448c-a519-2a8e7135e26e responseEpoch=3 chunkIndex=0 queueWaitMs=8 }
+2026-08-01T12:17:38.203Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=ea06b6e6-a2fb-448c-a519-2a8e7135e26e responseEpoch=3 chunkIndex=1 targetLanguage=zh resolution=text-detection responseLanguageHint=zh pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=17 }
+2026-08-01T12:17:38.204Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:17:38.205Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=17 }
+2026-08-01T12:17:40.355Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=ea06b6e6-a2fb-448c-a519-2a8e7135e26e responseEpoch=3 chunkIndex=1 chars=17 language=zh synthesisMs=2152 }
+2026-08-01T12:17:50.153Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=ea06b6e6-a2fb-448c-a519-2a8e7135e26e responseEpoch=3 chunkIndex=0 durationMs=11950 status=played }
+2026-08-01T12:17:50.154Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=ea06b6e6-a2fb-448c-a519-2a8e7135e26e responseEpoch=3 chunkIndex=1 queueDepth=1 }
+2026-08-01T12:17:50.161Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=ea06b6e6-a2fb-448c-a519-2a8e7135e26e responseEpoch=3 chunkIndex=1 queueWaitMs=7 }
+2026-08-01T12:17:50.162Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=ea06b6e6-a2fb-448c-a519-2a8e7135e26e responseEpoch=3 chunkIndex=2 targetLanguage=zh resolution=text-detection responseLanguageHint=zh pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=22 }
+2026-08-01T12:17:50.163Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:17:50.164Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=22 }
+2026-08-01T12:17:53.246Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=ea06b6e6-a2fb-448c-a519-2a8e7135e26e responseEpoch=3 chunkIndex=2 chars=22 language=zh synthesisMs=3084 }
+2026-08-01T12:17:53.389Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=ea06b6e6-a2fb-448c-a519-2a8e7135e26e responseEpoch=3 chunkIndex=1 durationMs=3228 status=played }
+2026-08-01T12:17:53.389Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=ea06b6e6-a2fb-448c-a519-2a8e7135e26e responseEpoch=3 chunkIndex=2 queueDepth=1 }
+2026-08-01T12:17:53.396Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=ea06b6e6-a2fb-448c-a519-2a8e7135e26e responseEpoch=3 chunkIndex=2 queueWaitMs=7 }
+2026-08-01T12:17:58.642Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=ea06b6e6-a2fb-448c-a519-2a8e7135e26e responseEpoch=3 chunkIndex=2 durationMs=5246 status=played }
+2026-08-01T12:17:58.642Z [log] [ConversationController] response_completed  { guildId=616847428351688705 turnId=ea06b6e6-a2fb-448c-a519-2a8e7135e26e responseEpoch=3 chars=73 chunks=3 }
+2026-08-01T12:17:58.643Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=speaking to=idle reason=turn_finished }
+2026-08-01T12:18:04.245Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=2179 bytes=60160 }
+2026-08-01T12:18:04.245Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T12:18:04.650Z [log] [ConversationController] transcript_filtered  { guildId=616847428351688705 userId=502659444493123596 reason=empty chars=0 language=und }
+2026-08-01T12:18:04.650Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=idle reason=transcript_empty }
+2026-08-01T12:18:06.815Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=519 bytes=17280 }
+2026-08-01T12:18:06.815Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T12:18:07.198Z [log] [ConversationController] transcript_filtered  { guildId=616847428351688705 userId=502659444493123596 reason=empty chars=0 language=und }
+2026-08-01T12:18:07.198Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=idle reason=transcript_empty }
+2026-08-01T12:18:15.915Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=558 bytes=18560 }
+2026-08-01T12:18:15.915Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T12:18:16.343Z [log] [ConversationController] transcript_filtered  { guildId=616847428351688705 userId=502659444493123596 reason=empty chars=0 language=und }
+2026-08-01T12:18:16.343Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=idle reason=transcript_empty }
+2026-08-01T12:18:21.876Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=4325 bytes=128000 }
+2026-08-01T12:18:21.876Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T12:18:23.361Z [log] [ConversationController] input_understanding_resolved  { guildId=616847428351688705 userId=502659444493123596 turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 asrLanguageRaw=zh asrLanguageNormalized=zh responseLanguage=zh resolutionReason=chinese-frame confidence=0.94 isAmbiguous=false entityIds=[] entityCount=0 previousStableLanguage=zh stableLanguageUpdated=true }
+2026-08-01T12:18:23.361Z [log] [ConversationController] utterance_received  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда language=zh turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 chars=14 asrLatencyMs=2386 }
+2026-08-01T12:18:23.361Z [log] [ConversationController] conversation_group_opened  { guildId=616847428351688705 responseEpoch=3 userId=502659444493123596 durationMs=800 }
+2026-08-01T12:18:23.380Z [log] [ConversationController] conversation_group_flushed  { guildId=616847428351688705 responseEpoch=3 speakers=1 utterances=1 durationMs=2405 }
+2026-08-01T12:18:23.380Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=thinking reason=generation_started }
+2026-08-01T12:18:23.381Z [log] [ConversationController] response_epoch_started  { guildId=616847428351688705 turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 responseEpoch=4 }
+2026-08-01T12:18:23.381Z [log] [GeminiBrain] gemini_request_started  { guildId=616847428351688705 userId=502659444493123596 turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 responseEpoch=4 model=gemini-3.6-flash turns=7 systemInstructionChars=5552 thinkingLevel=low maxOutputTokens=384 responseLengthClass=standard }
+2026-08-01T12:18:23.396Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=503 bytes=16640 }
+2026-08-01T12:18:23.396Z [log] [ConversationController] utterance_discarded  { guildId=616847428351688705 userId=502659444493123596 phase=thinking reason=bot_thinking durationMs=503 }
+2026-08-01T12:18:24.284Z [log] [GeminiBrain] gemini_first_token  { guildId=616847428351688705 userId=502659444493123596turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 responseEpoch=4 durationMs=903 geminiFirstTokenMs=903 }
+2026-08-01T12:18:24.627Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 responseEpoch=4 chunkIndex=0 targetLanguage=zh resolution=text-detection responseLanguageHint=zh pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=22 }
+2026-08-01T12:18:24.627Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:18:24.628Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=22 }
+2026-08-01T12:18:27.411Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 responseEpoch=4 chunkIndex=0 chars=22 language=zh synthesisMs=2784 }
+2026-08-01T12:18:27.411Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=thinking to=speaking reason=first_audio_queued }
+2026-08-01T12:18:27.411Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 responseEpoch=4 chunkIndex=0 queueDepth=1 }
+2026-08-01T12:18:27.418Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 responseEpoch=4 chunkIndex=0 queueWaitMs=7 }
+2026-08-01T12:18:27.419Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 responseEpoch=4 chunkIndex=1 targetLanguage=zh resolution=text-detection responseLanguageHint=zh pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=44 }
+2026-08-01T12:18:27.420Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:18:27.420Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=44 }
+2026-08-01T12:18:27.623Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=484 bytes=16000 }
+2026-08-01T12:18:27.623Z [log] [ConversationController] utterance_discarded  { guildId=616847428351688705 userId=502659444493123596 phase=speaking reason=bot_speaking durationMs=484 }
+2026-08-01T12:18:31.519Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 responseEpoch=4 chunkIndex=1 chars=44 language=zh synthesisMs=4100 }
+2026-08-01T12:18:32.542Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 responseEpoch=4 chunkIndex=0 durationMs=5124 status=played }
+2026-08-01T12:18:32.543Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 responseEpoch=4 chunkIndex=1 queueDepth=1 }
+2026-08-01T12:18:32.551Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 responseEpoch=4 chunkIndex=1 queueWaitMs=8 }
+2026-08-01T12:18:32.553Z [log] [ConversationController] avatar_pause  { guildId=616847428351688705 turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 responseEpoch=4 durationMs=1000 }
+2026-08-01T12:18:33.435Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=435 bytes=14720 }
+2026-08-01T12:18:33.435Z [log] [ConversationController] utterance_discarded  { guildId=616847428351688705 userId=502659444493123596 phase=speaking reason=bot_speaking durationMs=435 }
+2026-08-01T12:18:33.561Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 responseEpoch=4 chunkIndex=2 targetLanguage=zh resolution=text-detection responseLanguageHint=zh pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=21 }
+2026-08-01T12:18:33.561Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:18:33.562Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=21 }
+2026-08-01T12:18:38.036Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 responseEpoch=4 chunkIndex=2 chars=21 language=zh synthesisMs=4475 }
+2026-08-01T12:18:40.174Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 responseEpoch=4 chunkIndex=1 durationMs=7623 status=played }
+2026-08-01T12:18:40.174Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 responseEpoch=4 chunkIndex=2 queueDepth=1 }
+2026-08-01T12:18:40.183Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 responseEpoch=4 chunkIndex=2 queueWaitMs=9 }
+2026-08-01T12:18:40.184Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 responseEpoch=4 chunkIndex=3 targetLanguage=zh resolution=text-detection responseLanguageHint=zh pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=49 }
+2026-08-01T12:18:40.184Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:18:40.185Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=49 }
+2026-08-01T12:18:42.296Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=600 bytes=19840 }
+2026-08-01T12:18:42.296Z [log] [ConversationController] utterance_discarded  { guildId=616847428351688705 userId=502659444493123596 phase=speaking reason=bot_speaking durationMs=600 }
+2026-08-01T12:18:47.714Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 responseEpoch=4 chunkIndex=2 durationMs=7531 status=played }
+2026-08-01T12:18:48.377Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 responseEpoch=4 chunkIndex=3 chars=49 language=zh synthesisMs=8193 }
+2026-08-01T12:18:48.377Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 responseEpoch=4 chunkIndex=3 queueDepth=1 }
+2026-08-01T12:18:48.384Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 responseEpoch=4 chunkIndex=3 queueWaitMs=7 }
+2026-08-01T12:18:48.385Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 responseEpoch=4 chunkIndex=4 targetLanguage=zh resolution=text-detection responseLanguageHint=zh pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=21 }
+2026-08-01T12:18:48.386Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:18:48.387Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=21 }
+2026-08-01T12:18:50.127Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=1280 bytes=41600 }
+2026-08-01T12:18:50.127Z [log] [ConversationController] utterance_discarded  { guildId=616847428351688705 userId=502659444493123596 phase=speaking reason=bot_speaking durationMs=1280 }
+2026-08-01T12:18:50.398Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 responseEpoch=4 chunkIndex=4 chars=21 language=zh synthesisMs=2013 }
+2026-08-01T12:18:54.975Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=619 bytes=20480 }
+2026-08-01T12:18:54.975Z [log] [ConversationController] utterance_discarded  { guildId=616847428351688705 userId=502659444493123596 phase=speaking reason=bot_speaking durationMs=619 }
+2026-08-01T12:19:03.536Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 responseEpoch=4 chunkIndex=3 durationMs=15152 status=played }
+2026-08-01T12:19:03.537Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 responseEpoch=4 chunkIndex=4 queueDepth=1 }
+2026-08-01T12:19:03.546Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 responseEpoch=4 chunkIndex=4 queueWaitMs=9 }
+2026-08-01T12:19:03.547Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 responseEpoch=4 chunkIndex=5 targetLanguage=zh resolution=text-detection responseLanguageHint=zh pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=15 }
+2026-08-01T12:19:03.548Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:19:03.548Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=15 }
+2026-08-01T12:19:05.226Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 responseEpoch=4 chunkIndex=5 chars=15 language=zh synthesisMs=1680 }
+2026-08-01T12:19:06.331Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 responseEpoch=4 chunkIndex=4 durationMs=2785 status=played }
+2026-08-01T12:19:06.331Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 responseEpoch=4 chunkIndex=5 queueDepth=1 }
+2026-08-01T12:19:06.341Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 responseEpoch=4 chunkIndex=5 queueWaitMs=10 }
+2026-08-01T12:19:09.175Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 responseEpoch=4 chunkIndex=5 durationMs=2834 status=played }
+2026-08-01T12:19:09.175Z [log] [ConversationController] response_completed  { guildId=616847428351688705 turnId=956e1502-68a6-42b1-bd2f-12a1ca5becb6 responseEpoch=4 chars=172 chunks=6 }
+2026-08-01T12:19:09.176Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=speaking to=idle reason=turn_finished }
+2026-08-01T12:19:14.763Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=3639 bytes=81280 }
+2026-08-01T12:19:14.764Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T12:19:15.426Z [log] [ConversationController] input_understanding_resolved  { guildId=616847428351688705 userId=502659444493123596 turnId=76097152-5772-43d1-ba08-3c2a3046d348 asrLanguageRaw=zh asrLanguageNormalized=zh responseLanguage=zh resolutionReason=chinese-frame confidence=0.94 isAmbiguous=false entityIds=[] entityCount=0 previousStableLanguage=zh stableLanguageUpdated=true }
+2026-08-01T12:19:15.426Z [log] [ConversationController] utterance_received  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда language=zh turnId=76097152-5772-43d1-ba08-3c2a3046d348 chars=3 asrLatencyMs=1579 }
+2026-08-01T12:19:15.427Z [log] [ConversationController] conversation_group_opened  { guildId=616847428351688705 responseEpoch=4 userId=502659444493123596 durationMs=800 }
+2026-08-01T12:19:15.427Z [log] [ConversationController] conversation_group_flushed  { guildId=616847428351688705 responseEpoch=4 speakers=1 utterances=1 durationMs=1580 }
+2026-08-01T12:19:15.427Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=thinking reason=generation_started }
+2026-08-01T12:19:15.428Z [log] [ConversationController] response_epoch_started  { guildId=616847428351688705 turnId=76097152-5772-43d1-ba08-3c2a3046d348 responseEpoch=5 }
+2026-08-01T12:19:15.428Z [log] [GeminiBrain] gemini_request_started  { guildId=616847428351688705 userId=502659444493123596 turnId=76097152-5772-43d1-ba08-3c2a3046d348 responseEpoch=5 model=gemini-3.6-flash turns=9 systemInstructionChars=5645 thinkingLevel=low maxOutputTokens=384 responseLengthClass=standard }
+2026-08-01T12:19:16.655Z [log] [GeminiBrain] gemini_first_token  { guildId=616847428351688705 userId=502659444493123596turnId=76097152-5772-43d1-ba08-3c2a3046d348 responseEpoch=5 durationMs=1227 geminiFirstTokenMs=1227 }
+2026-08-01T12:19:17.030Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=76097152-5772-43d1-ba08-3c2a3046d348 responseEpoch=5 chunkIndex=0 targetLanguage=zh resolution=text-detection responseLanguageHint=zh pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=29 }
+2026-08-01T12:19:17.031Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:19:17.031Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=29 }
+2026-08-01T12:19:17.093Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=582 bytes=19200 }
+2026-08-01T12:19:17.094Z [log] [ConversationController] utterance_discarded  { guildId=616847428351688705 userId=502659444493123596 phase=thinking reason=bot_thinking durationMs=582 }
+2026-08-01T12:19:21.470Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=76097152-5772-43d1-ba08-3c2a3046d348 responseEpoch=5 chunkIndex=0 chars=29 language=zh synthesisMs=4440 }
+2026-08-01T12:19:21.471Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=thinking to=speaking reason=first_audio_queued }
+2026-08-01T12:19:21.471Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=76097152-5772-43d1-ba08-3c2a3046d348 responseEpoch=5 chunkIndex=0 queueDepth=1 }
+2026-08-01T12:19:21.488Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=76097152-5772-43d1-ba08-3c2a3046d348 responseEpoch=5 chunkIndex=0 queueWaitMs=17 }
+2026-08-01T12:19:21.489Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=76097152-5772-43d1-ba08-3c2a3046d348 responseEpoch=5 chunkIndex=1 targetLanguage=zh resolution=text-detection responseLanguageHint=zh pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=16 }
+2026-08-01T12:19:21.490Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:19:21.491Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=16 }
+2026-08-01T12:19:22.400Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=2031 bytes=65280 }
+2026-08-01T12:19:22.400Z [log] [ConversationController] utterance_discarded  { guildId=616847428351688705 userId=502659444493123596 phase=speaking reason=bot_speaking durationMs=2031 }
+2026-08-01T12:19:24.230Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=500 bytes=16640 }
+2026-08-01T12:19:24.231Z [log] [ConversationController] utterance_discarded  { guildId=616847428351688705 userId=502659444493123596 phase=speaking reason=bot_speaking durationMs=500 }
+2026-08-01T12:19:24.252Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=76097152-5772-43d1-ba08-3c2a3046d348 responseEpoch=5 chunkIndex=1 chars=16 language=zh synthesisMs=2763 }
+2026-08-01T12:19:28.861Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=76097152-5772-43d1-ba08-3c2a3046d348 responseEpoch=5 chunkIndex=0 durationMs=7373 status=played }
+2026-08-01T12:19:28.861Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=76097152-5772-43d1-ba08-3c2a3046d348 responseEpoch=5 chunkIndex=1 queueDepth=1 }
+2026-08-01T12:19:28.868Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=76097152-5772-43d1-ba08-3c2a3046d348 responseEpoch=5 chunkIndex=1 queueWaitMs=7 }
+2026-08-01T12:19:28.868Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=76097152-5772-43d1-ba08-3c2a3046d348 responseEpoch=5 chunkIndex=2 targetLanguage=zh resolution=text-detection responseLanguageHint=zh pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=28 }
+2026-08-01T12:19:28.870Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:19:28.870Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=28 }
+2026-08-01T12:19:30.553Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=939 bytes=30720 }
+2026-08-01T12:19:30.553Z [log] [ConversationController] utterance_discarded  { guildId=616847428351688705 userId=502659444493123596 phase=speaking reason=bot_speaking durationMs=939 }
+2026-08-01T12:19:32.696Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=76097152-5772-43d1-ba08-3c2a3046d348 responseEpoch=5 chunkIndex=1 durationMs=3828 status=played }
+2026-08-01T12:19:32.990Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=76097152-5772-43d1-ba08-3c2a3046d348 responseEpoch=5 chunkIndex=2 chars=28 language=zh synthesisMs=4122 }
+2026-08-01T12:19:32.991Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=76097152-5772-43d1-ba08-3c2a3046d348 responseEpoch=5 chunkIndex=2 queueDepth=1 }
+2026-08-01T12:19:32.997Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=76097152-5772-43d1-ba08-3c2a3046d348 responseEpoch=5 chunkIndex=2 queueWaitMs=6 }
+2026-08-01T12:19:32.998Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=76097152-5772-43d1-ba08-3c2a3046d348 responseEpoch=5 chunkIndex=3 targetLanguage=zh resolution=text-detection responseLanguageHint=zh pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=20 }
+2026-08-01T12:19:32.999Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:19:32.999Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=20 }
+2026-08-01T12:19:36.118Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=76097152-5772-43d1-ba08-3c2a3046d348 responseEpoch=5 chunkIndex=3 chars=20 language=zh synthesisMs=3119 }
+2026-08-01T12:19:36.575Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=881 bytes=28800 }
+2026-08-01T12:19:36.575Z [log] [ConversationController] utterance_discarded  { guildId=616847428351688705 userId=502659444493123596 phase=speaking reason=bot_speaking durationMs=881 }
+2026-08-01T12:19:40.289Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=76097152-5772-43d1-ba08-3c2a3046d348 responseEpoch=5 chunkIndex=2 durationMs=7292 status=played }
+2026-08-01T12:19:40.290Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=76097152-5772-43d1-ba08-3c2a3046d348 responseEpoch=5 chunkIndex=3 queueDepth=1 }
+2026-08-01T12:19:40.296Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=76097152-5772-43d1-ba08-3c2a3046d348 responseEpoch=5 chunkIndex=3 queueWaitMs=6 }
+2026-08-01T12:19:44.938Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=76097152-5772-43d1-ba08-3c2a3046d348 responseEpoch=5 chunkIndex=3 durationMs=4642 status=played }
+2026-08-01T12:19:44.938Z [log] [ConversationController] response_completed  { guildId=616847428351688705 turnId=76097152-5772-43d1-ba08-3c2a3046d348 responseEpoch=5 chars=93 chunks=4 }
+2026-08-01T12:19:44.938Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=speaking to=idle reason=turn_finished }
+2026-08-01T12:19:55.709Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=5600 bytes=152320 }
+2026-08-01T12:19:55.710Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T12:19:57.092Z [log] [ConversationController] input_understanding_resolved  { guildId=616847428351688705 userId=502659444493123596 turnId=2376e47f-de81-449b-856a-317effad4b4a asrLanguageRaw=zh asrLanguageNormalized=zh responseLanguage=zh resolutionReason=chinese-frame confidence=0.94 isAmbiguous=false entityIds=[] entityCount=0 previousStableLanguage=zh stableLanguageUpdated=true }
+2026-08-01T12:19:57.093Z [log] [ConversationController] utterance_received  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда language=zh turnId=2376e47f-de81-449b-856a-317effad4b4a chars=13 asrLatencyMs=2286 }
+2026-08-01T12:19:57.094Z [log] [ConversationController] conversation_group_opened  { guildId=616847428351688705 responseEpoch=5 userId=502659444493123596 durationMs=800 }
+2026-08-01T12:19:57.097Z [log] [ConversationController] conversation_group_flushed  { guildId=616847428351688705 responseEpoch=5 speakers=1 utterances=1 durationMs=2290 }
+2026-08-01T12:19:57.097Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=thinking reason=generation_started }
+2026-08-01T12:19:57.099Z [log] [ConversationController] response_epoch_started  { guildId=616847428351688705 turnId=2376e47f-de81-449b-856a-317effad4b4a responseEpoch=6 }
+2026-08-01T12:19:57.099Z [log] [GeminiBrain] gemini_request_started  { guildId=616847428351688705 userId=502659444493123596 turnId=2376e47f-de81-449b-856a-317effad4b4a responseEpoch=6 model=gemini-3.6-flash turns=11 systemInstructionChars=5645 thinkingLevel=low maxOutputTokens=384 responseLengthClass=standard }
+2026-08-01T12:19:58.482Z [log] [GeminiBrain] gemini_first_token  { guildId=616847428351688705 userId=502659444493123596turnId=2376e47f-de81-449b-856a-317effad4b4a responseEpoch=6 durationMs=1383 geminiFirstTokenMs=1383 }
+2026-08-01T12:19:58.848Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=2376e47f-de81-449b-856a-317effad4b4a responseEpoch=6 chunkIndex=0 targetLanguage=zh resolution=text-detection responseLanguageHint=zh pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=37 }
+2026-08-01T12:19:58.849Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:19:58.849Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=37 }
+2026-08-01T12:20:02.624Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=2376e47f-de81-449b-856a-317effad4b4a responseEpoch=6 chunkIndex=0 chars=37 language=zh synthesisMs=3776 }
+2026-08-01T12:20:02.624Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=thinking to=speaking reason=first_audio_queued }
+2026-08-01T12:20:02.624Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=2376e47f-de81-449b-856a-317effad4b4a responseEpoch=6 chunkIndex=0 queueDepth=1 }
+2026-08-01T12:20:02.631Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=2376e47f-de81-449b-856a-317effad4b4a responseEpoch=6 chunkIndex=0 queueWaitMs=7 }
+2026-08-01T12:20:02.631Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=2376e47f-de81-449b-856a-317effad4b4a responseEpoch=6 chunkIndex=1 targetLanguage=zh resolution=text-detection responseLanguageHint=zh pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=32 }
+2026-08-01T12:20:02.633Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:20:02.633Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=32 }
+2026-08-01T12:20:03.769Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=581 bytes=19200 }
+2026-08-01T12:20:03.769Z [log] [ConversationController] utterance_discarded  { guildId=616847428351688705 userId=502659444493123596 phase=speaking reason=bot_speaking durationMs=581 }
+2026-08-01T12:20:05.903Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=2376e47f-de81-449b-856a-317effad4b4a responseEpoch=6 chunkIndex=1 chars=32 language=zh synthesisMs=3272 }
+2026-08-01T12:20:09.295Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=2376e47f-de81-449b-856a-317effad4b4a responseEpoch=6 chunkIndex=0 durationMs=6664 status=played }
+2026-08-01T12:20:09.295Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=2376e47f-de81-449b-856a-317effad4b4a responseEpoch=6 chunkIndex=1 queueDepth=1 }
+2026-08-01T12:20:09.302Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=2376e47f-de81-449b-856a-317effad4b4a responseEpoch=6 chunkIndex=1 queueWaitMs=7 }
+2026-08-01T12:20:09.302Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=2376e47f-de81-449b-856a-317effad4b4a responseEpoch=6 chunkIndex=2 targetLanguage=zh resolution=text-detection responseLanguageHint=zh pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=20 }
+2026-08-01T12:20:09.303Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:20:09.303Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=20 }
+2026-08-01T12:20:11.907Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=2376e47f-de81-449b-856a-317effad4b4a responseEpoch=6 chunkIndex=2 chars=20 language=zh synthesisMs=2605 }
+2026-08-01T12:20:14.634Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=2376e47f-de81-449b-856a-317effad4b4a responseEpoch=6 chunkIndex=1 durationMs=5332 status=played }
+2026-08-01T12:20:14.635Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=2376e47f-de81-449b-856a-317effad4b4a responseEpoch=6 chunkIndex=2 queueDepth=1 }
+2026-08-01T12:20:14.642Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=2376e47f-de81-449b-856a-317effad4b4a responseEpoch=6 chunkIndex=2 queueWaitMs=7 }
+2026-08-01T12:20:18.687Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=2376e47f-de81-449b-856a-317effad4b4a responseEpoch=6 chunkIndex=2 durationMs=4045 status=played }
+2026-08-01T12:20:18.687Z [log] [ConversationController] response_completed  { guildId=616847428351688705 turnId=2376e47f-de81-449b-856a-317effad4b4a responseEpoch=6 chars=89 chunks=3 }
+2026-08-01T12:20:18.688Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=speaking to=idle reason=turn_finished }
+2026-08-01T12:20:22.714Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=3058 bytes=75520 }
+2026-08-01T12:20:22.714Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T12:20:23.148Z [log] [ConversationController] transcript_filtered  { guildId=616847428351688705 userId=502659444493123596 reason=empty chars=0 language=und }
+2026-08-01T12:20:23.148Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=idle reason=transcript_empty }
+2026-08-01T12:20:27.495Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=3538 bytes=106880 }
+2026-08-01T12:20:27.495Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T12:20:28.576Z [log] [ConversationController] input_understanding_resolved  { guildId=616847428351688705 userId=502659444493123596 turnId=5747f836-b79a-42c2-b0e9-ace85d4c2a2b asrLanguageRaw=zh asrLanguageNormalized=zh responseLanguage=zh resolutionReason=chinese-frame confidence=0.94 isAmbiguous=false entityIds=[] entityCount=0 previousStableLanguage=zh stableLanguageUpdated=true }
+2026-08-01T12:20:28.577Z [log] [ConversationController] utterance_received  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда language=zh turnId=5747f836-b79a-42c2-b0e9-ace85d4c2a2b chars=12 asrLatencyMs=1992 }
+2026-08-01T12:20:28.577Z [log] [ConversationController] conversation_group_opened  { guildId=616847428351688705 responseEpoch=6 userId=502659444493123596 durationMs=800 }
+2026-08-01T12:20:28.582Z [log] [ConversationController] conversation_group_flushed  { guildId=616847428351688705 responseEpoch=6 speakers=1 utterances=1 durationMs=1998 }
+2026-08-01T12:20:28.582Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=thinking reason=generation_started }
+2026-08-01T12:20:28.584Z [log] [ConversationController] response_epoch_started  { guildId=616847428351688705 turnId=5747f836-b79a-42c2-b0e9-ace85d4c2a2b responseEpoch=7 }
+2026-08-01T12:20:28.584Z [log] [GeminiBrain] gemini_request_started  { guildId=616847428351688705 userId=502659444493123596 turnId=5747f836-b79a-42c2-b0e9-ace85d4c2a2b responseEpoch=7 model=gemini-3.6-flash turns=13 systemInstructionChars=5645 thinkingLevel=low maxOutputTokens=384 responseLengthClass=standard }
+2026-08-01T12:20:30.961Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=500 bytes=16640 }
+2026-08-01T12:20:30.962Z [log] [ConversationController] utterance_discarded  { guildId=616847428351688705 userId=502659444493123596 phase=thinking reason=bot_thinking durationMs=500 }
+2026-08-01T12:20:39.214Z [error] [ConversationController] generation_failed  { error=fetch failed stack=TypeError: fetch failed cause={"name":"ConnectTimeoutError","code":"UND_ERR_CONNECT_TIMEOUT"} guildId=616847428351688705 responseEpoch=7 }
+2026-08-01T12:20:39.214Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=thinking to=idle reason=turn_finished }
+2026-08-01T12:20:48.527Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=5328 bytes=168320 }
+2026-08-01T12:20:48.527Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T12:20:50.478Z [log] [ConversationController] input_understanding_resolved  { guildId=616847428351688705 userId=502659444493123596 turnId=57bf3176-e398-4064-b212-e4aef8aea2f5 asrLanguageRaw=zh asrLanguageNormalized=zh responseLanguage=zh resolutionReason=chinese-frame confidence=0.94 isAmbiguous=false entityIds=[] entityCount=0 previousStableLanguage=zh stableLanguageUpdated=true }
+2026-08-01T12:20:50.478Z [log] [ConversationController] utterance_received  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда language=zh turnId=57bf3176-e398-4064-b212-e4aef8aea2f5 chars=16 asrLatencyMs=2866 }
+2026-08-01T12:20:50.479Z [log] [ConversationController] conversation_group_opened  { guildId=616847428351688705 responseEpoch=7 userId=502659444493123596 durationMs=800 }
+2026-08-01T12:20:50.482Z [log] [ConversationController] conversation_group_flushed  { guildId=616847428351688705 responseEpoch=7 speakers=1 utterances=1 durationMs=2870 }
+2026-08-01T12:20:50.483Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=thinking reason=generation_started }
+2026-08-01T12:20:50.483Z [log] [ConversationController] response_epoch_started  { guildId=616847428351688705 turnId=57bf3176-e398-4064-b212-e4aef8aea2f5 responseEpoch=8 }
+2026-08-01T12:20:50.484Z [log] [GeminiBrain] gemini_request_started  { guildId=616847428351688705 userId=502659444493123596 turnId=57bf3176-e398-4064-b212-e4aef8aea2f5 responseEpoch=8 model=gemini-3.6-flash turns=13 systemInstructionChars=5645 thinkingLevel=low maxOutputTokens=384 responseLengthClass=standard }
+2026-08-01T12:20:51.606Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=2120 bytes=55040 }
+2026-08-01T12:20:51.606Z [log] [ConversationController] utterance_discarded  { guildId=616847428351688705 userId=502659444493123596 phase=thinking reason=bot_thinking durationMs=2120 }
+2026-08-01T12:20:53.941Z [log] [GeminiBrain] gemini_first_token  { guildId=616847428351688705 userId=502659444493123596turnId=57bf3176-e398-4064-b212-e4aef8aea2f5 responseEpoch=8 durationMs=3457 geminiFirstTokenMs=3457 }
+2026-08-01T12:20:54.091Z [log] [ConversationController] avatar_pause  { guildId=616847428351688705 turnId=57bf3176-e398-4064-b212-e4aef8aea2f5 responseEpoch=8 durationMs=1000 }
+2026-08-01T12:20:55.094Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=57bf3176-e398-4064-b212-e4aef8aea2f5 responseEpoch=8 chunkIndex=0 targetLanguage=zh resolution=text-detection responseLanguageHint=zh pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=31 }
+2026-08-01T12:20:55.094Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:20:55.095Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=31 }
+2026-08-01T12:20:57.447Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=523 bytes=17280 }
+2026-08-01T12:20:57.447Z [log] [ConversationController] utterance_discarded  { guildId=616847428351688705 userId=502659444493123596 phase=thinking reason=bot_thinking durationMs=523 }
+2026-08-01T12:20:58.911Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=57bf3176-e398-4064-b212-e4aef8aea2f5 responseEpoch=8 chunkIndex=0 chars=31 language=zh synthesisMs=3817 }
+2026-08-01T12:20:58.911Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=thinking to=speaking reason=first_audio_queued }
+2026-08-01T12:20:58.912Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=57bf3176-e398-4064-b212-e4aef8aea2f5 responseEpoch=8 chunkIndex=0 queueDepth=1 }
+2026-08-01T12:20:58.919Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=57bf3176-e398-4064-b212-e4aef8aea2f5 responseEpoch=8 chunkIndex=0 queueWaitMs=7 }
+2026-08-01T12:20:58.920Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=57bf3176-e398-4064-b212-e4aef8aea2f5 responseEpoch=8 chunkIndex=1 targetLanguage=zh resolution=text-detection responseLanguageHint=zh pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=50 }
+2026-08-01T12:20:58.921Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:20:58.921Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=50 }
+2026-08-01T12:21:03.725Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=57bf3176-e398-4064-b212-e4aef8aea2f5 responseEpoch=8 chunkIndex=1 chars=50 language=zh synthesisMs=4805 }
+2026-08-01T12:21:04.804Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=57bf3176-e398-4064-b212-e4aef8aea2f5 responseEpoch=8 chunkIndex=0 durationMs=5885 status=played }
+2026-08-01T12:21:04.804Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=57bf3176-e398-4064-b212-e4aef8aea2f5 responseEpoch=8 chunkIndex=1 queueDepth=1 }
+2026-08-01T12:21:04.812Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=57bf3176-e398-4064-b212-e4aef8aea2f5 responseEpoch=8 chunkIndex=1 queueWaitMs=8 }
+2026-08-01T12:21:04.812Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=57bf3176-e398-4064-b212-e4aef8aea2f5 responseEpoch=8 chunkIndex=2 targetLanguage=zh resolution=text-detection responseLanguageHint=zh pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=20 }
+2026-08-01T12:21:04.814Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:21:04.814Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=20 }
+2026-08-01T12:21:05.937Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=57bf3176-e398-4064-b212-e4aef8aea2f5 responseEpoch=8 chunkIndex=2 chars=20 language=zh synthesisMs=1125 }
+2026-08-01T12:21:13.588Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=57bf3176-e398-4064-b212-e4aef8aea2f5 responseEpoch=8 chunkIndex=1 durationMs=8776 status=played }
+2026-08-01T12:21:13.588Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=57bf3176-e398-4064-b212-e4aef8aea2f5 responseEpoch=8 chunkIndex=2 queueDepth=1 }
+2026-08-01T12:21:13.595Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=57bf3176-e398-4064-b212-e4aef8aea2f5 responseEpoch=8 chunkIndex=2 queueWaitMs=7 }
+2026-08-01T12:21:15.038Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=57bf3176-e398-4064-b212-e4aef8aea2f5 responseEpoch=8 chunkIndex=2 durationMs=1443 status=played }
+2026-08-01T12:21:15.038Z [log] [ConversationController] response_completed  { guildId=616847428351688705 turnId=57bf3176-e398-4064-b212-e4aef8aea2f5 responseEpoch=8 chars=101 chunks=3 }
+2026-08-01T12:21:15.039Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=speaking to=idle reason=turn_finished }
+2026-08-01T12:21:22.494Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=438 bytes=14720 }
+2026-08-01T12:21:22.494Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T12:21:22.925Z [log] [ConversationController] transcript_filtered  { guildId=616847428351688705 userId=502659444493123596 reason=empty chars=0 language=und }
+2026-08-01T12:21:22.925Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=idle reason=transcript_empty }
+2026-08-01T12:21:35.039Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=4624 bytes=115840 }
+2026-08-01T12:21:35.039Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T12:21:35.467Z [log] [ConversationController] transcript_filtered  { guildId=616847428351688705 userId=502659444493123596 reason=empty chars=0 language=und }
+2026-08-01T12:21:35.467Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=idle reason=transcript_empty }
+2026-08-01T12:21:38.108Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=499 bytes=16640 }
+2026-08-01T12:21:38.108Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T12:21:38.528Z [log] [ConversationController] transcript_filtered  { guildId=616847428351688705 userId=502659444493123596 reason=empty chars=0 language=und }
+2026-08-01T12:21:38.528Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=idle reason=transcript_empty }
+2026-08-01T12:21:40.474Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=455 bytes=15360 }
+2026-08-01T12:21:40.474Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T12:21:40.887Z [log] [ConversationController] transcript_filtered  { guildId=616847428351688705 userId=502659444493123596 reason=empty chars=0 language=und }
+2026-08-01T12:21:40.888Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=idle reason=transcript_empty }
+2026-08-01T12:21:50.665Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=6316 bytes=136320 }
+2026-08-01T12:21:50.665Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T12:21:51.455Z [log] [ConversationController] input_understanding_resolved  { guildId=616847428351688705 userId=502659444493123596 turnId=4803e703-3114-48a6-9c21-18dc270f5710 asrLanguageRaw=en asrLanguageNormalized=en responseLanguage=zh resolutionReason=conversation-context confidence=0.82 isAmbiguous=true entityIds=["christina-nickname"] entityCount=1 previousStableLanguage=zh stableLanguageUpdated=false }
+2026-08-01T12:21:51.455Z [log] [ConversationController] utterance_received  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда language=en turnId=4803e703-3114-48a6-9c21-18dc270f5710 chars=10 asrLatencyMs=1693 }
+2026-08-01T12:21:51.456Z [log] [ConversationController] conversation_group_opened  { guildId=616847428351688705 responseEpoch=8 userId=502659444493123596 durationMs=800 }
+2026-08-01T12:21:51.470Z [log] [ConversationController] conversation_group_flushed  { guildId=616847428351688705 responseEpoch=8 speakers=1 utterances=1 durationMs=1708 }
+2026-08-01T12:21:51.471Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=thinking reason=generation_started }
+2026-08-01T12:21:51.471Z [log] [ConversationController] response_epoch_started  { guildId=616847428351688705 turnId=4803e703-3114-48a6-9c21-18dc270f5710 responseEpoch=9 }
+2026-08-01T12:21:51.472Z [log] [GeminiBrain] gemini_request_started  { guildId=616847428351688705 userId=502659444493123596 turnId=4803e703-3114-48a6-9c21-18dc270f5710 responseEpoch=9 model=gemini-3.6-flash turns=15 systemInstructionChars=5906 thinkingLevel=low maxOutputTokens=384 responseLengthClass=standard }
+2026-08-01T12:21:53.785Z [log] [GeminiBrain] gemini_first_token  { guildId=616847428351688705 userId=502659444493123596turnId=4803e703-3114-48a6-9c21-18dc270f5710 responseEpoch=9 durationMs=2313 geminiFirstTokenMs=2313 }
+2026-08-01T12:21:53.810Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=680 bytes=22400 }
+2026-08-01T12:21:53.810Z [log] [ConversationController] utterance_discarded  { guildId=616847428351688705 userId=502659444493123596 phase=thinking reason=bot_thinking durationMs=680 }
+2026-08-01T12:21:53.869Z [log] [ConversationController] avatar_action  { guildId=616847428351688705 turnId=4803e703-3114-48a6-9c21-18dc270f5710 responseEpoch=9 emotion=question intensity=0.7 motionHint=slight tilt of head, eyes narrowed }
+2026-08-01T12:21:54.034Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=4803e703-3114-48a6-9c21-18dc270f5710 responseEpoch=9 chunkIndex=0 targetLanguage=zh resolution=text-detection responseLanguageHint=zh pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=19 }
+2026-08-01T12:21:54.035Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:21:54.035Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=19 }
+2026-08-01T12:21:56.463Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=4803e703-3114-48a6-9c21-18dc270f5710 responseEpoch=9 chunkIndex=0 chars=19 language=zh synthesisMs=2429 }
+2026-08-01T12:21:56.464Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=thinking to=speaking reason=first_audio_queued }
+2026-08-01T12:21:56.464Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=4803e703-3114-48a6-9c21-18dc270f5710 responseEpoch=9 chunkIndex=0 queueDepth=1 }
+2026-08-01T12:21:56.480Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=4803e703-3114-48a6-9c21-18dc270f5710 responseEpoch=9 chunkIndex=0 queueWaitMs=16 }
+2026-08-01T12:21:56.480Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=4803e703-3114-48a6-9c21-18dc270f5710 responseEpoch=9 chunkIndex=1 targetLanguage=zh resolution=text-detection responseLanguageHint=zh pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=21 }
+2026-08-01T12:21:56.482Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:21:56.482Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=21 }
+2026-08-01T12:21:57.848Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=537 bytes=17920 }
+2026-08-01T12:21:57.848Z [log] [ConversationController] utterance_discarded  { guildId=616847428351688705 userId=502659444493123596 phase=speaking reason=bot_speaking durationMs=537 }
+2026-08-01T12:21:59.309Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=4803e703-3114-48a6-9c21-18dc270f5710 responseEpoch=9 chunkIndex=1 chars=21 language=zh synthesisMs=2829 }
+2026-08-01T12:22:00.373Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=4803e703-3114-48a6-9c21-18dc270f5710 responseEpoch=9 chunkIndex=0 durationMs=3893 status=played }
+2026-08-01T12:22:00.373Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=4803e703-3114-48a6-9c21-18dc270f5710 responseEpoch=9 chunkIndex=1 queueDepth=1 }
+2026-08-01T12:22:00.379Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=4803e703-3114-48a6-9c21-18dc270f5710 responseEpoch=9 chunkIndex=1 queueWaitMs=6 }
+2026-08-01T12:22:00.380Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=4803e703-3114-48a6-9c21-18dc270f5710 responseEpoch=9 chunkIndex=2 targetLanguage=zh resolution=text-detection responseLanguageHint=zh pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=24 }
+2026-08-01T12:22:00.381Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:22:00.381Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=24 }
+2026-08-01T12:22:03.202Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=4803e703-3114-48a6-9c21-18dc270f5710 responseEpoch=9 chunkIndex=2 chars=24 language=zh synthesisMs=2822 }
+2026-08-01T12:22:05.223Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=4803e703-3114-48a6-9c21-18dc270f5710 responseEpoch=9 chunkIndex=1 durationMs=4844 status=played }
+2026-08-01T12:22:05.223Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=4803e703-3114-48a6-9c21-18dc270f5710 responseEpoch=9 chunkIndex=2 queueDepth=1 }
+2026-08-01T12:22:05.230Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=4803e703-3114-48a6-9c21-18dc270f5710 responseEpoch=9 chunkIndex=2 queueWaitMs=7 }
+2026-08-01T12:22:05.231Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=4803e703-3114-48a6-9c21-18dc270f5710 responseEpoch=9 chunkIndex=3 targetLanguage=zh resolution=text-detection responseLanguageHint=zh pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=6 }
+2026-08-01T12:22:05.232Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:22:05.232Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=6}
+2026-08-01T12:22:06.540Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=4803e703-3114-48a6-9c21-18dc270f5710 responseEpoch=9 chunkIndex=3 chars=6 language=zh synthesisMs=1309 }
+2026-08-01T12:22:10.367Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=4803e703-3114-48a6-9c21-18dc270f5710 responseEpoch=9 chunkIndex=2 durationMs=5137 status=played }
+2026-08-01T12:22:10.368Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=4803e703-3114-48a6-9c21-18dc270f5710 responseEpoch=9 chunkIndex=3 queueDepth=1 }
+2026-08-01T12:22:10.374Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=4803e703-3114-48a6-9c21-18dc270f5710 responseEpoch=9 chunkIndex=3 queueWaitMs=7 }
+2026-08-01T12:22:11.900Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=4803e703-3114-48a6-9c21-18dc270f5710 responseEpoch=9 chunkIndex=3 durationMs=1526 status=played }
+2026-08-01T12:22:11.900Z [log] [ConversationController] response_completed  { guildId=616847428351688705 turnId=4803e703-3114-48a6-9c21-18dc270f5710 responseEpoch=9 chars=70 chunks=4 }
+2026-08-01T12:22:11.900Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=speaking to=idle reason=turn_finished }
+2026-08-01T12:22:17.062Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=3937 bytes=106880 }
+2026-08-01T12:22:17.063Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T12:22:18.172Z [log] [ConversationController] input_understanding_resolved  { guildId=616847428351688705 userId=502659444493123596 turnId=41b9b883-a297-4d9b-aad1-9c8ab095d99a asrLanguageRaw=zh asrLanguageNormalized=zh responseLanguage=zh resolutionReason=chinese-frame confidence=0.94 isAmbiguous=false entityIds=["christina-nickname"] entityCount=1previousStableLanguage=zh stableLanguageUpdated=true }
+2026-08-01T12:22:18.172Z [log] [ConversationController] utterance_received  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда language=zh turnId=41b9b883-a297-4d9b-aad1-9c8ab095d99a chars=15 asrLatencyMs=2012 }
+2026-08-01T12:22:18.173Z [log] [ConversationController] conversation_group_opened  { guildId=616847428351688705 responseEpoch=9 userId=502659444493123596 durationMs=800 }
+2026-08-01T12:22:18.185Z [log] [ConversationController] conversation_group_flushed  { guildId=616847428351688705 responseEpoch=9 speakers=1 utterances=1 durationMs=2024 }
+2026-08-01T12:22:18.185Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=thinking reason=generation_started }
+2026-08-01T12:22:18.186Z [log] [ConversationController] response_epoch_started  { guildId=616847428351688705 turnId=41b9b883-a297-4d9b-aad1-9c8ab095d99a responseEpoch=10 }
+2026-08-01T12:22:18.186Z [log] [GeminiBrain] gemini_request_started  { guildId=616847428351688705 userId=502659444493123596 turnId=41b9b883-a297-4d9b-aad1-9c8ab095d99a responseEpoch=10 model=gemini-3.6-flash turns=17 systemInstructionChars=5906 thinkingLevel=low maxOutputTokens=384 responseLengthClass=standard }
+2026-08-01T12:22:18.970Z [log] [GeminiBrain] gemini_first_token  { guildId=616847428351688705 userId=502659444493123596turnId=41b9b883-a297-4d9b-aad1-9c8ab095d99a responseEpoch=10 durationMs=784 geminiFirstTokenMs=784 }
+2026-08-01T12:22:19.886Z [error] [ConversationController] generation_failed  { error=got status: UNAVAILABLE. {"error":{"code":503,"message":"This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.","status":"UNAVAILABLE"}} stack=ApiError: got status: UNAVAILABLE. {"error":{"code":503,"message":"Thismodel is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.","status":"UNAVAILABLE"}}
+    at ApiClient.processStreamResponse_1 (C:\Users\lyang\Code\DC_BOT\airi\node_modules\.pnpm\@google+genai@2.14.0_@model_e9d088ca0209e271b247db6151e5b201\node_modules\@google\genai\src\_api_client.ts:649:32)
+    at processStreamResponse_1.next (<anonymous>)
+    at resume (C:\Users\lyang\Code\DC_BOT\airi\node_modules\.pnpm\@google+genai@2.14.0_@model_e9d088ca0209e271b247db6151e5b201\node_modules\@google\genai\src\caches.ts:481:2)
+    at fulfill (C:\Users\lyang\Code\DC_BOT\airi\node_modules\.pnpm\@google+genai@2.14.0_@model_e9d088ca0209e271b247db6151e5b201\node_modules\@google\genai\src\caches.ts:481:2)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) guildId=616847428351688705 responseEpoch=10 }
+2026-08-01T12:22:19.886Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=thinking to=idle reason=turn_finished }
+2026-08-01T12:22:27.932Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=599 bytes=19840 }
+2026-08-01T12:22:27.932Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T12:22:28.477Z [log] [ConversationController] transcript_filtered  { guildId=616847428351688705 userId=502659444493123596 reason=empty chars=0 language=und }
+2026-08-01T12:22:28.477Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=idle reason=transcript_empty }
+2026-08-01T12:22:42.905Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=8357 bytes=197760 }
+2026-08-01T12:22:42.905Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T12:22:43.863Z [log] [ConversationController] input_understanding_resolved  { guildId=616847428351688705 userId=502659444493123596 turnId=7d077cde-4338-48a0-a8e2-c4dd209b5898 asrLanguageRaw=zh asrLanguageNormalized=zh responseLanguage=zh resolutionReason=chinese-frame confidence=0.94 isAmbiguous=false entityIds=["christina-nickname"] entityCount=1previousStableLanguage=zh stableLanguageUpdated=true }
+2026-08-01T12:22:43.863Z [log] [ConversationController] utterance_received  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда language=zh turnId=7d077cde-4338-48a0-a8e2-c4dd209b5898 chars=13 asrLatencyMs=1862 }
+2026-08-01T12:22:43.863Z [log] [ConversationController] conversation_group_opened  { guildId=616847428351688705 responseEpoch=10 userId=502659444493123596 durationMs=800 }
+2026-08-01T12:22:43.874Z [log] [ConversationController] conversation_group_flushed  { guildId=616847428351688705 responseEpoch=10 speakers=1 utterances=1 durationMs=1873 }
+2026-08-01T12:22:43.875Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=thinking reason=generation_started }
+2026-08-01T12:22:43.875Z [log] [ConversationController] response_epoch_started  { guildId=616847428351688705 turnId=7d077cde-4338-48a0-a8e2-c4dd209b5898 responseEpoch=11 }
+2026-08-01T12:22:43.875Z [log] [GeminiBrain] gemini_request_started  { guildId=616847428351688705 userId=502659444493123596 turnId=7d077cde-4338-48a0-a8e2-c4dd209b5898 responseEpoch=11 model=gemini-3.6-flash turns=17 systemInstructionChars=5906 thinkingLevel=low maxOutputTokens=384 responseLengthClass=standard }
+2026-08-01T12:22:45.499Z [log] [GeminiBrain] gemini_first_token  { guildId=616847428351688705 userId=502659444493123596turnId=7d077cde-4338-48a0-a8e2-c4dd209b5898 responseEpoch=11 durationMs=1624 geminiFirstTokenMs=1624 }
+2026-08-01T12:22:45.647Z [log] [ConversationController] avatar_pause  { guildId=616847428351688705 turnId=7d077cde-4338-48a0-a8e2-c4dd209b5898 responseEpoch=11 durationMs=1000 }
+2026-08-01T12:22:46.653Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=7d077cde-4338-48a0-a8e2-c4dd209b5898 responseEpoch=11 chunkIndex=0 targetLanguage=zh resolution=text-detection responseLanguageHint=zh pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=23 }
+2026-08-01T12:22:46.654Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:22:46.654Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=23 }
+2026-08-01T12:22:49.202Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=7d077cde-4338-48a0-a8e2-c4dd209b5898 responseEpoch=11 chunkIndex=0 chars=23 language=zh synthesisMs=2549 }
+2026-08-01T12:22:49.202Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=thinking to=speaking reason=first_audio_queued }
+2026-08-01T12:22:49.202Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=7d077cde-4338-48a0-a8e2-c4dd209b5898 responseEpoch=11 chunkIndex=0 queueDepth=1 }
+2026-08-01T12:22:49.209Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=7d077cde-4338-48a0-a8e2-c4dd209b5898 responseEpoch=11 chunkIndex=0 queueWaitMs=7 }
+2026-08-01T12:22:49.210Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=7d077cde-4338-48a0-a8e2-c4dd209b5898 responseEpoch=11 chunkIndex=1 targetLanguage=zh resolution=text-detection responseLanguageHint=zh pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=25 }
+2026-08-01T12:22:49.211Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:22:49.211Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=25 }
+2026-08-01T12:22:52.042Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=7d077cde-4338-48a0-a8e2-c4dd209b5898 responseEpoch=11 chunkIndex=1 chars=25 language=zh synthesisMs=2832 }
+2026-08-01T12:22:53.454Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=7d077cde-4338-48a0-a8e2-c4dd209b5898 responseEpoch=11 chunkIndex=0 durationMs=4245 status=played }
+2026-08-01T12:22:53.455Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=7d077cde-4338-48a0-a8e2-c4dd209b5898 responseEpoch=11 chunkIndex=1 queueDepth=1 }
+2026-08-01T12:22:53.472Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=7d077cde-4338-48a0-a8e2-c4dd209b5898 responseEpoch=11 chunkIndex=1 queueWaitMs=17 }
+2026-08-01T12:22:53.473Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=7d077cde-4338-48a0-a8e2-c4dd209b5898 responseEpoch=11 chunkIndex=2 targetLanguage=zh resolution=text-detection responseLanguageHint=zh pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=23 }
+2026-08-01T12:22:53.473Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:22:53.474Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=23 }
+2026-08-01T12:22:56.035Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=7d077cde-4338-48a0-a8e2-c4dd209b5898 responseEpoch=11 chunkIndex=2 chars=23 language=zh synthesisMs=2562 }
+2026-08-01T12:22:58.001Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=7d077cde-4338-48a0-a8e2-c4dd209b5898 responseEpoch=11 chunkIndex=1 durationMs=4529 status=played }
+2026-08-01T12:22:58.001Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=7d077cde-4338-48a0-a8e2-c4dd209b5898 responseEpoch=11 chunkIndex=2 queueDepth=1 }
+2026-08-01T12:22:58.009Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=7d077cde-4338-48a0-a8e2-c4dd209b5898 responseEpoch=11 chunkIndex=2 queueWaitMs=8 }
+2026-08-01T12:22:58.010Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=7d077cde-4338-48a0-a8e2-c4dd209b5898 responseEpoch=11 chunkIndex=3 targetLanguage=zh resolution=text-detection responseLanguageHint=zh pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=45 }
+2026-08-01T12:22:58.011Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:22:58.011Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=45 }
+2026-08-01T12:23:02.360Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=7d077cde-4338-48a0-a8e2-c4dd209b5898 responseEpoch=11 chunkIndex=2 durationMs=4351 status=played }
+2026-08-01T12:23:03.820Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=7d077cde-4338-48a0-a8e2-c4dd209b5898 responseEpoch=11 chunkIndex=3 chars=45 language=zh synthesisMs=5810 }
+2026-08-01T12:23:03.820Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=7d077cde-4338-48a0-a8e2-c4dd209b5898 responseEpoch=11 chunkIndex=3 queueDepth=1 }
+2026-08-01T12:23:03.828Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=7d077cde-4338-48a0-a8e2-c4dd209b5898 responseEpoch=11 chunkIndex=3 queueWaitMs=8 }
+2026-08-01T12:23:14.833Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=7d077cde-4338-48a0-a8e2-c4dd209b5898 responseEpoch=11 chunkIndex=3 durationMs=11005 status=played }
+2026-08-01T12:23:14.833Z [log] [ConversationController] response_completed  { guildId=616847428351688705 turnId=7d077cde-4338-48a0-a8e2-c4dd209b5898 responseEpoch=11 chars=116 chunks=4 }
+2026-08-01T12:23:14.833Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=speaking to=idle reason=turn_finished }
+2026-08-01T12:23:16.305Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=506 bytes=17280 }
+2026-08-01T12:23:16.305Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T12:23:16.766Z [log] [ConversationController] transcript_filtered  { guildId=616847428351688705 userId=502659444493123596 reason=empty chars=0 language=und }
+2026-08-01T12:23:16.767Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=idle reason=transcript_empty }
+2026-08-01T12:23:18.578Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=957 bytes=31360 }
+2026-08-01T12:23:18.578Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T12:23:19.018Z [log] [ConversationController] transcript_filtered  { guildId=616847428351688705 userId=502659444493123596 reason=empty chars=0 language=und }
+2026-08-01T12:23:19.018Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=idle reason=transcript_empty }
+2026-08-01T12:23:24.708Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=460 bytes=15360 }
+2026-08-01T12:23:24.708Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T12:23:25.149Z [log] [ConversationController] transcript_filtered  { guildId=616847428351688705 userId=502659444493123596 reason=empty chars=0 language=und }
+2026-08-01T12:23:25.150Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=idle reason=transcript_empty }
+2026-08-01T12:23:30.625Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=4001 bytes=119040 }
+2026-08-01T12:23:30.626Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T12:23:31.558Z [log] [ConversationController] input_understanding_resolved  { guildId=616847428351688705 userId=502659444493123596 turnId=9588d0d1-c817-4607-b070-6fe0e57031fb asrLanguageRaw=en asrLanguageNormalized=en responseLanguage=en resolutionReason=english-sentence confidence=0.9 isAmbiguous=false entityIds=[] entityCount=0 previousStableLanguage=zh stableLanguageUpdated=true }
+2026-08-01T12:23:31.558Z [log] [ConversationController] utterance_received  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда language=en turnId=9588d0d1-c817-4607-b070-6fe0e57031fb chars=22 asrLatencyMs=1838 }
+2026-08-01T12:23:31.558Z [log] [ConversationController] conversation_group_opened  { guildId=616847428351688705 responseEpoch=11 userId=502659444493123596 durationMs=800 }
+2026-08-01T12:23:31.571Z [log] [ConversationController] conversation_group_flushed  { guildId=616847428351688705 responseEpoch=11 speakers=1 utterances=1 durationMs=1851 }
+2026-08-01T12:23:31.572Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=thinking reason=generation_started }
+2026-08-01T12:23:31.572Z [log] [ConversationController] response_epoch_started  { guildId=616847428351688705 turnId=9588d0d1-c817-4607-b070-6fe0e57031fb responseEpoch=12 }
+2026-08-01T12:23:31.572Z [log] [GeminiBrain] gemini_request_started  { guildId=616847428351688705 userId=502659444493123596 turnId=9588d0d1-c817-4607-b070-6fe0e57031fb responseEpoch=12 model=gemini-3.6-flash turns=19 systemInstructionChars=5735 thinkingLevel=low maxOutputTokens=384 responseLengthClass=standard }
+2026-08-01T12:23:32.592Z [log] [GeminiBrain] gemini_first_token  { guildId=616847428351688705 userId=502659444493123596turnId=9588d0d1-c817-4607-b070-6fe0e57031fb responseEpoch=12 durationMs=1020 geminiFirstTokenMs=1020 }
+2026-08-01T12:23:32.845Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=9588d0d1-c817-4607-b070-6fe0e57031fb responseEpoch=12 chunkIndex=0 targetLanguage=en resolution=text-detection responseLanguageHint=en pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=45 }
+2026-08-01T12:23:32.846Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:23:32.846Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=en promptLanguage=ja streamingMode=0 chars=45 }
+2026-08-01T12:23:35.236Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=9588d0d1-c817-4607-b070-6fe0e57031fb responseEpoch=12 chunkIndex=0 chars=45 language=en synthesisMs=2391 }
+2026-08-01T12:23:35.237Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=thinking to=speaking reason=first_audio_queued }
+2026-08-01T12:23:35.237Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=9588d0d1-c817-4607-b070-6fe0e57031fb responseEpoch=12 chunkIndex=0 queueDepth=1 }
+2026-08-01T12:23:35.244Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=9588d0d1-c817-4607-b070-6fe0e57031fb responseEpoch=12 chunkIndex=0 queueWaitMs=7 }
+2026-08-01T12:23:35.245Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=9588d0d1-c817-4607-b070-6fe0e57031fb responseEpoch=12 chunkIndex=1 targetLanguage=en resolution=text-detection responseLanguageHint=en pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=78 }
+2026-08-01T12:23:35.246Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:23:35.246Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=en promptLanguage=ja streamingMode=0 chars=78 }
+2026-08-01T12:23:37.800Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=1418 bytes=37760 }
+2026-08-01T12:23:37.801Z [log] [ConversationController] utterance_discarded  { guildId=616847428351688705 userId=502659444493123596 phase=speaking reason=bot_speaking durationMs=1418 }
+2026-08-01T12:23:37.867Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=9588d0d1-c817-4607-b070-6fe0e57031fb responseEpoch=12 chunkIndex=1 chars=78 language=en synthesisMs=2621 }
+2026-08-01T12:23:39.164Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=9588d0d1-c817-4607-b070-6fe0e57031fb responseEpoch=12 chunkIndex=0 durationMs=3920 status=played }
+2026-08-01T12:23:39.165Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=9588d0d1-c817-4607-b070-6fe0e57031fb responseEpoch=12 chunkIndex=1 queueDepth=1 }
+2026-08-01T12:23:39.172Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=9588d0d1-c817-4607-b070-6fe0e57031fb responseEpoch=12 chunkIndex=1 queueWaitMs=7 }
+2026-08-01T12:23:39.173Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=9588d0d1-c817-4607-b070-6fe0e57031fb responseEpoch=12 chunkIndex=2 targetLanguage=en resolution=text-detection responseLanguageHint=en pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=101 }
+2026-08-01T12:23:39.174Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:23:39.174Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=en promptLanguage=ja streamingMode=0 chars=101 }
+2026-08-01T12:23:42.465Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=9588d0d1-c817-4607-b070-6fe0e57031fb responseEpoch=12 chunkIndex=2 chars=101 language=en synthesisMs=3292 }
+2026-08-01T12:23:43.497Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=9588d0d1-c817-4607-b070-6fe0e57031fb responseEpoch=12 chunkIndex=1 durationMs=4325 status=played }
+2026-08-01T12:23:43.498Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=9588d0d1-c817-4607-b070-6fe0e57031fb responseEpoch=12 chunkIndex=2 queueDepth=1 }
+2026-08-01T12:23:43.504Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=9588d0d1-c817-4607-b070-6fe0e57031fb responseEpoch=12 chunkIndex=2 queueWaitMs=6 }
+2026-08-01T12:23:43.505Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=9588d0d1-c817-4607-b070-6fe0e57031fb responseEpoch=12 chunkIndex=3 targetLanguage=en resolution=text-detection responseLanguageHint=en pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=46 }
+2026-08-01T12:23:43.505Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:23:43.505Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=en promptLanguage=ja streamingMode=0 chars=46 }
+2026-08-01T12:23:45.468Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=9588d0d1-c817-4607-b070-6fe0e57031fb responseEpoch=12 chunkIndex=3 chars=46 language=en synthesisMs=1963 }
+2026-08-01T12:23:49.396Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=9588d0d1-c817-4607-b070-6fe0e57031fb responseEpoch=12 chunkIndex=2 durationMs=5892 status=played }
+2026-08-01T12:23:49.396Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=9588d0d1-c817-4607-b070-6fe0e57031fb responseEpoch=12 chunkIndex=3 queueDepth=1 }
+2026-08-01T12:23:49.403Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=9588d0d1-c817-4607-b070-6fe0e57031fb responseEpoch=12 chunkIndex=3 queueWaitMs=7 }
+2026-08-01T12:23:50.982Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=482 bytes=16000 }
+2026-08-01T12:23:50.983Z [log] [ConversationController] utterance_discarded  { guildId=616847428351688705 userId=502659444493123596 phase=speaking reason=bot_speaking durationMs=482 }
+2026-08-01T12:23:52.878Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=9588d0d1-c817-4607-b070-6fe0e57031fb responseEpoch=12 chunkIndex=3 durationMs=3475 status=played }
+2026-08-01T12:23:52.879Z [log] [ConversationController] response_completed  { guildId=616847428351688705 turnId=9588d0d1-c817-4607-b070-6fe0e57031fb responseEpoch=12 chars=270 chunks=4 }
+2026-08-01T12:23:52.879Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=speaking to=idle reason=turn_finished }
+2026-08-01T12:23:53.339Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=522 bytes=17280 }
+2026-08-01T12:23:53.339Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T12:23:53.778Z [log] [ConversationController] transcript_filtered  { guildId=616847428351688705 userId=502659444493123596 reason=empty chars=0 language=und }
+2026-08-01T12:23:53.779Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=idle reason=transcript_empty }
+2026-08-01T12:23:59.490Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=1178 bytes=30720 }
+2026-08-01T12:23:59.490Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T12:24:00.115Z [log] [ConversationController] input_understanding_resolved  { guildId=616847428351688705 userId=502659444493123596 turnId=2c9feda4-54d8-4297-85f8-a18157be3c95 asrLanguageRaw=zh asrLanguageNormalized=zh responseLanguage=zh resolutionReason=asr-language confidence=0.7 isAmbiguous=true entityIds=[] entityCount=0 previousStableLanguage=en stableLanguageUpdated=false }
+2026-08-01T12:24:00.115Z [log] [ConversationController] utterance_received  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда language=zh turnId=2c9feda4-54d8-4297-85f8-a18157be3c95 chars=2 asrLatencyMs=1538 }
+2026-08-01T12:24:00.115Z [log] [ConversationController] conversation_group_opened  { guildId=616847428351688705 responseEpoch=12 userId=502659444493123596 durationMs=800 }
+2026-08-01T12:24:00.116Z [log] [ConversationController] conversation_group_flushed  { guildId=616847428351688705 responseEpoch=12 speakers=1 utterances=1 durationMs=1539 }
+2026-08-01T12:24:00.116Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=thinking reason=generation_started }
+2026-08-01T12:24:00.117Z [log] [ConversationController] response_epoch_started  { guildId=616847428351688705 turnId=2c9feda4-54d8-4297-85f8-a18157be3c95 responseEpoch=13 }
+2026-08-01T12:24:00.117Z [log] [GeminiBrain] gemini_request_started  { guildId=616847428351688705 userId=502659444493123596 turnId=2c9feda4-54d8-4297-85f8-a18157be3c95 responseEpoch=13 model=gemini-3.6-flash turns=21 systemInstructionChars=5735 thinkingLevel=low maxOutputTokens=384 responseLengthClass=standard }
+2026-08-01T12:24:01.849Z [log] [GeminiBrain] gemini_first_token  { guildId=616847428351688705 userId=502659444493123596turnId=2c9feda4-54d8-4297-85f8-a18157be3c95 responseEpoch=13 durationMs=1732 geminiFirstTokenMs=1732 }
+2026-08-01T12:24:01.999Z [log] [ConversationController] avatar_pause  { guildId=616847428351688705 turnId=2c9feda4-54d8-4297-85f8-a18157be3c95 responseEpoch=13 durationMs=1000 }
+2026-08-01T12:24:03.014Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=2c9feda4-54d8-4297-85f8-a18157be3c95 responseEpoch=13 chunkIndex=0 targetLanguage=zh resolution=text-detection responseLanguageHint=zh pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=29 }
+2026-08-01T12:24:03.015Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:24:03.015Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=29 }
+2026-08-01T12:24:04.102Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=3419 bytes=93440 }
+2026-08-01T12:24:04.102Z [log] [ConversationController] utterance_discarded  { guildId=616847428351688705 userId=502659444493123596 phase=thinking reason=bot_thinking durationMs=3419 }
+2026-08-01T12:24:06.795Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=2c9feda4-54d8-4297-85f8-a18157be3c95 responseEpoch=13 chunkIndex=0 chars=29 language=zh synthesisMs=3781 }
+2026-08-01T12:24:06.796Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=thinking to=speaking reason=first_audio_queued }
+2026-08-01T12:24:06.796Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=2c9feda4-54d8-4297-85f8-a18157be3c95 responseEpoch=13 chunkIndex=0 queueDepth=1 }
+2026-08-01T12:24:06.802Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=2c9feda4-54d8-4297-85f8-a18157be3c95 responseEpoch=13 chunkIndex=0 queueWaitMs=6 }
+2026-08-01T12:24:06.803Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=2c9feda4-54d8-4297-85f8-a18157be3c95 responseEpoch=13 chunkIndex=1 targetLanguage=zh resolution=text-detection responseLanguageHint=zh pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=25 }
+2026-08-01T12:24:06.804Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:24:06.804Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=25 }
+2026-08-01T12:24:08.709Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=578 bytes=19200 }
+2026-08-01T12:24:08.710Z [log] [ConversationController] utterance_discarded  { guildId=616847428351688705 userId=502659444493123596 phase=speaking reason=bot_speaking durationMs=578 }
+2026-08-01T12:24:10.144Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=2c9feda4-54d8-4297-85f8-a18157be3c95 responseEpoch=13 chunkIndex=1 chars=25 language=zh synthesisMs=3341 }
+2026-08-01T12:24:14.025Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=2c9feda4-54d8-4297-85f8-a18157be3c95 responseEpoch=13 chunkIndex=0 durationMs=7223 status=played }
+2026-08-01T12:24:14.025Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=2c9feda4-54d8-4297-85f8-a18157be3c95 responseEpoch=13 chunkIndex=1 queueDepth=1 }
+2026-08-01T12:24:14.032Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=2c9feda4-54d8-4297-85f8-a18157be3c95 responseEpoch=13 chunkIndex=1 queueWaitMs=7 }
+2026-08-01T12:24:15.679Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=699 bytes=23040 }
+2026-08-01T12:24:15.679Z [log] [ConversationController] utterance_discarded  { guildId=616847428351688705 userId=502659444493123596 phase=speaking reason=bot_speaking durationMs=699 }
+2026-08-01T12:24:19.726Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=2c9feda4-54d8-4297-85f8-a18157be3c95 responseEpoch=13 chunkIndex=1 durationMs=5694 status=played }
+2026-08-01T12:24:19.727Z [log] [ConversationController] response_completed  { guildId=616847428351688705 turnId=2c9feda4-54d8-4297-85f8-a18157be3c95 responseEpoch=13 chars=54 chunks=2 }
+2026-08-01T12:24:19.727Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=speaking to=idle reason=turn_finished }
+2026-08-01T12:24:22.950Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=1819 bytes=58880 }
+2026-08-01T12:24:22.950Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T12:24:24.018Z [log] [ConversationController] input_understanding_resolved  { guildId=616847428351688705 userId=502659444493123596 turnId=2c8bf15c-193b-4258-b2aa-8adbf56ecbf1 asrLanguageRaw=und asrLanguageNormalized=und responseLanguage=zh resolutionReason=chinese-frame confidence=0.94 isAmbiguous=false entityIds=[] entityCount=0 previousStableLanguage=en stableLanguageUpdated=true }
+2026-08-01T12:24:24.018Z [log] [ConversationController] utterance_received  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда language=und turnId=2c8bf15c-193b-4258-b2aa-8adbf56ecbf1 chars=7 asrLatencyMs=1984 }
+2026-08-01T12:24:24.018Z [log] [ConversationController] conversation_group_opened  { guildId=616847428351688705 responseEpoch=13 userId=502659444493123596 durationMs=800 }
+2026-08-01T12:24:24.019Z [log] [ConversationController] conversation_group_flushed  { guildId=616847428351688705 responseEpoch=13 speakers=1 utterances=1 durationMs=1985 }
+2026-08-01T12:24:24.019Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=thinking reason=generation_started }
+2026-08-01T12:24:24.019Z [log] [ConversationController] response_epoch_started  { guildId=616847428351688705 turnId=2c8bf15c-193b-4258-b2aa-8adbf56ecbf1 responseEpoch=14 }
+2026-08-01T12:24:24.019Z [log] [GeminiBrain] gemini_request_started  { guildId=616847428351688705 userId=502659444493123596 turnId=2c8bf15c-193b-4258-b2aa-8adbf56ecbf1 responseEpoch=14 model=gemini-3.6-flash turns=23 systemInstructionChars=5735 thinkingLevel=low maxOutputTokens=384 responseLengthClass=standard }
+2026-08-01T12:24:26.965Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=461 bytes=15360 }
+2026-08-01T12:24:26.965Z [log] [ConversationController] utterance_discarded  { guildId=616847428351688705 userId=502659444493123596 phase=thinking reason=bot_thinking durationMs=461 }
+2026-08-01T12:24:27.969Z [log] [GeminiBrain] gemini_first_token  { guildId=616847428351688705 userId=502659444493123596turnId=2c8bf15c-193b-4258-b2aa-8adbf56ecbf1 responseEpoch=14 durationMs=3950 geminiFirstTokenMs=3950 }
+2026-08-01T12:24:28.171Z [log] [ConversationController] avatar_pause  { guildId=616847428351688705 turnId=2c8bf15c-193b-4258-b2aa-8adbf56ecbf1 responseEpoch=14 durationMs=1000 }
+2026-08-01T12:24:28.602Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=481 bytes=16000 }
+2026-08-01T12:24:28.602Z [log] [ConversationController] utterance_discarded  { guildId=616847428351688705 userId=502659444493123596 phase=thinking reason=bot_thinking durationMs=481 }
+2026-08-01T12:24:29.182Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=2c8bf15c-193b-4258-b2aa-8adbf56ecbf1 responseEpoch=14 chunkIndex=0 targetLanguage=zh resolution=text-detection responseLanguageHint=zh pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=27 }
+2026-08-01T12:24:29.184Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:24:29.184Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=27 }
+2026-08-01T12:24:31.519Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=460 bytes=15360 }
+2026-08-01T12:24:31.520Z [log] [ConversationController] utterance_discarded  { guildId=616847428351688705 userId=502659444493123596 phase=thinking reason=bot_thinking durationMs=460 }
+2026-08-01T12:24:32.974Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=2c8bf15c-193b-4258-b2aa-8adbf56ecbf1 responseEpoch=14 chunkIndex=0 chars=27 language=zh synthesisMs=3792 }
+2026-08-01T12:24:32.974Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=thinking to=speaking reason=first_audio_queued }
+2026-08-01T12:24:32.974Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=2c8bf15c-193b-4258-b2aa-8adbf56ecbf1 responseEpoch=14 chunkIndex=0 queueDepth=1 }
+2026-08-01T12:24:32.981Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=2c8bf15c-193b-4258-b2aa-8adbf56ecbf1 responseEpoch=14 chunkIndex=0 queueWaitMs=7 }
+2026-08-01T12:24:32.982Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=2c8bf15c-193b-4258-b2aa-8adbf56ecbf1 responseEpoch=14 chunkIndex=1 targetLanguage=zh resolution=text-detection responseLanguageHint=zh pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=26 }
+2026-08-01T12:24:32.983Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:24:32.984Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=26 }
+2026-08-01T12:24:35.863Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=2c8bf15c-193b-4258-b2aa-8adbf56ecbf1 responseEpoch=14 chunkIndex=1 chars=26 language=zh synthesisMs=2881 }
+2026-08-01T12:24:39.951Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=2c8bf15c-193b-4258-b2aa-8adbf56ecbf1 responseEpoch=14 chunkIndex=0 durationMs=6970 status=played }
+2026-08-01T12:24:39.951Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=2c8bf15c-193b-4258-b2aa-8adbf56ecbf1 responseEpoch=14 chunkIndex=1 queueDepth=1 }
+2026-08-01T12:24:39.958Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=2c8bf15c-193b-4258-b2aa-8adbf56ecbf1 responseEpoch=14 chunkIndex=1 queueWaitMs=7 }
+2026-08-01T12:24:39.959Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=2c8bf15c-193b-4258-b2aa-8adbf56ecbf1 responseEpoch=14 chunkIndex=2 targetLanguage=zh resolution=text-detection responseLanguageHint=zh pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=11 }
+2026-08-01T12:24:39.960Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:24:39.960Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=zh promptLanguage=ja streamingMode=0 chars=11 }
+2026-08-01T12:24:41.104Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=497 bytes=16640 }
+2026-08-01T12:24:41.104Z [log] [ConversationController] utterance_discarded  { guildId=616847428351688705 userId=502659444493123596 phase=speaking reason=bot_speaking durationMs=497 }
+2026-08-01T12:24:41.496Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=2c8bf15c-193b-4258-b2aa-8adbf56ecbf1 responseEpoch=14 chunkIndex=2 chars=11 language=zh synthesisMs=1537 }
+2026-08-01T12:24:44.137Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=2061 bytes=42240 }
+2026-08-01T12:24:44.137Z [log] [ConversationController] utterance_discarded  { guildId=616847428351688705 userId=502659444493123596 phase=speaking reason=bot_speaking durationMs=2061 }
+2026-08-01T12:24:45.247Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=2c8bf15c-193b-4258-b2aa-8adbf56ecbf1 responseEpoch=14 chunkIndex=1 durationMs=5289 status=played }
+2026-08-01T12:24:45.247Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=2c8bf15c-193b-4258-b2aa-8adbf56ecbf1 responseEpoch=14 chunkIndex=2 queueDepth=1 }
+2026-08-01T12:24:45.254Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=2c8bf15c-193b-4258-b2aa-8adbf56ecbf1 responseEpoch=14 chunkIndex=2 queueWaitMs=7 }
+2026-08-01T12:24:47.163Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=2c8bf15c-193b-4258-b2aa-8adbf56ecbf1 responseEpoch=14 chunkIndex=2 durationMs=1909 status=played }
+2026-08-01T12:24:47.163Z [log] [ConversationController] response_completed  { guildId=616847428351688705 turnId=2c8bf15c-193b-4258-b2aa-8adbf56ecbf1 responseEpoch=14 chars=64 chunks=3 }
+2026-08-01T12:24:47.163Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=speaking to=idle reason=turn_finished }
+2026-08-01T12:24:52.879Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=4577 bytes=99840 }
+2026-08-01T12:24:52.880Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T12:24:53.774Z [log] [ConversationController] input_understanding_resolved  { guildId=616847428351688705 userId=502659444493123596 turnId=4a982d2b-0447-48d4-9d21-1cb8f32d77b7 asrLanguageRaw=zh asrLanguageNormalized=zh responseLanguage=ja resolutionReason=japanese-script confidence=0.98 isAmbiguous=false entityIds=[] entityCount=0 previousStableLanguage=zh stableLanguageUpdated=true }
+2026-08-01T12:24:53.774Z [log] [ConversationController] utterance_received  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда language=zh turnId=4a982d2b-0447-48d4-9d21-1cb8f32d77b7 chars=7 asrLatencyMs=1801 }
+2026-08-01T12:24:53.774Z [log] [ConversationController] conversation_group_opened  { guildId=616847428351688705 responseEpoch=14 userId=502659444493123596 durationMs=800 }
+2026-08-01T12:24:53.780Z [log] [ConversationController] conversation_group_flushed  { guildId=616847428351688705 responseEpoch=14 speakers=1 utterances=1 durationMs=1807 }
+2026-08-01T12:24:53.780Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=thinking reason=generation_started }
+2026-08-01T12:24:53.781Z [log] [ConversationController] response_epoch_started  { guildId=616847428351688705 turnId=4a982d2b-0447-48d4-9d21-1cb8f32d77b7 responseEpoch=15 }
+2026-08-01T12:24:53.781Z [log] [GeminiBrain] gemini_request_started  { guildId=616847428351688705 userId=502659444493123596 turnId=4a982d2b-0447-48d4-9d21-1cb8f32d77b7 responseEpoch=15 model=gemini-3.6-flash turns=25 systemInstructionChars=5736 thinkingLevel=low maxOutputTokens=384 responseLengthClass=standard }
+2026-08-01T12:24:54.701Z [log] [GeminiBrain] gemini_first_token  { guildId=616847428351688705 userId=502659444493123596turnId=4a982d2b-0447-48d4-9d21-1cb8f32d77b7 responseEpoch=15 durationMs=920 geminiFirstTokenMs=920 }
+2026-08-01T12:24:54.880Z [log] [ConversationController] avatar_pause  { guildId=616847428351688705 turnId=4a982d2b-0447-48d4-9d21-1cb8f32d77b7 responseEpoch=15 durationMs=1000 }
+2026-08-01T12:24:55.886Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=4a982d2b-0447-48d4-9d21-1cb8f32d77b7 responseEpoch=15 chunkIndex=0 targetLanguage=ja resolution=text-detection responseLanguageHint=ja pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=17 }
+2026-08-01T12:24:55.887Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:24:55.887Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=ja promptLanguage=ja streamingMode=0 chars=17 }
+2026-08-01T12:24:57.683Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=4a982d2b-0447-48d4-9d21-1cb8f32d77b7 responseEpoch=15 chunkIndex=0 chars=17 language=ja synthesisMs=1797 }
+2026-08-01T12:24:57.683Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=thinking to=speaking reason=first_audio_queued }
+2026-08-01T12:24:57.684Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=4a982d2b-0447-48d4-9d21-1cb8f32d77b7 responseEpoch=15 chunkIndex=0 queueDepth=1 }
+2026-08-01T12:24:57.691Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=4a982d2b-0447-48d4-9d21-1cb8f32d77b7 responseEpoch=15 chunkIndex=0 queueWaitMs=7 }
+2026-08-01T12:24:57.691Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=4a982d2b-0447-48d4-9d21-1cb8f32d77b7 responseEpoch=15 chunkIndex=1 targetLanguage=ja resolution=text-detection responseLanguageHint=ja pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=24 }
+2026-08-01T12:24:57.692Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:24:57.692Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=ja promptLanguage=ja streamingMode=0 chars=24 }
+2026-08-01T12:24:59.575Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=4a982d2b-0447-48d4-9d21-1cb8f32d77b7 responseEpoch=15 chunkIndex=1 chars=24 language=ja synthesisMs=1884 }
+2026-08-01T12:25:00.498Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=4a982d2b-0447-48d4-9d21-1cb8f32d77b7 responseEpoch=15 chunkIndex=0 durationMs=2807 status=played }
+2026-08-01T12:25:00.498Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=4a982d2b-0447-48d4-9d21-1cb8f32d77b7 responseEpoch=15 chunkIndex=1 queueDepth=1 }
+2026-08-01T12:25:00.505Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=4a982d2b-0447-48d4-9d21-1cb8f32d77b7 responseEpoch=15 chunkIndex=1 queueWaitMs=6 }
+2026-08-01T12:25:00.505Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=4a982d2b-0447-48d4-9d21-1cb8f32d77b7 responseEpoch=15 chunkIndex=2 targetLanguage=ja resolution=text-detection responseLanguageHint=ja pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=15 }
+2026-08-01T12:25:00.506Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:25:00.506Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=ja promptLanguage=ja streamingMode=0 chars=15 }
+2026-08-01T12:25:03.234Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=4a982d2b-0447-48d4-9d21-1cb8f32d77b7 responseEpoch=15 chunkIndex=2 chars=15 language=ja synthesisMs=2729 }
+2026-08-01T12:25:03.429Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=4a982d2b-0447-48d4-9d21-1cb8f32d77b7 responseEpoch=15 chunkIndex=1 durationMs=2925 status=played }
+2026-08-01T12:25:03.430Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=4a982d2b-0447-48d4-9d21-1cb8f32d77b7 responseEpoch=15 chunkIndex=2 queueDepth=1 }
+2026-08-01T12:25:03.437Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=4a982d2b-0447-48d4-9d21-1cb8f32d77b7 responseEpoch=15 chunkIndex=2 queueWaitMs=7 }
+2026-08-01T12:25:03.437Z [log] [ConversationController] tts_synthesis_started  { guildId=616847428351688705 turnId=4a982d2b-0447-48d4-9d21-1cb8f32d77b7 responseEpoch=15 chunkIndex=3 targetLanguage=ja resolution=text-detection responseLanguageHint=ja pronunciationSubstitutions=0 pronunciationProfileVersion=makise-amadeus-v2 chars=19 }
+2026-08-01T12:25:03.438Z [log] [TtsCache] tts_cache_miss  { cacheTier=provider }
+2026-08-01T12:25:03.438Z [log] [GptSoVitsTts] Synthesizing  { textLanguage=ja promptLanguage=ja streamingMode=0 chars=19 }
+2026-08-01T12:25:05.024Z [log] [ConversationController] tts_synthesis_completed  { guildId=616847428351688705 turnId=4a982d2b-0447-48d4-9d21-1cb8f32d77b7 responseEpoch=15 chunkIndex=3 chars=19 language=ja synthesisMs=1587 }
+2026-08-01T12:25:08.244Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=4a982d2b-0447-48d4-9d21-1cb8f32d77b7 responseEpoch=15 chunkIndex=2 durationMs=4807 status=played }
+2026-08-01T12:25:08.244Z [log] [Playback] playback_enqueued  { guildId=616847428351688705 turnId=4a982d2b-0447-48d4-9d21-1cb8f32d77b7 responseEpoch=15 chunkIndex=3 queueDepth=1 }
+2026-08-01T12:25:08.251Z [log] [Playback] playback_started  { guildId=616847428351688705 turnId=4a982d2b-0447-48d4-9d21-1cb8f32d77b7 responseEpoch=15 chunkIndex=3 queueWaitMs=7 }
+2026-08-01T12:25:10.797Z [log] [Playback] playback_completed  { guildId=616847428351688705 turnId=4a982d2b-0447-48d4-9d21-1cb8f32d77b7 responseEpoch=15 chunkIndex=3 durationMs=2546 status=played }
+2026-08-01T12:25:10.798Z [log] [ConversationController] response_completed  { guildId=616847428351688705 turnId=4a982d2b-0447-48d4-9d21-1cb8f32d77b7 responseEpoch=15 chars=75 chunks=4 }
+2026-08-01T12:25:10.798Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=speaking to=idle reason=turn_finished }
+2026-08-01T12:25:14.859Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=1218 bytes=30720 }
+2026-08-01T12:25:14.859Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T12:25:15.518Z [log] [ConversationController] transcript_filtered  { guildId=616847428351688705 userId=502659444493123596 reason=filler chars=2 language=zh }
+2026-08-01T12:25:15.518Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=idle reason=transcript_filler }
+2026-08-01T12:25:16.409Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=500 bytes=16640 }
+2026-08-01T12:25:16.409Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T12:25:16.835Z [log] [ConversationController] transcript_filtered  { guildId=616847428351688705 userId=502659444493123596 reason=empty chars=0 language=und }
+2026-08-01T12:25:16.835Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=idle reason=transcript_empty }
+2026-08-01T12:25:18.793Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=440 bytes=14720 }
+2026-08-01T12:25:18.794Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T12:25:19.256Z [log] [ConversationController] transcript_filtered  { guildId=616847428351688705 userId=502659444493123596 reason=empty chars=0 language=und }
+2026-08-01T12:25:19.256Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=idle reason=transcript_empty }
+2026-08-01T12:25:22.766Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=878 bytes=28800 }
+2026-08-01T12:25:22.766Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T12:25:23.269Z [log] [ConversationController] transcript_filtered  { guildId=616847428351688705 userId=502659444493123596 reason=empty chars=0 language=und }
+2026-08-01T12:25:23.269Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=idle reason=transcript_empty }
+2026-08-01T12:25:26.172Z [log] [VoiceManager] Utterance finalized  { guildId=616847428351688705 userId=502659444493123596 displayName=ратгіск тне соммцлізт звезда durationMs=2356 bytes=64000 }
+2026-08-01T12:25:26.173Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=collecting reason=utterance_admitted }
+2026-08-01T12:25:26.641Z [log] [ConversationController] transcript_filtered  { guildId=616847428351688705 userId=502659444493123596 reason=empty chars=0 language=und }
+2026-08-01T12:25:26.641Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=collecting to=idle reason=transcript_empty }
+2026-08-01T12:25:28.013Z [log] [DiscordAdapter] Interaction received: /leave from starrydark
+2026-08-01T12:25:28.015Z [log] [VoiceManager] Voice connection state changed from ready to destroyed  { old=ready new=destroyed }
+2026-08-01T12:25:28.015Z [log] [Playback] playback_cancelled  { guildId=616847428351688705 reason=shutdown cleared=0 }
+2026-08-01T12:25:28.016Z [log] [ConversationState] guild_phase_changed  { guildId=616847428351688705 from=idle to=disconnecting reason=session_ended }
+2026-08-01T12:25:28.016Z [log] [ConversationController] response_cancelled  { guildId=616847428351688705 responseEpoch=15 reason=disconnect }
+2026-08-01T12:25:28.020Z [log] [VoiceManager] Voice stream closed  { displayName=ратгіск тне соммцлізт звезда }
+2026-08-01T12:25:28.021Z [log] [VoiceManager] Opus decoder closed  { displayName=ратгіск тне соммцлізт звезда }
+2026-08-01T12:25:28.021Z [error] [VoiceManager] Opus decoding pipeline error  { error=Premature close stack=Error [ERR_STREAM_PREMATURE_CLOSE]: Premature close
+    at OpusDecoder.onclose (node:internal/streams/end-of-stream:171:30)
+    at OpusDecoder.emit (node:events:520:35)
+    at emitCloseNT (node:internal/streams/destroy:148:10)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21) }
+2026-08-01T12:25:40.397Z [log] [GeminiBrain] gemini_request_started  { guildId=616847428351688705 userId=502659444493123596 turnId=1533088328713506819 responseEpoch=undefined model=gemini-3.6-flash turns=1 systemInstructionChars=5614 thinkingLevel=low maxOutputTokens=384 responseLengthClass=standard }
+2026-08-01T12:25:41.424Z [log] [GeminiBrain] gemini_first_token  { guildId=616847428351688705 userId=502659444493123596turnId=1533088328713506819 responseEpoch=undefined durationMs=1027 geminiFirstTokenMs=1027 }

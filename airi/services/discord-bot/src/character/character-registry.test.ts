@@ -38,7 +38,7 @@ afterEach(() => {
 })
 
 describe('fileCharacterRegistry — LIVE Kurisu card (compatibility)', () => {
-  it('loads the live card with no extensions.dc_bot into a full runtime', () => {
+  it('loads the live card interaction profile into a full runtime', () => {
     const registry = new FileCharacterRegistry({
       resolvePath: () => ({ dir: CARD_DIR, json: KURISU_CARD_JSON }),
     })
@@ -67,8 +67,8 @@ describe('fileCharacterRegistry — LIVE Kurisu card (compatibility)', () => {
     expect(runtime.voice.voiceId).toBe('kurisu')
     expect(runtime.voice.promptLanguage).toBe('ja')
 
-    // asr hotwords default to [].
-    expect(runtime.asr.hotwords).toEqual([])
+    expect(runtime.asr.hotwords).toContain('牧瀬紅莉栖')
+    expect(runtime.asr.hotwords).toContain('アマデウス')
 
     // avatar displayModelId picked up from the AIRI extension.
     expect(runtime.avatar?.renderer).toBe('live2d')

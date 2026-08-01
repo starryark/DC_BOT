@@ -16,6 +16,15 @@ export interface BrainTurn {
   text: string
 }
 
+export type GeminiThinkingLevel = 'minimal' | 'low' | 'medium' | 'high'
+export type ResponseLengthClass = 'casual' | 'standard' | 'detailed'
+
+export interface BrainGenerationProfile {
+  thinkingLevel: GeminiThinkingLevel
+  maxOutputTokens: number
+  responseLengthClass: ResponseLengthClass
+}
+
 /**
  * A fully composed generation request.
  *
@@ -34,6 +43,8 @@ export interface BrainRequest {
   systemInstruction: string
   /** Conversation contents oldest-first, ending with the current user turn. */
   contents: Content[]
+  /** Fully resolved per-turn latency/length policy. */
+  generationProfile: BrainGenerationProfile
 }
 
 export interface BrainProvider {

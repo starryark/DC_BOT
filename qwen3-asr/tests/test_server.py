@@ -74,6 +74,7 @@ def test_transcribe_too_short_returns_empty(client: TestClient) -> None:
     body = r.json()
     assert body["text"] == ""
     assert body["language"] == "und"
+    assert body["hotword_mode"] == "unsupported"
 
 
 def test_transcribe_too_long(client: TestClient) -> None:

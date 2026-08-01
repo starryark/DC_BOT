@@ -10,6 +10,7 @@ class TranscribeResponse(BaseModel):
     audio_ms: int
     inference_ms: int
     model: str
+    hotword_mode: str = "unsupported"
 
 
 class HealthResponse(BaseModel):

@@ -1,4 +1,5 @@
 import { env } from 'node:process'
+import type { GeminiThinkingLevel } from './providers/brain/types'
 
 /**
  * Centralized, validated runtime configuration.
@@ -66,6 +67,12 @@ export interface BrainConfig {
   defaultCooldownMs: number
   /** Minimum gap between spoken "temporarily unable to answer" prompts. */
   cooldownPromptIntervalMs: number
+  thinkingLevelCasual: GeminiThinkingLevel
+  thinkingLevelStandard: GeminiThinkingLevel
+  thinkingLevelComplex: GeminiThinkingLevel
+  maxOutputTokensCasual: number
+  maxOutputTokensStandard: number
+  maxOutputTokensDetailed: number
 }
 
 /**
@@ -185,6 +192,10 @@ function parseBoundedInteger(raw: string | undefined, fallback: number, min: num
   return n
 }
 
+function parseThinkingLevel(raw: string | undefined, fallback: GeminiThinkingLevel): GeminiThinkingLevel {
+  return raw === 'minimal' || raw === 'low' || raw === 'medium' || raw === 'high' ? raw : fallback
+}
+
 function parseInputPolicy(raw: string | undefined): InputPolicy {
   const v = (raw ?? '').trim().toLowerCase()
   if (v === 'latest_wins' || v === 'barge_in' || v === 'half_duplex')
@@ -253,6 +264,12 @@ export function config(): AppConfig {
       maxConcurrentRequests: parseBounded(env.GEMINI_MAX_CONCURRENT_REQUESTS, 1, 32),
       defaultCooldownMs: parseBounded(env.GEMINI_DEFAULT_COOLDOWN_MS, 60_000, 3_600_000),
       cooldownPromptIntervalMs: parseBounded(env.GEMINI_COOLDOWN_PROMPT_INTERVAL_MS, 60_000, 3_600_000),
+      thinkingLevelCasual: parseThinkingLevel(env.GEMINI_THINKING_LEVEL_CASUAL, 'low'),
+      thinkingLevelStandard: parseThinkingLevel(env.GEMINI_THINKING_LEVEL_STANDARD, 'low'),
+      thinkingLevelComplex: parseThinkingLevel(env.GEMINI_THINKING_LEVEL_COMPLEX, 'medium'),
+      maxOutputTokensCasual: parseBoundedInteger(env.GEMINI_MAX_OUTPUT_TOKENS_CASUAL, 256, 64, 4096),
+      maxOutputTokensStandard: parseBoundedInteger(env.GEMINI_MAX_OUTPUT_TOKENS_STANDARD, 384, 64, 4096),
+      maxOutputTokensDetailed: parseBoundedInteger(env.GEMINI_MAX_OUTPUT_TOKENS_DETAILED, 768, 64, 8192),
     },
 
     character: {

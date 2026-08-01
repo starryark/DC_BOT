@@ -38,6 +38,7 @@ import { isStableLanguageEvidence, resolveInputUnderstanding } from './input-und
 import { chunkStream } from './speech-chunker'
 import { filterTranscript } from './transcript-filter'
 import { runBoundedTtsPipeline } from './tts-pipeline'
+import { classifyTurn, resolveGenerationProfile } from './turn-classifier'
 
 /**
  * Spoken when the model is rate-limited. Japanese to match the Kurisu reference
@@ -169,7 +170,7 @@ export class ConversationController {
     let asrLanguage = 'und'
     try {
       const wav = convertOpusToWav(utterance.pcm)
-      const result = await this.asr.transcribe({ wav, sampleRate: 16000 })
+      const result = await this.asr.transcribe({ wav, sampleRate: 16000, hotwords: this.character?.asr.hotwords ?? [] })
       asrText = result.text
       asrLanguage = result.language
     }
@@ -386,7 +387,8 @@ export class ConversationController {
   private compileRequest(
     session: GuildConversationSession,
     turn: AcceptedTurn,
-  ): { guildId: string, userId: string, systemInstruction: string, contents: Content[] } {
+  ): { guildId: string, userId: string, systemInstruction: string, contents: Content[], generationProfile: import('../providers/brain/types').BrainGenerationProfile } {
+    const generationProfile = resolveGenerationProfile(classifyTurn(turn.text), config().brain)
     if (this.character && this.promptCompiler) {
       const { prompt } = this.promptCompiler.compile({
         character: this.character,
@@ -400,6 +402,7 @@ export class ConversationController {
         userId: turn.userId,
         systemInstruction: prompt.systemInstruction,
         contents: prompt.contents,
+        generationProfile,
       }
     }
 
@@ -410,6 +413,7 @@ export class ConversationController {
       userId: turn.userId,
       systemInstruction: `${FALLBACK_SYSTEM_PROMPT}\n\n# Current-turn runtime routing\nSelected reply language: ${turn.understanding.responseLanguage}. Reply in this selected language.`,
       contents,
+      generationProfile,
     }
   }
 
@@ -578,7 +582,7 @@ export class ConversationController {
    * action is recorded rather than published; wiring it to the avatar is Wave 7's
    * job and needs no further change here.
    */
-  private onControlToken(session: GuildConversationSession, epoch: number, turnId: string, token: string): void {
+  private async onControlToken(session: GuildConversationSession, epoch: number, turnId: string, token: string): Promise<void> {
     if (session.responseEpoch !== epoch)
       return
 
@@ -595,6 +599,9 @@ export class ConversationController {
     }
     for (const pause of parsed.pauses) {
       this.logger.withFields({ guildId: session.guildId, turnId, responseEpoch: epoch, durationMs: pause.durationMs }).log('avatar_pause')
+      await cancellableDelay(pause.durationMs, session.generationAbort?.signal)
+      if (session.responseEpoch !== epoch)
+        return
     }
   }
 
@@ -641,6 +648,20 @@ export class ConversationController {
     await this.cancel(session, 'disconnect')
     this.states.delete(guildId)
   }
+}
+
+function cancellableDelay(durationMs: number, signal?: AbortSignal): Promise<void> {
+  if (!signal || signal.aborted || durationMs <= 0)
+    return Promise.resolve()
+  return new Promise((resolve) => {
+    const timer = setTimeout(done, durationMs)
+    signal.addEventListener('abort', done, { once: true })
+    function done() {
+      clearTimeout(timer)
+      signal?.removeEventListener('abort', done)
+      resolve()
+    }
+  })
 }
 
 /** Does the reply end in a question, so a bare "yes"/"嗯" is a real answer? */

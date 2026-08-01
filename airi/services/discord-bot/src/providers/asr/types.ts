@@ -7,12 +7,16 @@ export interface AsrResult {
   /** BCP-ish code: `zh` | `en` | `ja` | `und` | other. */
   language: string
   inferenceMs: number
+  /** Honest backend capability report; current Qwen service does not decoder-bias. */
+  hotwordMode?: 'native' | 'prompt' | 'post-normalization' | 'unsupported'
 }
 
 export interface AsrInput {
   /** 16 kHz mono PCM16 WAV (header + samples). */
   wav: Buffer
   sampleRate: 16000
+  languageHint?: 'ja' | 'zh' | 'en'
+  hotwords?: string[]
 }
 
 export interface AsrProvider {

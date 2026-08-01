@@ -142,7 +142,7 @@ const TOKEN_CLOSE = '|>'
 const MAX_HELD_CHARS = 512
 
 /** Receives each complete `<|...|>` span, including its delimiters. */
-export type ControlTokenHandler = (token: string) => void
+export type ControlTokenHandler = (token: string) => unknown | Promise<unknown>
 
 /**
  * Separates `<|...|>` control tokens from spoken text in a delta stream.
@@ -189,7 +189,7 @@ export async function* stripControlTokens(deltas: AsyncIterable<string>, onToken
         }
         break
       }
-      onToken?.(held.slice(open, close + TOKEN_CLOSE.length))
+      await onToken?.(held.slice(open, close + TOKEN_CLOSE.length))
       held = held.slice(close + TOKEN_CLOSE.length)
     }
 

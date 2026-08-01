@@ -5,6 +5,8 @@ import type { DiscordMentionInputEvent } from './events'
 import type { ConversationRoomId } from './room-id'
 
 import { parseActV1 } from '../character/output-protocol/act-v1-parser'
+import { config } from '../config'
+import { classifyTurn, resolveGenerationProfile } from './turn-classifier'
 import { BrainRateLimitError, BrainRequestAbortedError } from '../providers/brain/errors'
 import { FALLBACK_SYSTEM_PROMPT } from '../providers/brain/prompt'
 import { InMemoryRoomStore } from './room'
@@ -119,6 +121,7 @@ export class MentionResponder implements TextMentionResponder {
       turnId: event.turnId,
       systemInstruction: `${compiled.systemInstruction}\n\n---\n\n${DISCORD_DELIVERY_INSTRUCTION}`,
       contents: compiled.contents,
+      generationProfile: resolveGenerationProfile(classifyTurn(currentInputText), config().brain),
     }
 
     let generated = ''
