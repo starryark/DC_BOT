@@ -48,6 +48,21 @@ causal repository references fixture generation rows until IMP-205 implements
 generation ownership. No runtime, delivery, deletion workflow, or flag is
 enabled.
 
+IMP-208 adds an explicit file-backed validation profile: foreign keys on, WAL,
+`synchronous=FULL`, latest migration, and a finite 250 ms provisional busy
+timeout. Exhaustion becomes a typed persistence failure; retries are never
+infinite. The value is a local measurement recommendation, not a production SLO.
+
+`createVerifiedBackup` uses the `node:sqlite` online backup API and atomically
+publishes an integrity-checked snapshot plus schema/checksum manifest.
+`restoreVerifiedBackup` restores only to an isolated path, requires tombstone
+replay before publication, verifies again, and checkpoints WAL. See
+`docs/memory/sqlite-backup-restore.md`. Never copy only a live WAL main file, use
+a network filesystem, or add independent SQLite writer processes. PostgreSQL or
+topology reconsideration is required when those constraints or approved measured
+bounds fail. Runtime flags remain off; DB/Discord atomicity and exactly-once
+Discord delivery are not claimed.
+
 IMP-205 adds `GenerationRepository`, `OutputRepository`, and
 `DeliveryRepository` behind additive migration 5
 (`generation_output_delivery_repositories`). Generations retain exact ordered

@@ -410,13 +410,38 @@ Run from `airi/`, 2026-08-02. Exact commands and exact results:
   remain open. Recovery is disabling durable writes and restoring the verified
   pre-v7 snapshot; no down migration exists. IMP-208 is next and unstarted.
 
+### IMP-208 concurrency, backup, and compatibility evidence (2026-08-02)
+
+- A file-backed profile verifies foreign keys, WAL after reopen,
+  `synchronous=FULL`, latest migrations, and a finite 250 ms provisional busy
+  timeout. Exhaustion is typed and never retried indefinitely.
+- Deterministic separate-connection tests cover different/same-room writes, WAL
+  read snapshots, bounded writer contention, and token-fenced queue claimers.
+  Six portable child-process schedules use actual forced process termination at
+  transaction, commit, WAL, and checkpoint boundaries; reopen, atomic visibility,
+  integrity, foreign keys, history, and checkpoint all pass.
+- Node's online SQLite backup API publishes a verified snapshot and manifest via
+  partial files and atomic renames. Restore occurs at an isolated path and cannot
+  publish before deletion-obligation replay and repeat verification. The drill
+  proves existing primary SQLite canary/tombstone scope only; complete derived
+  deletion remains IMP-702/IMP-703.
+- Empty and exact v1–v7 compatibility, checksum/future-schema failure, duplicate
+  and unordered definition failure, and historical-row preservation pass. No
+  migration changed and no down migration was added.
+- The reproducible workstation baseline is recorded in
+  `docs/memory/evidence/imp-208-validation-report.md`. It is not a universal SLO.
+  Actual deployment proof for one process and local storage remains
+  OQ-BLOCK-003; local tests do not approve G2 production rollout.
+- Runtime flags remain disabled. No production database was accessed and no
+  DB/Discord atomicity or exactly-once Discord delivery is claimed.
+
 Not run, and why:
 
 | Command | Why not |
 |---|---|
-| Destructive down-migration tests | Not applicable: the approved plan is forward-only; recovery is snapshot restore, not reverse SQL. Restore rehearsal remains IMP-208. |
-| Concurrency / failure-injection / crash-window suites | They exercise a persistence adapter that does not exist yet (IMP-207, IMP-208, IMP-406). |
-| Deletion-propagation, backup restore-and-redelete drills | Require the repositories and the deletion executor (IMP-702, IMP-703). |
+| Destructive down-migration tests | Not applicable: the approved plan is forward-only; recovery is verified snapshot restore, not reverse SQL. |
+| Power-loss testing | OS process-kill recovery passed; workstation tests cannot simulate storage-controller or power loss. |
+| Full derived-store deletion after restore | IMP-208 proves current primary SQLite/tombstone scope; caches, indexes, exports, embeddings, and the complete executor remain IMP-702/IMP-703. |
 | Prompt-injection corpus, voice-interruption E2E, latency and cost benchmarks | Require the serializer and the live adapters (IMP-602, IMP-405, IMP-803). |
 | Full monorepo `pnpm lint` / `pnpm test:run` | Not run: the unrelated upstream workspaces are outside this increment's blast radius and pre-existing failures there would obscure the result. The two workspaces this increment touches were linted and tested in full. |
 
@@ -430,7 +455,7 @@ flags all default to `false`; no other production module reads it yet.
 |---|---|
 | Entry (IMP-001…003) | ✅ **passed this increment** |
 | G1 Domain (IMP-101…108) | ✅ **passed this increment** — one contract package, no Discord/DB imports, conformance fixtures cover multi-speaker causality and partial delivery |
-| G2 Persistence | 🚧 **in progress** — IMP-201 through IMP-207 complete; IMP-208 remains, and OQ-BLOCK-003 still blocks IMP-208 sign-off |
+| G2 Persistence | ✅ **IMP-201 through IMP-208 technical envelope passed** — production rollout/G2 approval remains conditioned on OQ-BLOCK-003 deployment evidence |
 | G3 Identity propagation | ⛔ not started; also blocked on FIND-010 |
 | G4 Event/delivery | ⛔ not started |
 | G5 Text/voice integration | ⛔ not started |

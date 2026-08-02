@@ -1,3 +1,5 @@
+export * from './backup.js'
+export * from './connection-profile.js'
 export * from './idempotency.js'
 export { migrate } from './migration-runner.js'
 export { latestSchemaVersion, migrations } from './migrations/index.js'

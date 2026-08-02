@@ -131,15 +131,15 @@ describe('imp-201 forward-only migration runner', () => {
     expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([])
   })
 
-  it('applies supplied migrations in deterministic numeric order', () => {
+  it('rejects unordered supplied migrations deterministically', () => {
     const db = database()
     const supplied = [
       migration(2, 'second', 'CREATE TABLE second (id INTEGER PRIMARY KEY) STRICT'),
       migration(1, 'first', 'CREATE TABLE first (id INTEGER PRIMARY KEY) STRICT'),
     ]
 
-    expect(migrate(db, supplied)).toEqual([1, 2])
-    expect(db.prepare('SELECT version FROM memory_schema_migrations ORDER BY version').all()).toEqual([{ version: 1 }, { version: 2 }])
+    expect(() => migrate(db, supplied)).toThrowError(/strictly increasing order/)
+    expect(tables(db)).toEqual([])
   })
 
   it('rolls back schema and history when a migration statement fails', () => {

@@ -26,14 +26,16 @@ function checksum(sql: string): string {
 }
 
 function validateMigrations(migrations: readonly Migration[]): readonly Migration[] {
-  const ordered = [...migrations].sort((left, right) => left.version - right.version)
+  const ordered = [...migrations]
   const versions = new Set<number>()
 
-  for (const migration of ordered) {
+  for (const [index, migration] of ordered.entries()) {
     if (!Number.isSafeInteger(migration.version) || migration.version <= 0)
       fail('Migration versions must be positive safe integers', { version: migration.version })
     if (versions.has(migration.version))
       fail('Duplicate migration version', { version: migration.version })
+    if (index > 0 && ordered[index - 1]!.version >= migration.version)
+      fail('Migration definitions must be supplied in strictly increasing order', { version: migration.version })
     versions.add(migration.version)
 
     const actualChecksum = checksum(migration.sql)
