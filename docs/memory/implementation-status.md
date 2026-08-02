@@ -3,6 +3,9 @@
 **Task:** IMP-001 · **Frozen:** 2026-08-02 · **Repository:** DC_BOT `main` @ `0ea3cbf5ec92f719e2b48066c3ada45aa50122ad`
 **Access mode:** **A — writable local checkout** (`C:\Users\lyang\Code\DC_BOT`).
 
+**Current implementation increment:** IMP-201 · **Inspected base:** `main` @
+`50d81100cfda083feefe83fe542880b8bc29bcbd` · initial working tree clean.
+
 This is the live status page for the shared-memory program. It answers three
 questions: which approved artifacts exist, what is blocked, and what is
 therefore authorized to be coded right now.
@@ -165,6 +168,7 @@ violate it. `Open` = neither.
 | IMP-106 | REQ-EVENT-001…003 | `memory-domain/src/{events,causality}.ts` | `…/{events,causality}.test.ts` |
 | IMP-107 | REQ-DELIVERY-001…003 | `memory-domain/src/{generation,delivery}.ts` | `…/{generation,delivery}.test.ts` |
 | IMP-108 | REQ-MEM-002, REQ-MEM-003, REQ-PRIV-002 | `memory-domain/src/{memory-records,provenance,corrections}.ts` | `…/{memory-records,corrections}.test.ts` |
+| IMP-201 | REQ-EVENT-001, REQ-MEM-002, REQ-OPS-001 | `memory-sqlite/src/{schema,migrations,migration-runner}.ts` | `…/{migration-runner,schema/v1,boundaries}.test.ts` |
 
 ---
 
@@ -197,12 +201,36 @@ Run from `airi/`, 2026-08-02. Exact commands and exact results:
 | `pnpm exec moeru-lint packages/memory-domain services/discord-bot/src/memory services/discord-bot/src/config.ts` | ✅ 0 errors, 0 warnings |
 | `vitest run` in `packages/memory-domain` | ✅ 10 files, **206 tests passed** |
 | `vitest run` in `services/discord-bot` | ✅ 33 files, **365 tests passed** (330 pre-existing + 35 added) |
+| `pnpm -F @proj-airi/memory-sqlite typecheck` | ✅ clean |
+| `pnpm -F @proj-airi/memory-sqlite test` | ✅ 3 files, **20 tests passed against SQLite** |
+| `pnpm exec moeru-lint packages/memory-sqlite` | ✅ 0 errors, 0 warnings |
+| `git diff --check` | ✅ clean (line-ending conversion notices only) |
+
+### IMP-201 implementation evidence
+
+- Introduced schema version **1**, migration
+  `001_initial_shared_memory_schema`, SHA-256
+  `eb437ff3cf9bca1ab28719bff3d526d57e2f6bcdbb98ab48c545ec618518baf9`.
+- The forward-only runner orders versions numerically, validates unique versions
+  and immutable checksums, applies each migration under `BEGIN EXCLUSIVE`, and
+  records history only inside the successful transaction.
+- Reapplication is a no-op. Unknown future versions and altered applied
+  checksums fail closed with `MemoryError(PERSISTENCE_FAILED)`.
+- Foreign keys are enabled and verified per connection. WAL and busy-timeout
+  policy remain deliberately unselected pending IMP-208 and OQ-BLOCK-003.
+- Version 1 contains normalized identities, historical snapshots, scoped aliases
+  and preferences, physical/logical rooms and bindings, ordered events and
+  lifecycle transitions, context evidence and many-to-many generation causes,
+  output segments and delivery attempts (including `unknown_after_crash`),
+  layered memories, provenance, correction/supersession, worker jobs, forget
+  requests, deletion tombstones, and quarantinable legacy migration evidence.
+- Runtime composition and all 16 memory feature flags are unchanged and off.
 
 Not run, and why:
 
 | Command | Why not |
 |---|---|
-| Migration up/down tests | No schema exists yet (IMP-201, gate G2). |
+| Destructive down-migration tests | Not applicable: the approved plan is forward-only; recovery is snapshot restore, not reverse SQL. Restore rehearsal remains IMP-208. |
 | Concurrency / failure-injection / crash-window suites | They exercise a persistence adapter that does not exist yet (IMP-207, IMP-208, IMP-406). |
 | Deletion-propagation, backup restore-and-redelete drills | Require the repositories and the deletion executor (IMP-702, IMP-703). |
 | Prompt-injection corpus, voice-interruption E2E, latency and cost benchmarks | Require the serializer and the live adapters (IMP-602, IMP-405, IMP-803). |
@@ -218,7 +246,7 @@ flags all default to `false`; no other production module reads it yet.
 |---|---|
 | Entry (IMP-001…003) | ✅ **passed this increment** |
 | G1 Domain (IMP-101…108) | ✅ **passed this increment** — one contract package, no Discord/DB imports, conformance fixtures cover multi-speaker causality and partial delivery |
-| G2 Persistence | ⛔ not started (IMP-201…208) |
+| G2 Persistence | 🚧 **in progress** — IMP-201 complete; IMP-202…208 remain, and OQ-BLOCK-003 still blocks IMP-208 sign-off |
 | G3 Identity propagation | ⛔ not started; also blocked on FIND-010 |
 | G4 Event/delivery | ⛔ not started |
 | G5 Text/voice integration | ⛔ not started |

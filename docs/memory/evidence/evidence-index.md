@@ -62,3 +62,14 @@ Every downstream claim MUST carry one of:
 - **Recommendation** — a proposal; must be backed by an ADR or an `IMP-*` task.
 
 A claim with no classification is not usable as a gate input.
+
+## 5. Implementation evidence after the frozen baseline
+
+These rows record directly inspected implementation facts without changing the
+frozen repository-fact baseline in §1.
+
+| ID | Increment | Observed implementation fact | Evidence |
+|---|---|---|---|
+| IEV-201-001 | IMP-201 | SQLite schema version 1 is represented by one checksummed forward migration; the runner rejects duplicate, altered, unknown, and future migration states and rolls back failed migrations. | `airi/packages/memory-sqlite/src/{migration-runner,migrations/index}.ts`; SQLite-backed `migration-runner.test.ts` |
+| IEV-201-002 | IMP-201 | Schema v1 keeps Discord ID identity distinct from historical snapshots and aliases, represents scoped rooms, explicit causality, generation/delivery separation including `unknown_after_crash`, provenance/supersession, and deletion tombstones. | `airi/packages/memory-sqlite/src/schema/v1.ts`; SQLite-backed `schema/v1.test.ts` |
+| IEV-201-003 | IMP-201 | The persistence package has no Discord, provider, transport, or service-runtime imports and is not composed into the running bot. | `airi/packages/memory-sqlite/src/boundaries.test.ts`; no running-path changes in IMP-201 |
