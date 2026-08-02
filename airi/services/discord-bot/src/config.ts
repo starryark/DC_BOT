@@ -1,6 +1,8 @@
-import { env } from 'node:process'
+import type { MemoryFeatureFlags } from './memory/feature-flags'
 import type { GeminiThinkingLevel } from './providers/brain/types'
 import type { GptSoVitsLang } from './providers/tts/types'
+
+import { env } from 'node:process'
 
 /**
  * Centralized, validated runtime configuration.
@@ -165,6 +167,12 @@ export interface AppConfig {
   ttsCache: TtsCacheConfig
   ttsChunking: TtsChunkingConfig
   conversationFloor: ConversationFloorConfig
+  /**
+   * Shared-memory rollout flags (IMP-002). Every flag defaults to `false`:
+   * rollout stage R1 is "code merged, runtime disabled". Policy over these
+   * values lives in `src/memory/feature-flags.ts`, not here.
+   */
+  memory: MemoryFeatureFlags
   avatar: {
     enabled: boolean
     relayUrl: string
@@ -338,6 +346,25 @@ export function config(): AppConfig {
       maxGroupSpeakers: parseBounded(env.VOICE_MAX_GROUP_SPEAKERS, 2, 20),
       maxGroupUtterances: parseBounded(env.VOICE_MAX_GROUP_UTTERANCES, 4, 100),
     },
+    memory: {
+      durableEvents: parseBool(env.MEMORY_FF_DURABLE_EVENTS, false),
+      actorSnapshots: parseBool(env.MEMORY_FF_ACTOR_SNAPSHOTS, false),
+      preferredAliases: parseBool(env.MEMORY_FF_PREFERRED_ALIASES, false),
+      sharedRecentContext: parseBool(env.MEMORY_FF_SHARED_RECENT_CONTEXT, false),
+      roomBindings: parseBool(env.MEMORY_FF_ROOM_BINDINGS, false),
+      deliveryLifecycle: parseBool(env.MEMORY_FF_DELIVERY_LIFECYCLE, false),
+      summaries: parseBool(env.MEMORY_FF_SUMMARIES, false),
+      explicitSemanticMemory: parseBool(env.MEMORY_FF_EXPLICIT_SEMANTIC_MEMORY, false),
+      autoExtraction: parseBool(env.MEMORY_FF_AUTO_EXTRACTION, false),
+      fulltextRetrieval: parseBool(env.MEMORY_FF_FULLTEXT_RETRIEVAL, false),
+      vectorRetrieval: parseBool(env.MEMORY_FF_VECTOR_RETRIEVAL, false),
+      onDemandRecall: parseBool(env.MEMORY_FF_ON_DEMAND_RECALL, false),
+      relationshipHypotheses: parseBool(env.MEMORY_FF_RELATIONSHIP_HYPOTHESES, false),
+      remoteTransport: parseBool(env.MEMORY_FF_REMOTE_TRANSPORT, false),
+      degradedStatelessMode: parseBool(env.MEMORY_FF_DEGRADED_STATELESS_MODE, false),
+      durableWriteSpool: parseBool(env.MEMORY_FF_DURABLE_WRITE_SPOOL, false),
+    },
+
     avatar: {
       enabled: parseBool(env.AVATAR_ENABLED, false),
       relayUrl: env.AVATAR_RELAY_URL || 'ws://127.0.0.1:8080/ws/publisher',

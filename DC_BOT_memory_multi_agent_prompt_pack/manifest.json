@@ -1,0 +1,109 @@
+{
+  "pack": "DC_BOT memory multi-agent prompt pack",
+  "files": [
+    {
+      "filename": "00_program_coordinator.txt",
+      "title": "Program Coordinator and Document Controller"
+    },
+    {
+      "filename": "01_repository_evidence_audit.txt",
+      "title": "Current DC_BOT Repository Evidence Audit"
+    },
+    {
+      "filename": "02_comparative_research.txt",
+      "title": "Comparative Upstream Implementation Research"
+    },
+    {
+      "filename": "03_topology_storage_adr.txt",
+      "title": "Deployment Topology and Storage ADR"
+    },
+    {
+      "filename": "04_requirements_baseline.txt",
+      "title": "Requirements Baseline and Traceability"
+    },
+    {
+      "filename": "05_identity_alias_spec.txt",
+      "title": "Person Identity and Alias Specification"
+    },
+    {
+      "filename": "06_room_scope_authorization_spec.txt",
+      "title": "Room, Scope, and Authorization Specification"
+    },
+    {
+      "filename": "07_event_causality_delivery_spec.txt",
+      "title": "Event, Causality, and Delivery Lifecycle Specification"
+    },
+    {
+      "filename": "08_persistence_concurrency_spec.txt",
+      "title": "Persistence, Sequencing, Concurrency, and Idempotency"
+    },
+    {
+      "filename": "09_memory_port_api_spec.txt",
+      "title": "MemoryPort and API Contract Specification"
+    },
+    {
+      "filename": "10_context_prompt_security_spec.txt",
+      "title": "Context Assembly and Prompt Security Specification"
+    },
+    {
+      "filename": "11_memory_lifecycle_spec.txt",
+      "title": "Summarization and Semantic-Memory Lifecycle"
+    },
+    {
+      "filename": "12_retrieval_spec.txt",
+      "title": "Retrieval, Multilingual Search, and Ranking"
+    },
+    {
+      "filename": "13_security_threat_model.txt",
+      "title": "Security, Privacy, and Abuse Threat Model"
+    },
+    {
+      "filename": "14_data_governance_spec.txt",
+      "title": "Data Governance, Retention, Deletion, and Export"
+    },
+    {
+      "filename": "15_migration_plan.txt",
+      "title": "Migration and Backward-Compatibility Plan"
+    },
+    {
+      "filename": "16_observability_operations_spec.txt",
+      "title": "Observability, Resilience, and Operations"
+    },
+    {
+      "filename": "17_evaluation_benchmark_spec.txt",
+      "title": "Benchmark and Evaluation Specification"
+    },
+    {
+      "filename": "18_failure_injection_plan.txt",
+      "title": "Failure-Injection and Concurrency Test Plan"
+    },
+    {
+      "filename": "19_rollout_rollback_plan.txt",
+      "title": "Rollout, Feature Flags, and Rollback"
+    },
+    {
+      "filename": "20_coding_agent_skills.txt",
+      "title": "Coding-Agent Skill Pack"
+    },
+    {
+      "filename": "21_implementation_backlog.txt",
+      "title": "Implementation Backlog and Ownership Graph"
+    },
+    {
+      "filename": "22_documentation_integrator.txt",
+      "title": "Documentation Integrator and Specification Compiler"
+    },
+    {
+      "filename": "23_red_team_readiness_review.txt",
+      "title": "Independent Adversarial Readiness Review"
+    },
+    {
+      "filename": "99_MASTER_START_ACTUAL_CODING.txt",
+      "title": "Master implementation orchestrator"
+    },
+    {
+      "filename": "README_INDEX.txt",
+      "title": "Index and execution order"
+    }
+  ]
+}

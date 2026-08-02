@@ -10,6 +10,7 @@ export default defineConfig({
       'packages/ccc',
       'packages/core-agent',
       'packages/better-ws',
+      'packages/memory-domain',
       'packages/plugin-sdk',
       'packages/plugin-sdk-tamagotchi',
       'packages/scenarios-stage-tamagotchi-browser',

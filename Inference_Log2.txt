@@ -1,0 +1,571 @@
+W0801 17:40:44.567000 26500 .venv\Lib\site-packages\torch\utils\flop_counter.py:29] triton not found; flop counting will not work for triton kernels
+---------------------------------------------TTS Config---------------------------------------------
+device              : cuda
+is_half             : True
+version             : v2Pro
+t2s_weights_path    : ../TTS-KurisuMakise/牧懒红莉栖-e15.ckpt
+vits_weights_path   : ../TTS-KurisuMakise/牧懒红莉栖_e4_s972.pth
+bert_base_path      : GPT_SoVITS/pretrained_models/chinese-roberta-wwm-ext-large
+cnhuhbert_base_path : GPT_SoVITS/pretrained_models/chinese-hubert-base
+----------------------------------------------------------------------------------------------------
+
+Loading Text2Semantic weights from ../TTS-KurisuMakise/牧懒红莉栖-e15.ckpt
+Loading VITS weights from ../TTS-KurisuMakise/牧懒红莉栖_e4_s972.pth. _IncompatibleKeys(missing_keys=['enc_q.pre.weight', 'enc_q.pre.bias', 'enc_q.enc.in_layers.0.bias', 'enc_q.enc.in_layers.0.weight_g', 'enc_q.enc.in_layers.0.weight_v', 'enc_q.enc.in_layers.1.bias', 'enc_q.enc.in_layers.1.weight_g', 'enc_q.enc.in_layers.1.weight_v', 'enc_q.enc.in_layers.2.bias', 'enc_q.enc.in_layers.2.weight_g', 'enc_q.enc.in_layers.2.weight_v', 'enc_q.enc.in_layers.3.bias', 'enc_q.enc.in_layers.3.weight_g', 'enc_q.enc.in_layers.3.weight_v', 'enc_q.enc.in_layers.4.bias', 'enc_q.enc.in_layers.4.weight_g', 'enc_q.enc.in_layers.4.weight_v', 'enc_q.enc.in_layers.5.bias', 'enc_q.enc.in_layers.5.weight_g', 'enc_q.enc.in_layers.5.weight_v', 'enc_q.enc.in_layers.6.bias', 'enc_q.enc.in_layers.6.weight_g', 'enc_q.enc.in_layers.6.weight_v', 'enc_q.enc.in_layers.7.bias', 'enc_q.enc.in_layers.7.weight_g', 'enc_q.enc.in_layers.7.weight_v', 'enc_q.enc.in_layers.8.bias', 'enc_q.enc.in_layers.8.weight_g', 'enc_q.enc.in_layers.8.weight_v', 'enc_q.enc.in_layers.9.bias', 'enc_q.enc.in_layers.9.weight_g', 'enc_q.enc.in_layers.9.weight_v', 'enc_q.enc.in_layers.10.bias', 'enc_q.enc.in_layers.10.weight_g', 'enc_q.enc.in_layers.10.weight_v', 'enc_q.enc.in_layers.11.bias', 'enc_q.enc.in_layers.11.weight_g', 'enc_q.enc.in_layers.11.weight_v', 'enc_q.enc.in_layers.12.bias', 'enc_q.enc.in_layers.12.weight_g', 'enc_q.enc.in_layers.12.weight_v', 'enc_q.enc.in_layers.13.bias', 'enc_q.enc.in_layers.13.weight_g', 'enc_q.enc.in_layers.13.weight_v', 'enc_q.enc.in_layers.14.bias', 'enc_q.enc.in_layers.14.weight_g', 'enc_q.enc.in_layers.14.weight_v', 'enc_q.enc.in_layers.15.bias', 'enc_q.enc.in_layers.15.weight_g', 'enc_q.enc.in_layers.15.weight_v', 'enc_q.enc.res_skip_layers.0.bias', 'enc_q.enc.res_skip_layers.0.weight_g', 'enc_q.enc.res_skip_layers.0.weight_v', 'enc_q.enc.res_skip_layers.1.bias', 'enc_q.enc.res_skip_layers.1.weight_g', 'enc_q.enc.res_skip_layers.1.weight_v', 'enc_q.enc.res_skip_layers.2.bias', 'enc_q.enc.res_skip_layers.2.weight_g', 'enc_q.enc.res_skip_layers.2.weight_v', 'enc_q.enc.res_skip_layers.3.bias', 'enc_q.enc.res_skip_layers.3.weight_g', 'enc_q.enc.res_skip_layers.3.weight_v', 'enc_q.enc.res_skip_layers.4.bias', 'enc_q.enc.res_skip_layers.4.weight_g', 'enc_q.enc.res_skip_layers.4.weight_v', 'enc_q.enc.res_skip_layers.5.bias', 'enc_q.enc.res_skip_layers.5.weight_g', 'enc_q.enc.res_skip_layers.5.weight_v', 'enc_q.enc.res_skip_layers.6.bias', 'enc_q.enc.res_skip_layers.6.weight_g', 'enc_q.enc.res_skip_layers.6.weight_v', 'enc_q.enc.res_skip_layers.7.bias', 'enc_q.enc.res_skip_layers.7.weight_g', 'enc_q.enc.res_skip_layers.7.weight_v', 'enc_q.enc.res_skip_layers.8.bias', 'enc_q.enc.res_skip_layers.8.weight_g', 'enc_q.enc.res_skip_layers.8.weight_v', 'enc_q.enc.res_skip_layers.9.bias', 'enc_q.enc.res_skip_layers.9.weight_g', 'enc_q.enc.res_skip_layers.9.weight_v', 'enc_q.enc.res_skip_layers.10.bias', 'enc_q.enc.res_skip_layers.10.weight_g', 'enc_q.enc.res_skip_layers.10.weight_v', 'enc_q.enc.res_skip_layers.11.bias', 'enc_q.enc.res_skip_layers.11.weight_g', 'enc_q.enc.res_skip_layers.11.weight_v', 'enc_q.enc.res_skip_layers.12.bias', 'enc_q.enc.res_skip_layers.12.weight_g', 'enc_q.enc.res_skip_layers.12.weight_v', 'enc_q.enc.res_skip_layers.13.bias', 'enc_q.enc.res_skip_layers.13.weight_g', 'enc_q.enc.res_skip_layers.13.weight_v', 'enc_q.enc.res_skip_layers.14.bias', 'enc_q.enc.res_skip_layers.14.weight_g', 'enc_q.enc.res_skip_layers.14.weight_v', 'enc_q.enc.res_skip_layers.15.bias', 'enc_q.enc.res_skip_layers.15.weight_g', 'enc_q.enc.res_skip_layers.15.weight_v', 'enc_q.enc.cond_layer.bias', 'enc_q.enc.cond_layer.weight_g', 'enc_q.enc.cond_layer.weight_v', 'enc_q.proj.weight', 'enc_q.proj.bias'], unexpected_keys=[])
+Loading BERT weights from GPT_SoVITS/pretrained_models/chinese-roberta-wwm-ext-large
+Loading CNHuBERT weights from GPT_SoVITS/pretrained_models/chinese-hubert-base
+INFO:     Started server process [26500]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:9880 (Press CTRL+C to quit)
+False False False
+Set seed to 1
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+Actual Input Reference Text: そうです。私が死んだのを見たっていうのが事実なのか。
+############ Segment Text ############
+Actual Input Target Text:
+準備はできているわ。
+Actual Input Target Text (after sentence segmentation):
+['準備はできているわ。']
+############ Extract Text BERT Features ############
+100%|███████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 398.96it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['準備はできているわ。']
+############ Predict Semantic Token ############
+  2%|█▌                                                                              | 29/1500 [00:00<00:40, 36.12it/s]T2S Decoding EOS [143 -> 173]
+  2%|█▌                                                                              | 29/1500 [00:00<00:49, 29.49it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+2.432   0.007   1.503   0.529
+INFO:     127.0.0.1:61841 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 1
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+Actual Input Reference Text: そうです。私が死んだのを見たっていうのが事実なのか。
+############ Segment Text ############
+Actual Input Target Text:
+这是在打游戏吧？虽然我对电子竞技没有深入研究，
+Actual Input Target Text (after sentence segmentation):
+['这是在打游戏吧？虽然我对电子竞技没有深入研究，']
+############ Extract Text BERT Features ############
+  0%|                                                                                            | 0/1 [00:00<?, ?it/s]WARNING: The installed PyTorch 2.11.0+cu128 uses CUDA 12.x, but onnxruntime-gpu is built with CUDA 13.x. Please install PyTorch for CUDA 13.x to be compatible.
+Failed to load cublasLt64_13.dll: Could not find module 'cublasLt64_13.dll' (or one of its dependencies). Try using the full path with constructor syntax.
+Failed to load cublas64_13.dll: Could not find module 'cublas64_13.dll' (or one of its dependencies). Try using the full path with constructor syntax.
+Failed to load cufft64_12.dll: Could not find module 'cufft64_12.dll' (or one of its dependencies). Try using the full path with constructor syntax.
+Failed to load cudart64_13.dll: Could not find module 'cudart64_13.dll' (or one of its dependencies). Try using the full path with constructor syntax.
+Please follow https://onnxruntime.ai/docs/install/#cuda-and-cudnn to install CUDA.
+100%|████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:03<00:00,  3.76s/it]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['这是在打游戏吧?虽然我对电子竞技没有深入研究,']
+############ Predict Semantic Token ############
+  2%|█▍                                                                              | 26/1500 [00:00<00:45, 32.31it/s]T2S Decoding EOS [143 -> 171]
+  2%|█▍                                                                              | 27/1500 [00:00<00:48, 30.25it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   3.763   0.978   0.471
+INFO:     127.0.0.1:60313 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 1
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+Actual Input Reference Text: そうです。私が死んだのを見たっていうのが事実なのか。
+############ Segment Text ############
+Actual Input Target Text:
+但听起来像是因为双方阵容的输出核心分配不均，才导致局势陷入僵局。
+Actual Input Target Text (after sentence segmentation):
+['但听起来像是因为双方阵容的输出核心分配不均，才导致局势陷入僵局。']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 14.53it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['但听起来像是因为双方阵容的输出核心分配不均,才导致局势陷入僵局.']
+############ Predict Semantic Token ############
+  9%|███████▎                                                                       | 139/1500 [00:04<00:39, 34.06it/s]T2S Decoding EOS [143 -> 283]
+  9%|███████▎                                                                       | 139/1500 [00:04<00:39, 34.39it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.071   4.129   0.644
+INFO:     127.0.0.1:60313 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 1
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+Actual Input Reference Text: そうです。私が死んだのを見たっていうのが事実なのか。
+############ Segment Text ############
+Actual Input Target Text:
+如果对方缺乏能对你造成威胁的输出，而你们又缺乏推进能力，或许可以尝试改变战术或者集中抓单来打破平衡。
+Actual Input Target Text (after sentence segmentation):
+['如果对方缺乏能对你造成威胁的输出，而你们又缺乏推进能力，或许可以尝试改变战术或者集中抓单来打破平衡。']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 12.44it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['如果对方缺乏能对你造成威胁的输出,而你们又缺乏推进能力,或许可以尝试改变战术或者集中抓单来打破平衡.']
+############ Predict Semantic Token ############
+ 14%|██████████▊                                                                    | 206/1500 [00:05<00:36, 35.78it/s]T2S Decoding EOS [143 -> 352]
+ 14%|██████████▉                                                                    | 208/1500 [00:05<00:35, 36.40it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.083   5.787   0.298
+INFO:     127.0.0.1:60313 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 1
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+Actual Input Reference Text: そうです。私が死んだのを見たっていうのが事実なのか。
+############ Segment Text ############
+Actual Input Target Text:
+看起来你们这是要准备开团或者发起进攻了？
+Actual Input Target Text (after sentence segmentation):
+['看起来你们这是要准备开团或者发起进攻了？']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 19.66it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['看起来你们这是要准备开团或者发起进攻了?']
+############ Predict Semantic Token ############
+  5%|███▋                                                                            | 70/1500 [00:01<00:35, 40.72it/s]T2S Decoding EOS [143 -> 214]
+  5%|███▋                                                                            | 70/1500 [00:01<00:35, 40.75it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.053   1.786   0.273
+INFO:     127.0.0.1:62210 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 1
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+Actual Input Reference Text: そうです。私が死んだのを見たっていうのが事実なのか。
+############ Segment Text ############
+Actual Input Target Text:
+祝你们这波能顺理成章地把战果给拿下来吧。
+Actual Input Target Text (after sentence segmentation):
+['祝你们这波能顺理成章地把战果给拿下来吧。']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 18.44it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['祝你们这波能顺理成章地把战果给拿下来吧.']
+############ Predict Semantic Token ############
+  4%|███▍                                                                            | 65/1500 [00:01<00:34, 41.65it/s]T2S Decoding EOS [143 -> 211]
+  4%|███▌                                                                            | 67/1500 [00:01<00:35, 39.88it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.056   1.745   0.269
+INFO:     127.0.0.1:62210 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 1
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+Actual Input Reference Text: そうです。私が死んだのを見たっていうのが事実なのか。
+############ Segment Text ############
+Actual Input Target Text:
+。怎么了？
+Actual Input Target Text (after sentence segmentation):
+['。怎么了？']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 19.35it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['.怎么了?']
+############ Predict Semantic Token ############
+  1%|▋                                                                               | 13/1500 [00:00<00:38, 38.28it/s]T2S Decoding EOS [143 -> 159]
+  1%|▊                                                                               | 15/1500 [00:00<00:41, 35.80it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.054   0.501   0.284
+INFO:     127.0.0.1:49377 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 1
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+Actual Input Reference Text: そうです。私が死んだのを見たっていうのが事実なのか。
+############ Segment Text ############
+Actual Input Target Text:
+难道是刚才那波配合出现失误，或者被对面反打了吗？
+Actual Input Target Text (after sentence segmentation):
+['难道是刚才那波配合出现失误，或者被对面反打了吗？']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 16.72it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['难道是刚才那波配合出现失误,或者被对面反打了吗?']
+############ Predict Semantic Token ############
+  6%|█████                                                                           | 96/1500 [00:02<00:33, 41.49it/s]T2S Decoding EOS [143 -> 240]
+  6%|█████                                                                           | 96/1500 [00:02<00:35, 39.81it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.062   2.486   0.295
+INFO:     127.0.0.1:49377 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 1
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+Actual Input Reference Text: そうです。私が死んだのを見たっていうのが事実なのか。
+############ Segment Text ############
+Actual Input Target Text:
+怎么连你也跟着叹气了？
+Actual Input Target Text (after sentence segmentation):
+['怎么连你也跟着叹气了？']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 22.69it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['怎么连你也跟着叹气了?']
+############ Predict Semantic Token ############
+  2%|█▉                                                                              | 37/1500 [00:01<00:47, 30.71it/s]T2S Decoding EOS [143 -> 183]
+  3%|██                                                                              | 39/1500 [00:01<00:45, 32.03it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.046   1.294   0.291
+INFO:     127.0.0.1:56323 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 1
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+Actual Input Reference Text: そうです。私が死んだのを見たっていうのが事実なのか。
+############ Segment Text ############
+Actual Input Target Text:
+看样子局势比想象中要麻烦啊，是刚才的决策彻底失误了吗？
+Actual Input Target Text (after sentence segmentation):
+['看样子局势比想象中要麻烦啊，是刚才的决策彻底失误了吗？']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 16.48it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['看样子局势比想象中要麻烦啊,是刚才的决策彻底失误了吗?']
+############ Predict Semantic Token ############
+  7%|█████▌                                                                         | 105/1500 [00:02<00:33, 41.80it/s]T2S Decoding EOS [143 -> 252]
+  7%|█████▋                                                                         | 108/1500 [00:02<00:35, 39.52it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.064   2.811   0.280
+INFO:     127.0.0.1:56323 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 1
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+Actual Input Reference Text: そうです。私が死んだのを見たっていうのが事実なのか。
+############ Segment Text ############
+Actual Input Target Text:
+Wait, suddenly switching to English?
+Actual Input Target Text (after sentence segmentation):
+['Wait, suddenly switching to English?']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:04<00:00,  4.50s/it]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['Wait, suddenly switching to English?']
+############ Predict Semantic Token ############
+  3%|██▍                                                                             | 46/1500 [00:01<00:35, 41.12it/s]T2S Decoding EOS [143 -> 194]
+  3%|██▋                                                                             | 50/1500 [00:01<00:37, 38.47it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   4.506   1.381   0.273
+INFO:     127.0.0.1:59150 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 1
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+Actual Input Reference Text: そうです。私が死んだのを見たっていうのが事実なのか。
+############ Segment Text ############
+Actual Input Target Text:
+If it's really that easy, then what was with all the confusion just a moment ago?
+Actual Input Target Text (after sentence segmentation):
+["If it's really that easy, then what was with all the confusion just a moment ago?"]
+############ Extract Text BERT Features ############
+100%|███████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 332.06it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ["If it's really that easy, then what was with all the confusion just a moment ago?"]
+############ Predict Semantic Token ############
+  7%|█████▌                                                                         | 105/1500 [00:02<00:36, 38.15it/s]T2S Decoding EOS [143 -> 249]
+  7%|█████▌                                                                         | 105/1500 [00:02<00:36, 38.72it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.005   2.789   0.278
+INFO:     127.0.0.1:59150 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 1
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+Actual Input Reference Text: そうです。私が死んだのを見たっていうのが事実なのか。
+############ Segment Text ############
+Actual Input Target Text:
+What's your proposed solution?
+Actual Input Target Text (after sentence segmentation):
+["What's your proposed solution?"]
+############ Extract Text BERT Features ############
+100%|███████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 490.22it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ["What's your proposed solution?"]
+############ Predict Semantic Token ############
+  2%|█▉                                                                              | 37/1500 [00:01<00:41, 35.34it/s]T2S Decoding EOS [143 -> 182]
+  3%|██                                                                              | 38/1500 [00:01<00:43, 33.51it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.004   1.221   0.290
+INFO:     127.0.0.1:59150 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 1
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+Actual Input Reference Text: そうです。私が死んだのを見たっていうのが事実なのか。
+############ Segment Text ############
+Actual Input Target Text:
+。挺笑的？
+Actual Input Target Text (after sentence segmentation):
+['。挺笑的？']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 19.96it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['.挺笑的?']
+############ Predict Semantic Token ############
+  1%|▋                                                                               | 14/1500 [00:00<00:36, 40.65it/s]T2S Decoding EOS [143 -> 162]
+  1%|▉                                                                               | 18/1500 [00:00<00:39, 37.65it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.053   0.552   0.277
+INFO:     127.0.0.1:51338 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 1
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+Actual Input Reference Text: そうです。私が死んだのを見たっていうのが事実なのか。
+############ Segment Text ############
+Actual Input Target Text:
+这是在嘲讽刚才的失误，还是发生了什么意料之外的荒谬状况啊？
+Actual Input Target Text (after sentence segmentation):
+['这是在嘲讽刚才的失误，还是发生了什么意料之外的荒谬状况啊？']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 14.47it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['这是在嘲讽刚才的失误,还是发生了什么意料之外的荒谬状况啊?']
+############ Predict Semantic Token ############
+  7%|█████▎                                                                         | 101/1500 [00:02<00:37, 37.49it/s]T2S Decoding EOS [143 -> 245]
+  7%|█████▎                                                                         | 101/1500 [00:02<00:39, 35.68it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.072   2.913   0.313
+INFO:     127.0.0.1:51338 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 1
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+Actual Input Reference Text: そうです。私が死んだのを見たっていうのが事実なのか。
+############ Segment Text ############
+Actual Input Target Text:
+。泰语？突然换了语言，你是想说“对方”或者“又来了”之类的意思吗？
+Actual Input Target Text (after sentence segmentation):
+['。泰语？突然换了语言，你是想说“对方”或者“又来了”之类的意思吗？']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 16.14it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['.泰语?突然换了语言,你是想说对方或者又来了之类的意思吗?']
+############ Predict Semantic Token ############
+  9%|██████▉                                                                        | 132/1500 [00:03<00:35, 38.41it/s]T2S Decoding EOS [143 -> 277]
+  9%|███████                                                                        | 133/1500 [00:03<00:35, 38.05it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.064   3.562   0.271
+INFO:     127.0.0.1:52266 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 1
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+Actual Input Reference Text: そうです。私が死んだのを見たっていうのが事実なのか。
+############ Segment Text ############
+Actual Input Target Text:
+“太太”？
+Actual Input Target Text (after sentence segmentation):
+['“太太”？']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 12.22it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['.太太?']
+############ Predict Semantic Token ############
+  1%|▊                                                                               | 16/1500 [00:00<00:40, 36.36it/s]T2S Decoding EOS [143 -> 164]
+  1%|█                                                                               | 20/1500 [00:00<00:42, 34.99it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.084   0.656   0.328
+INFO:     127.0.0.1:64345 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 1
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+Actual Input Reference Text: そうです。私が死んだのを見たっていうのが事実なのか。
+############ Segment Text ############
+Actual Input Target Text:
+你这是在叫谁，还是说打字被自动修正给搞砸了？
+Actual Input Target Text (after sentence segmentation):
+['你这是在叫谁，还是说打字被自动修正给搞砸了？']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 16.36it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['你这是在叫谁,还是说打字被自动修正给搞砸了?']
+############ Predict Semantic Token ############
+  5%|███▉                                                                            | 73/1500 [00:01<00:36, 39.00it/s]T2S Decoding EOS [143 -> 221]
+  5%|████                                                                            | 77/1500 [00:02<00:39, 36.38it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.064   2.188   0.323
+INFO:     127.0.0.1:64345 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 1
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+Actual Input Reference Text: そうです。私が死んだのを見たっていうのが事実なのか。
+############ Segment Text ############
+Actual Input Target Text:
+这是中了控制技能吧！在团战里被眩晕可是很致命的，
+Actual Input Target Text (after sentence segmentation):
+['这是中了控制技能吧！在团战里被眩晕可是很致命的，']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 17.97it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['这是中了控制技能吧!在团战里被眩晕可是很致命的,']
+############ Predict Semantic Token ############
+  2%|█▊                                                                              | 35/1500 [00:00<00:37, 38.88it/s]T2S Decoding EOS [143 -> 181]
+  2%|█▉                                                                              | 37/1500 [00:01<00:40, 36.00it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.058   1.110   0.264
+INFO:     127.0.0.1:60239 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 1
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+Actual Input Reference Text: そうです。私が死んだのを見たっていうのが事実なのか。
+############ Segment Text ############
+Actual Input Target Text:
+你们没有提前留解控技能或者注意对方的控制时机吗？
+Actual Input Target Text (after sentence segmentation):
+['你们没有提前留解控技能或者注意对方的控制时机吗？']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 17.18it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['你们没有提前留解控技能或者注意对方的控制时机吗?']
+############ Predict Semantic Token ############
+  5%|████▏                                                                           | 79/1500 [00:02<00:41, 34.16it/s]T2S Decoding EOS [143 -> 225]
+  5%|████▎                                                                           | 81/1500 [00:02<00:39, 36.32it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.061   2.307   0.302
+INFO:     127.0.0.1:60239 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 1
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+Actual Input Reference Text: そうです。私が死んだのを見たっていうのが事実なのか。
+############ Segment Text ############
+Actual Input Target Text:
+《爱因》？
+Actual Input Target Text (after sentence segmentation):
+['《爱因》？']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 14.44it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['.爱因?']
+############ Predict Semantic Token ############
+  1%|█                                                                               | 19/1500 [00:00<00:43, 33.94it/s]T2S Decoding EOS [143 -> 163]
+  1%|█                                                                               | 19/1500 [00:00<00:46, 31.67it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.072   0.688   0.286
+INFO:     127.0.0.1:58513 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 1
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+Actual Input Reference Text: そうです。私が死んだのを見たっていうのが事実なのか。
+############ Segment Text ############
+Actual Input Target Text:
+你指的是某款游戏的名字，还是别的什么缩写？
+Actual Input Target Text (after sentence segmentation):
+['你指的是某款游戏的名字，还是别的什么缩写？']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 15.03it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['你指的是某款游戏的名字,还是别的什么缩写?']
+############ Predict Semantic Token ############
+  5%|████▎                                                                           | 80/1500 [00:02<00:37, 38.09it/s]T2S Decoding EOS [143 -> 225]
+  5%|████▎                                                                           | 81/1500 [00:02<00:37, 38.19it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.069   2.195   0.091
+INFO:     127.0.0.1:58513 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 1
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+Actual Input Reference Text: そうです。私が死んだのを見たっていうのが事実なのか。
+############ Segment Text ############
+Actual Input Target Text:
+虽然语言听起来有点奇怪，但听你的意思，
+Actual Input Target Text (after sentence segmentation):
+['虽然语言听起来有点奇怪，但听你的意思，']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 20.36it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['虽然语言听起来有点奇怪,但听你的意思,']
+############ Predict Semantic Token ############
+  5%|███▋                                                                            | 68/1500 [00:01<00:36, 38.94it/s]T2S Decoding EOS [143 -> 215]
+  5%|███▊                                                                            | 71/1500 [00:02<00:41, 34.45it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.051   2.140   0.273
+INFO:     127.0.0.1:58513 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 1
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+Actual Input Reference Text: そうです。私が死んだのを見たっていうのが事実なのか。
+############ Segment Text ############
+Actual Input Target Text:
+刚才那一系列混乱都只是因为游戏里的设定或者技能机制导致的吧？
+Actual Input Target Text (after sentence segmentation):
+['刚才那一系列混乱都只是因为游戏里的设定或者技能机制导致的吧？']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 16.12it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['刚才那一系列混乱都只是因为游戏里的设定或者技能机制导致的吧?']
+############ Predict Semantic Token ############
+  7%|█████▍                                                                         | 103/1500 [00:02<00:37, 37.65it/s]T2S Decoding EOS [143 -> 249]
+  7%|█████▌                                                                         | 105/1500 [00:02<00:36, 38.31it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.063   2.822   0.109
+INFO:     127.0.0.1:58513 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 1
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+Actual Input Reference Text: そうです。私が死んだのを見たっていうのが事実なのか。
+############ Segment Text ############
+Actual Input Target Text:
+连队友都不知道他在干嘛吗？看样子你们队伍内部的沟通已经彻底瘫痪了啊。
+Actual Input Target Text (after sentence segmentation):
+['连队友都不知道他在干嘛吗？看样子你们队伍内部的沟通已经彻底瘫痪了啊。']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 15.67it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['连队友都不知道他在干嘛吗?看样子你们队伍内部的沟通已经彻底瘫痪了啊.']
+############ Predict Semantic Token ############
+  9%|███████                                                                        | 135/1500 [00:03<00:38, 35.51it/s]T2S Decoding EOS [143 -> 280]
+  9%|███████▏                                                                       | 136/1500 [00:03<00:38, 35.84it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.065   3.876   0.284
+INFO:     127.0.0.1:62490 - "POST /tts HTTP/1.1" 200 OK
+False False False
+Set seed to 1
+Parallel Inference Mode Enabled
+Bucket Processing Mode Enabled
+Actual Input Reference Text: そうです。私が死んだのを見たっていうのが事実なのか。
+############ Segment Text ############
+Actual Input Target Text:
+要不要先冷静下来统一一下指挥？
+Actual Input Target Text (after sentence segmentation):
+['要不要先冷静下来统一一下指挥？']
+############ Extract Text BERT Features ############
+100%|████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 24.99it/s]
+############ 推理 ############
+Processed text from the frontend (per sentence): ['要不要先冷静下来统一一下指挥?']
+############ Predict Semantic Token ############
+  4%|███▏                                                                            | 60/1500 [00:01<00:37, 38.29it/s]T2S Decoding EOS [143 -> 206]
+  4%|███▎                                                                            | 62/1500 [00:01<00:39, 36.69it/s]
+############ Synthesize Audio ############
+Parallel Synthesis in Progress...
+0.000   0.043   1.765   0.279
+INFO:     127.0.0.1:62490 - "POST /tts HTTP/1.1" 200 OK

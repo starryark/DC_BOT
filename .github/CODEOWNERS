@@ -1,0 +1,46 @@
+# Ownership boundaries for the shared-memory program (IMP-003).
+#
+# Roles are from `artifacts/21-implementation-backlog.md` §10.2. Until the
+# program has named humans for each role, the repository owner stands in for
+# every one of them — the point of this file today is that a change to a
+# contract cannot be merged without the domain owner seeing it.
+#
+# Later patterns win, so the most specific rule for a path is the last one.
+
+*                                               @starryark
+
+# --- Contracts -------------------------------------------------------------
+# Domain Contracts Agent owns the port. Text, voice, persistence, and privacy
+# reviewers are all mandatory here (backlog IMP-101), because every workstream
+# depends on this package and a unilateral change breaks all of them.
+/airi/packages/memory-domain/                   @starryark
+
+# --- Persistence -----------------------------------------------------------
+# Persistence Agent. No Discord imports; no policy bypass.
+/airi/packages/memory-sqlite/                   @starryark
+
+# --- Integration facade ----------------------------------------------------
+# Integration facade owner. Direct alternate durable stores are prohibited.
+/airi/services/discord-bot/src/memory/          @starryark
+
+# --- Migration-sensitive orchestration -------------------------------------
+# Single-owner during migration (backlog §10.2): parallel uncoordinated edits
+# to these files are how text and voice end up with divergent identity models.
+/airi/services/discord-bot/src/orchestration/conversation-controller.ts  @starryark
+/airi/services/discord-bot/src/orchestration/group-turn-builder.ts       @starryark
+/airi/services/discord-bot/src/orchestration/guild-session.ts            @starryark
+/airi/services/discord-bot/src/orchestration/mention-responder.ts        @starryark
+/airi/services/discord-bot/src/orchestration/events.ts                   @starryark
+/airi/services/discord-bot/src/orchestration/room.ts                     @starryark
+/airi/services/discord-bot/src/orchestration/room-id.ts                  @starryark
+
+# --- Prompt security -------------------------------------------------------
+# Context & Prompt Agent, with a mandatory privacy/security review.
+/airi/services/discord-bot/src/character/prompt-compiler.ts  @starryark
+
+# --- Program controls ------------------------------------------------------
+# Evidence, ADRs, and gate status. A change here is a change to what the
+# program believes is true.
+/docs/memory/                                   @starryark
+/docs/runbooks/                                 @starryark
+/artifacts/                                     @starryark

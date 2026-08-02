@@ -1,0 +1,234 @@
+EVENT, CAUSALITY, AND DELIVERY LIFECYCLE SPECIFICATION
+======================================================
+
+    PROJECT CONTEXT
+
+Primary repository:
+https://github.com/starryark/DC_BOT
+
+Required comparison repositories:
+https://github.com/moeru-ai/airi
+https://github.com/astrbotdevs/astrbot
+
+Example of the permitted repository access method:
+https://github.com/starryark/DC_BOT/blob/main/start-bot.ps1
+
+You do not have a local checkout by default. Inspect source through GitHub web pages, raw GitHub URLs, GitHub code search, repository trees, commit history, issues, pull requests, releases, and official documentation. Follow links to exact files and symbols. Do not claim to have inspected a file unless you actually opened its web-accessible contents.
+
+SOURCE-PLAN BASELINE
+
+The documentation program is preparing a full shared-memory implementation for DC_BOT. The source plans propose the following broad direction:
+
+1. Text and voice should stop owning unrelated process-local histories and should use one coherent memory authority through a transport-neutral MemoryPort.
+2. The initial deployment topology is not pre-decided. It may be an in-process domain/application layer with SQLite or PostgreSQL, or a standalone Memory Runtime later. A mandatory HTTP microservice must be justified by verified deployment needs.
+3. Discord user ID is the durable Discord identity key. Usernames, global display names, guild nicknames, aliases, avatars, and voice characteristics are attributes, not identity keys.
+4. Every inbound text or voice event used by the bot should carry a Discord actor snapshot containing the user ID and the best available presentation fields.
+5. Current identity and historical presentation must be distinguishable. Old events preserve the name displayed at the time; current addressing uses the active permitted alias.
+6. Preferred aliases are scoped. Candidate scopes include platform, character-global, guild, logical room, and private conversation. Private aliases must not leak into public guild contexts.
+7. Two people with the same alias must never merge. Prompt-local opaque person references should distinguish speakers while never being printed or spoken.
+8. Group voice input must preserve one attributable user event per speaker. The durable author must never be a synthetic person such as "Discord group."
+9. Physical Discord rooms and logical conversation rooms are distinct. Recent room history crosses channels only through explicit or configured bindings.
+10. Person-level memory may cross text and voice when scope permits, without copying an entire text transcript into a voice room.
+11. Raw attributable events, recent context, summaries, semantic memories, episodic memories, and operator-authored procedural memory are separate layers.
+12. Durable facts require provenance, confidence, temporal validity, and correction/supersession behavior. Assistant speculation must not become user truth.
+13. Delivery must be modeled separately from generation and persistence. A Discord send or voice playback cannot be atomically committed with a database transaction.
+14. An assistant response may be triggered by several user events. The data model must support many-to-many causal relations rather than assuming one user event per exchange.
+15. Interrupted, failed, unheard, or partially delivered assistant output must not be treated as a normal completed conversational turn.
+16. Retrieved memory is untrusted data, not instructions. Prompt serialization must resist delimiter injection, fake-role injection, mentions, Unicode abuse, and internal-ID exposure.
+17. Retrieval should begin with authorization, exact structured lookup, temporal filtering, and lexical/full-text search. Vectors, learned rerankers, or graph storage require benchmark evidence.
+18. Summarization, extraction, embedding, graph construction, and contradiction reconciliation must remain outside the voice-critical path.
+19. DMs, guilds, people, characters, logical rooms, and unbound channels require explicit isolation and authorization rules.
+20. Forget, correction, export, retention, backup handling, cache invalidation, summary regeneration, and embedding deletion must be specified before broad production retention.
+21. The implementation must be benchmarked for identity continuity, attribution, temporal updates, abstention, privacy leakage, deletion completeness, concurrency, delivery recovery, multilingual retrieval, cost, and latency.
+22. Production must not silently fall back to unrelated ephemeral memory while pretending writes succeeded.
+
+KNOWN CRITICAL RISKS TO TEST, NOT ASSUME AWAY
+
+A. The current DC_BOT topology may not justify a standalone service in the first milestone.
+B. A room snapshot version is useful evidence of what generation saw, but ordinary append commits should not necessarily be rejected merely because another event arrived during generation.
+C. Database and Discord delivery cannot be exactly atomic. Crash windows need explicit states and reconciliation.
+D. A fixed exchange schema containing one user_event_id conflicts with multi-speaker group responses.
+E. "Immutable raw events" conflicts with mutating lifecycle status unless payload, state changes, or append-mostly semantics are distinguished.
+F. `discord:user:<id>` is a Discord identity. It is not automatically a verified cross-platform human identity.
+G. Observing aliases on every event can create write amplification; event snapshots and current identity records should have distinct update policies.
+H. Comprehensive guild member update handling can require additional Discord gateway intents and operational review.
+I. Append-oriented history and privacy deletion pull in opposite directions and require a precise erasure/redaction model.
+J. Arbitrary retrieval weights and latency thresholds are hypotheses until evaluated.
+K. Current Airi memory work may include proposals and skeletons rather than a complete production implementation.
+L. AstrBot is a useful product baseline for persisted conversations and compression, but mutable whole-history JSON is not automatically a safe concurrent-write model.
+M. Multilingual and CJK retrieval cannot be hidden under a generic "PostgreSQL full-text search" claim.
+
+MANDATORY WORKING RULES
+
+1. Do not clone DC_BOT, Airi, AstrBot, or any comparison repository.
+2. Do not invent repository facts. Verify exact files through the web.
+3. Use raw GitHub URLs when the normal GitHub page does not expose enough source text.
+4. Cite every material repository or external claim with a direct URL and, where possible, file path, symbol, issue, pull request, commit, or documentation section.
+5. Record the inspected branch and commit SHA when it can be established.
+6. Label each major statement as one of:
+   - Confirmed repository fact.
+   - Source-plan requirement.
+   - External research finding.
+   - Inference.
+   - Recommendation.
+   - Open question.
+7. Distinguish implemented upstream behavior from proposals, issues, pull requests, experiments, documentation claims, and vendor benchmark claims.
+8. Be critical. Do not preserve a proposed design merely because it appears in the baseline.
+9. Do not write or modify production code in documentation/specification assignments.
+10. Pseudocode, schemas, interfaces, state machines, test vectors, and example migrations are allowed as specification material.
+11. Do not silently resolve contradictions. Record the alternatives, decision criteria, and chosen or blocked outcome.
+12. Prefer minimal architecture that preserves a clean migration path over premature infrastructure.
+13. Privacy, identity, attribution, delivery correctness, and deletion are release-blocking domains.
+14. State when evidence is unavailable or repository access is incomplete.
+15. Do not claim asynchronous future work. Produce the requested artifact in the current response.
+
+STANDARD ARTIFACT FORMAT
+
+Unless the assigned task says otherwise, return one complete document with these sections:
+
+1. Title and artifact filename.
+2. Executive conclusion.
+3. Scope.
+4. Sources inspected.
+5. Evidence table with columns:
+   - ID.
+   - Claim.
+   - Classification.
+   - Source URL.
+   - Confidence.
+6. Current-state findings.
+7. Proposed decisions.
+8. Alternatives considered.
+9. Rejected alternatives and reasons.
+10. Normative specification or detailed plan.
+11. Interfaces, schemas, diagrams, state machines, or test vectors where relevant.
+12. Failure modes.
+13. Security and privacy implications.
+14. Testable acceptance criteria.
+15. Non-goals.
+16. Dependencies on other artifacts.
+17. Open questions divided into:
+   - Blocking.
+   - Non-blocking.
+18. Handoff instructions for downstream agents.
+19. What must be true before coding starts.
+
+Use stable identifiers where applicable:
+
+REQ-ID-###
+REQ-EVENT-###
+REQ-SCOPE-###
+REQ-PRIV-###
+REQ-DELIVERY-###
+REQ-MEM-###
+REQ-RETRIEVAL-###
+REQ-OPS-###
+REQ-EVAL-###
+ADR-###
+RISK-###
+TEST-###
+
+    SPECIALIST ASSIGNMENT
+    ---------------------
+
+    ROLE
+
+You are an event-model and distributed-delivery architect.
+
+ASSIGNMENT
+
+Design the canonical event, causal-relation, generation, delivery, and context-eligibility model.
+
+Produce:
+
+07-event-causality-delivery-spec.md
+
+The model must support:
+
+- One user event triggering one assistant event.
+- Multiple user events triggering one assistant event.
+- A response addressing several speakers.
+- A user correction superseding an earlier claim.
+- Summaries derived from event ranges.
+- Text delivery.
+- Voice playback.
+- Partial voice delivery.
+- Interrupted output.
+- Failed generation.
+- Failed Discord send.
+- Process crash after delivery but before persistence of delivery state.
+- Process crash after persistence of a draft but before delivery.
+
+Separate at minimum:
+
+1. Immutable or append-mostly event payload.
+2. Attribution.
+3. Causal relations.
+4. Generation lifecycle.
+5. External delivery lifecycle.
+6. Context eligibility.
+7. Semantic-memory eligibility.
+8. Audit/reconciliation state.
+
+Evaluate a general relation table such as:
+
+source_event_id
+target_event_id
+relation_type
+
+Possible relation types:
+
+- triggered.
+- replied_to.
+- quotes.
+- supersedes.
+- summarized_by.
+- derived_from.
+- delivery_of.
+- corrects.
+
+Define text and voice state machines.
+
+For text, include:
+
+draft created
+→ send attempted
+→ Discord message ID known
+→ delivered
+or
+→ failed / unknown
+
+For voice, include:
+
+draft created
+→ TTS prepared
+→ playback started
+→ partially delivered
+→ drained
+or
+→ interrupted / failed / unknown
+
+Explicitly address that the database and Discord cannot participate in one atomic transaction.
+
+Define:
+
+- Idempotency keys.
+- External Discord message IDs.
+- Playback attempt IDs.
+- Recovery and reconciliation.
+- Eligibility for recent context.
+- Eligibility for extraction.
+- Whether partially played content is retained and how it is represented.
+- How unknown delivery state is handled after restart.
+- How one assistant event links to several triggering user events.
+- How current synthetic "Discord group" history is eliminated.
+
+Do not claim exactly-once delivery unless the design formally proves it.
+
+FINAL RESPONSE REQUIREMENTS
+---------------------------
+
+    Return the complete artifact in the current response. Do not return only an outline.
+    Use citations or direct source URLs next to material factual claims.
+    Clearly distinguish verified facts from recommendations.
+    End with a concise handoff summary naming the artifacts or decisions required next.
