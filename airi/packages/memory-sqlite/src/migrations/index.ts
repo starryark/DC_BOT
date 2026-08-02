@@ -2,6 +2,7 @@ import { schemaV1 } from '../schema/v1.js'
 import { schemaV2 } from '../schema/v2.js'
 import { schemaV3 } from '../schema/v3.js'
 import { schemaV4 } from '../schema/v4.js'
+import { schemaV5 } from '../schema/v5.js'
 
 /** A deterministic, forward-only SQLite schema change. */
 export interface Migration {
@@ -35,6 +36,12 @@ export const migrations: readonly Migration[] = Object.freeze([
     name: 'event_causality_repositories',
     checksum: 'cbe385b24720f051a3389fbeb2b1663564ff9beb43c68fe86b41c4ba875512f7',
     sql: schemaV4,
+  },
+  {
+    version: 5,
+    name: 'generation_output_delivery_repositories',
+    checksum: '83d7b755d62a8a09b109598503dce8c1594ca3f11b9713fe73341db74982c4a0',
+    sql: schemaV5,
   },
 ])
 

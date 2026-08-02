@@ -42,15 +42,16 @@ describe('imp-201 forward-only migration runner', () => {
   it('migrates an empty SQLite database to the latest schema and records the checksum once', () => {
     const db = database()
 
-    expect(migrate(db)).toEqual([1, 2, 3, 4])
+    expect(migrate(db)).toEqual([1, 2, 3, 4, 5])
     expect(db.prepare('PRAGMA foreign_keys').get()).toEqual({ foreign_keys: 1 })
     expect(db.prepare('SELECT version, name, checksum FROM memory_schema_migrations').all()).toEqual([
       { version: 1, name: 'initial_shared_memory_schema', checksum: migrations[0]?.checksum },
       { version: 2, name: 'identity_alias_repositories', checksum: migrations[1]?.checksum },
       { version: 3, name: 'room_binding_authorization_repositories', checksum: migrations[2]?.checksum },
       { version: 4, name: 'event_causality_repositories', checksum: migrations[3]?.checksum },
+      { version: 5, name: 'generation_output_delivery_repositories', checksum: migrations[4]?.checksum },
     ])
-    expect(latestSchemaVersion).toBe(4)
+    expect(latestSchemaVersion).toBe(5)
   })
 
   it('is a no-op when every known migration is already applied', () => {
@@ -58,7 +59,7 @@ describe('imp-201 forward-only migration runner', () => {
     migrate(db)
 
     expect(migrate(db)).toEqual([])
-    expect(db.prepare('SELECT COUNT(*) AS count FROM memory_schema_migrations').get()).toEqual({ count: 4 })
+    expect(db.prepare('SELECT COUNT(*) AS count FROM memory_schema_migrations').get()).toEqual({ count: 5 })
   })
 
   it('IMP-204 upgrades v3 while preserving identity, alias, room, binding, and authorization data', () => {
@@ -70,8 +71,24 @@ describe('imp-201 forward-only migration runner', () => {
     db.prepare("INSERT INTO aliases(alias_id,person_id,scope_type,scope_id,value,precedence,visibility,valid_from,source) VALUES ('alias','person','platform','discord','Alice',0,'public','2026-01-01T00:00:00Z','test')").run()
     db.prepare("INSERT INTO room_binding_records(binding_id,physical_room_id,logical_room_id,character_id,idempotency_key,created_at,active_version) VALUES ('binding','physical','logical','character','binding-key','2026-01-01T00:00:00Z',1)").run()
     db.prepare("INSERT INTO room_binding_versions(binding_id,version,status,binding_kind,cross_channel_history,direction,valid_from,authorized_by,authorization_revision,created_at) VALUES ('binding',1,'active','explicit',1,'bidirectional','2026-01-01T00:00:00Z','operator',7,'2026-01-01T00:00:00Z')").run()
-    expect(migrate(db)).toEqual([4])
+    expect(migrate(db)).toEqual([4, 5])
     expect(db.prepare('SELECT person_id FROM people').get()).toEqual({ person_id: 'person' }); expect(db.prepare('SELECT alias_id FROM aliases').get()).toEqual({ alias_id: 'alias' }); expect(db.prepare('SELECT physical_room_id FROM physical_room_records').get()).toEqual({ physical_room_id: 'physical' }); expect(db.prepare('SELECT binding_id,authorization_revision FROM room_binding_versions').get()).toEqual({ binding_id: 'binding', authorization_revision: 7 })
+  })
+
+  it('IMP-205 upgrades v4 while preserving legacy generations, causal edges, events, and migration history', () => {
+    const db = database(); migrate(db, migrations.slice(0, 4))
+    db.prepare("INSERT INTO logical_rooms(logical_room_id,isolation_scope_type,isolation_scope_id,room_kind,created_at) VALUES ('logical','unbound_channel','logical','unbound_channel','2026-01-01T00:00:00Z')").run()
+    db.prepare("INSERT INTO events(event_id,logical_room_id,room_sequence,event_kind,direction,modality,content_json,source_system,occurred_at,received_at,committed_at,immutability_hash,writer_version) VALUES ('assistant','logical',1,'assistant','outbound','text','{}','legacy','2026-01-01T00:00:00Z','2026-01-01T00:00:00Z','2026-01-01T00:00:00Z','hash','legacy')").run()
+    db.prepare("INSERT INTO assistant_generations(generation_id,assistant_event_id,generation_idempotency_key,context_snapshot_version,generation_started_at,generation_status,context_eligibility) VALUES ('legacy-generation','assistant','legacy-key',0,'2026-01-01T00:00:00Z','generated','eligible')").run()
+    db.prepare("INSERT INTO physical_room_records(physical_room_id,locator_key,platform,channel_id,channel_kind,guild_id,lifecycle,observed_at) VALUES ('physical','discord:guild:1:2','discord','2','guild_text','1','active','2026-01-01T00:00:00Z')").run()
+    db.prepare("INSERT INTO inbound_event_records(event_id,idempotency_key,event_kind,actor_kind,actor_json,physical_room_id,logical_room_id,room_sequence,occurred_at,recorded_at,payload_json,retention_class,envelope_hash) VALUES ('inbound','inbound-key','system','anonymous','{\"kind\":\"anonymous\",\"source\":\"system\"}','physical','logical',2,'2026-01-01T00:00:00Z','2026-01-01T00:00:00Z','{\"redacted\":false}','systemMetadata','hash')").run()
+    db.prepare("INSERT INTO generation_causal_edges VALUES ('legacy-generation','inbound','trigger')").run()
+
+    expect(migrate(db)).toEqual([5])
+    expect(db.prepare('SELECT * FROM generation_causal_edges').all()).toEqual([{ generation_id: 'legacy-generation', inbound_event_id: 'inbound', cause_role: 'trigger' }])
+    expect(db.prepare('SELECT generation_id FROM assistant_generations').get()).toEqual({ generation_id: 'legacy-generation' })
+    expect(db.prepare('SELECT version,checksum FROM memory_schema_migrations ORDER BY version').all()).toHaveLength(5)
+    expect(() => db.prepare("INSERT INTO generation_causal_edges VALUES ('missing','inbound','trigger')").run()).toThrow()
   })
 
   it('upgrades v2 in place without changing identity or alias records', () => {
@@ -80,7 +97,7 @@ describe('imp-201 forward-only migration runner', () => {
     db.prepare('INSERT INTO people(person_id,discord_user_id,created_at) VALUES (\'person\',\'18446744073709551615\',\'2026-01-01T00:00:00Z\')').run()
     db.prepare('INSERT INTO aliases(alias_id,person_id,scope_type,scope_id,value,precedence,visibility,valid_from,source) VALUES (\'alias\',\'person\',\'platform\',\'discord\',\'Alex\',0,\'public\',\'2026-01-01T00:00:00Z\',\'test\')').run()
 
-    expect(migrate(db)).toEqual([3, 4])
+    expect(migrate(db)).toEqual([3, 4, 5])
     expect(db.prepare('SELECT person_id,discord_user_id FROM people').get()).toEqual({ person_id: 'person', discord_user_id: '18446744073709551615' })
     expect(db.prepare('SELECT alias_id,value FROM aliases').get()).toEqual({ alias_id: 'alias', value: 'Alex' })
   })

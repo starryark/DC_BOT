@@ -172,6 +172,7 @@ violate it. `Open` = neither.
 | IMP-202 | REQ-ID-001…004 | `memory-sqlite/src/repositories/{identity,alias}.ts`; additive schema v2 | `…/repositories/{identity,alias}.test.ts` |
 | IMP-203 | REQ-SCOPE-001, REQ-SCOPE-002, REQ-RETRIEVAL-001 | `memory-sqlite/src/repositories/{rooms,bindings,policy-data}.ts`; additive schema v3 | `…/repositories/rooms.test.ts` real-SQLite scope matrix |
 | IMP-204 | REQ-EVENT-001, REQ-EVENT-002, REQ-EVENT-003 | `memory-sqlite/src/repositories/{events,causal-edges}.ts`; additive schema v4 | `…/repositories/events.test.ts` real-SQLite event/causal matrix |
+| IMP-205 | REQ-DELIVERY-001, REQ-DELIVERY-002, REQ-DELIVERY-003 | `memory-sqlite/src/repositories/{generations,outputs,deliveries}.ts`; additive schema v5 | `…/repositories/generation-delivery.test.ts` real-SQLite lifecycle/delivery matrix |
 
 ---
 
@@ -319,6 +320,35 @@ Run from `airi/`, 2026-08-02. Exact commands and exact results:
   changed. R1 remains disabled; G2 remains in progress; IMP-205 through IMP-208,
   OQ-BLOCK-003, and FIND-010 remain. The next increment is IMP-205.
 
+### IMP-205 generation, output, and delivery repository evidence (2026-08-02)
+
+- Migration 5, `generation_output_delivery_repositories`, is additive with
+  checksum `83d7b755d62a8a09b109598503dce8c1594ca3f11b9713fe73341db74982c4a0`.
+  It preserves legacy generation rows and migration-4 causal references through
+  a shared generation-ID registry while leaving migrations 1–4 unchanged.
+- `GenerationRepository` provides idempotent creation, ordered snapshot
+  evidence, scoped reconstruction, and domain-validated compare-and-transition.
+  Concurrent inbound room advancement does not reject a legal transition.
+- `OutputRepository` atomically appends immutable ordered segment sets.
+  `DeliveryRepository` creates retry-safe physical attempts, persists text
+  receipts, voice playback/range and unknown-after-crash evidence, exposes
+  unresolved attempts, and atomically appends transition evidence.
+- Context eligibility is evaluated at read time. SQL enforces exact scope;
+  domain `STRICT_CONTEXT_ELIGIBILITY` and `eligibleSegmentText` decide nuanced
+  admission and delivered-prefix projection. Strict policy excludes voice,
+  partial, failed, unknown, and never-attempted output.
+- Real in-memory SQLite coverage includes clean/v4 migration, checksum/history
+  and foreign-key preservation, retry/conflict write counts, legal/illegal/stale
+  transitions, supersession, concurrent room append, text receipts, voice and
+  crash outcomes, strict/permissive context policy, reconciliation evidence,
+  and injected rollback. Runtime, Discord, reconciliation, deletion, and flag
+  activation remain out of scope. R1 remains disabled; IMP-206 through IMP-208
+  remain unstarted.
+- Verification passed: memory-sqlite typecheck and 8 files / 59 tests;
+  memory-domain typecheck and 10 files / 206 tests; discord-bot typecheck and
+  33 files / 365 tests; direct package lint with 0 warnings and 0 errors; root
+  `git diff --check`. No production database was opened.
+
 Not run, and why:
 
 | Command | Why not |
@@ -339,7 +369,7 @@ flags all default to `false`; no other production module reads it yet.
 |---|---|
 | Entry (IMP-001…003) | ✅ **passed this increment** |
 | G1 Domain (IMP-101…108) | ✅ **passed this increment** — one contract package, no Discord/DB imports, conformance fixtures cover multi-speaker causality and partial delivery |
-| G2 Persistence | 🚧 **in progress** — IMP-201 through IMP-204 complete; IMP-205…208 remain, and OQ-BLOCK-003 still blocks IMP-208 sign-off |
+| G2 Persistence | 🚧 **in progress** — IMP-201 through IMP-205 complete; IMP-206…208 remain, and OQ-BLOCK-003 still blocks IMP-208 sign-off |
 | G3 Identity propagation | ⛔ not started; also blocked on FIND-010 |
 | G4 Event/delivery | ⛔ not started |
 | G5 Text/voice integration | ⛔ not started |

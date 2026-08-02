@@ -47,3 +47,16 @@ require a trigger, and traverse deterministically in both directions. The
 causal repository references fixture generation rows until IMP-205 implements
 generation ownership. No runtime, delivery, deletion workflow, or flag is
 enabled.
+
+IMP-205 adds `GenerationRepository`, `OutputRepository`, and
+`DeliveryRepository` behind additive migration 5
+(`generation_output_delivery_repositories`). Generations retain exact ordered
+snapshot evidence and validated append-only lifecycle history; room-version
+advancement is never used as a generation commit CAS. Output segments are
+immutable, generation-owned, and ordinally ordered. Delivery attempts retain
+stable retry identity, distinct physical attempt numbers, append-only evidence,
+receipt-backed text outcomes, local voice-playback ranges, and unresolved crash
+states. `DeliveryRepository.eligible` applies exact room/character scope in SQL
+and delegates nuanced admission and prefix projection to the domain policy.
+The strict default excludes voice, partial, unknown, failed, and never-attempted
+output. No reconciler, transport, runtime composition, or rollout flag is added.
