@@ -349,6 +349,39 @@ Run from `airi/`, 2026-08-02. Exact commands and exact results:
   33 files / 365 tests; direct package lint with 0 warnings and 0 errors; root
   `git diff --check`. No production database was opened.
 
+### IMP-206 layered memory and provenance repository evidence (2026-08-02)
+
+- Migration 6, `layered_memory_provenance_repositories`, is additive with
+  checksum `339ad95d51c276186ac42487ea8e863c0b0721199c89a0b7661a4f4c10df2b80`.
+  Migrations 1–5 remain unchanged; exact-v5 upgrade coverage preserves migration
+  history, legacy memory, IMP-205 generation data, and foreign-key integrity.
+- Separate repositories persist and reconstruct summary, semantic, episodic,
+  and procedural records with exact temporal validity and complete provenance.
+  Summary coverage lineage and provenance lineage remain independently auditable.
+- Domain validators reject unsupported assistant assertions, missing lineage,
+  invalid confidence/intervals, empty facts, and non-operator procedures before
+  durable state. Multi-row writes and corrections use transactions; failures
+  leave no orphan record, lineage, replacement, edge, or changed validity window.
+- Semantic reads use half-open `[validFrom, validUntil)` world-time intervals.
+  Corrections close the prior interval, append a replacement, retain reciprocal
+  supersession and correction evidence, deduplicate exact retries, reject stale
+  or conflicting requests, and reconstruct chains deterministically.
+- Requirement-number drift is recorded: the approved backlog maps IMP-206 to
+  REQ-MEM-002/003 and REQ-PRIV-002, while the integrated/red-team documents use
+  REQ-MEM-001/002/003/005 and assign REQ-PRIV-002 to opaque prompt references.
+  This increment follows the backlog semantics and domain contracts; actor
+  snapshots, prompt serialization, and deletion execution were not broadened in.
+- Runtime composition and all memory rollout flags remain unchanged and off.
+  R1 remains disabled; IMP-207 and IMP-208 remain unstarted. OQ-BLOCK-003 and
+  FIND-010 remain open. Recovery is to disable durable writes and restore the
+  verified pre-v6 snapshot; there is intentionally no down migration.
+- Verification passed: memory-sqlite typecheck and 9 files / 67 tests;
+  memory-domain typecheck and 10 files / 206 tests; discord-bot typecheck and
+  33 files / 365 tests; direct package lint with 0 warnings and 0 errors; root
+  `git diff --check`; independent migration checksum recomputation matched.
+  Every SQLite test used an in-memory temporary database; no production
+  database was opened.
+
 Not run, and why:
 
 | Command | Why not |
@@ -369,7 +402,7 @@ flags all default to `false`; no other production module reads it yet.
 |---|---|
 | Entry (IMP-001…003) | ✅ **passed this increment** |
 | G1 Domain (IMP-101…108) | ✅ **passed this increment** — one contract package, no Discord/DB imports, conformance fixtures cover multi-speaker causality and partial delivery |
-| G2 Persistence | 🚧 **in progress** — IMP-201 through IMP-205 complete; IMP-206…208 remain, and OQ-BLOCK-003 still blocks IMP-208 sign-off |
+| G2 Persistence | 🚧 **in progress** — IMP-201 through IMP-206 complete; IMP-207…208 remain, and OQ-BLOCK-003 still blocks IMP-208 sign-off |
 | G3 Identity propagation | ⛔ not started; also blocked on FIND-010 |
 | G4 Event/delivery | ⛔ not started |
 | G5 Text/voice integration | ⛔ not started |

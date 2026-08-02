@@ -60,3 +60,14 @@ states. `DeliveryRepository.eligible` applies exact room/character scope in SQL
 and delegates nuanced admission and prefix projection to the domain policy.
 The strict default excludes voice, partial, unknown, failed, and never-attempted
 output. No reconciler, transport, runtime composition, or rollout flag is added.
+
+IMP-206 adds `SummaryRepository`, `MemoryRepository`, and
+`CorrectionRepository` behind additive migration 6
+(`layered_memory_provenance_repositories`). Domain-shaped tables keep summaries,
+semantic facts, episodes, and operator procedures separate while legacy v1
+memory rows remain intact. Writes validate durable provenance, confidence,
+temporal intervals, fact content, and procedure authorship before transactional
+base-plus-lineage persistence. Facts support half-open as-of reads, current reads,
+atomic append-only corrections, exact retry deduplication, and deterministic
+chain reconstruction. No retrieval ranking, worker, deletion executor, runtime
+composition, or rollout flag is added.
