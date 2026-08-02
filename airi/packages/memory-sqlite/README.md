@@ -53,6 +53,20 @@ IMP-208 adds an explicit file-backed validation profile: foreign keys on, WAL,
 timeout. Exhaustion becomes a typed persistence failure; retries are never
 infinite. The value is a local measurement recommendation, not a production SLO.
 
+Deployment startup must use `openAuthoritativeSqliteDatabase`, which returns a
+closeable `{ database, ownership }` handle. It acquires a versioned sidecar
+SQLite lease before opening write-capable authority access; a competing process
+receives a typed, retryable `SqliteWriterOwnershipError` within the configured
+bound. `close()` is idempotent and releases both resources. Abrupt termination
+releases the live SQLite/VFS lock, so the next process can acquire without
+deleting or stealing a stale marker. The sidecar contains no application data
+and its filename is a digest of the canonical authority identity.
+
+`openSqliteDatabase` remains a low-level primitive for isolated tests, read-only
+connections, backup/restore candidates, and deliberate contention probes. It is
+not the safe deployment writer startup API. Read-only callers set
+`{ readOnly: true }` and do not acquire writer ownership.
+
 `createVerifiedBackup` uses the `node:sqlite` online backup API and atomically
 publishes an integrity-checked snapshot plus schema/checksum manifest.
 `restoreVerifiedBackup` restores only to an isolated path, requires tombstone
@@ -109,3 +123,33 @@ is additive; legacy queue rows remain inspectable but require an exact retry or
 policy-controlled reconstruction before hash-based deduplication. No worker
 loop, Discord call, WAL/busy-timeout rollout, runtime composition, or flag is
 enabled.
+
+## G2 operational soak harness (test-only)
+
+`src/benchmark/g2-operational-soak.ts`, run as
+`pnpm -F @proj-airi/memory-sqlite benchmark:g2`, collects the deployment
+evidence `OQ-BLOCK-003` requires. Use it when an operator needs measured
+checkpoint, backup, restore, contention, WAL, latency, and correctness evidence
+from the intended deployment host and volume. Do not use it as a benchmark of
+convenience, and do not treat a completed run as approval: every summary reports
+`g2AutomaticallyPassed: false`, and results are `measured-not-evaluated` unless
+an operator supplies a threshold document that names its approver.
+
+It creates its own run-scoped synthetic database through
+`openAuthoritativeSqliteDatabase`
+and drives the existing repositories, queue, unit of work, and verified
+backup/restore utilities; it adds no persistence logic and opens no production
+database. `G2_DATABASE_DIRECTORY` and `G2_OUTPUT_DIRECTORY` must both be given
+and must be separate. The harness refuses the operating-system temporary
+directory, network shares, filesystem roots, the repository checkout, and any
+directory already holding a database it did not mark, and there is deliberately
+no override. One process holds one write-capable connection; readers are
+read-only; the bounded contention probe and the opt-in second-writer probe are
+recorded explicitly rather than assumed.
+
+Supporting modules are `g2-config.ts` (validated configuration),
+`g2-path-safety.ts` (path admission and run manifests), `g2-environment.ts`
+(host and PRAGMA evidence), `g2-metrics.ts` (bounded-memory distributions),
+`g2-thresholds.ts` (operator limits), and `g2-report.ts` (summary schema and
+Markdown rendering). Procedure: `docs/memory/g2-operational-evidence-runbook.md`.
+Approval record: `docs/memory/evidence/g2-operational-acceptance-template.md`.

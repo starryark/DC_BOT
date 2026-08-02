@@ -15,6 +15,7 @@
     "src"
   ],
   "scripts": {
+    "benchmark:g2": "tsx src/benchmark/g2-operational-soak.ts",
     "benchmark:imp208": "tsx src/benchmark/imp208-benchmark.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"

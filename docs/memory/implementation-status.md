@@ -181,7 +181,7 @@ violate it. `Open` = neither.
 | ID | Question | Owner role | Blocks |
 |---|---|---|---|
 | OQ-BLOCK-004 / OQ-B1 / FIND-010 | Which Discord gateway intents are approved and available (Message Content, Server Members)? | Discord Operations Agent | G3 / IMP-305 |
-| OQ-BLOCK-003 / BQ-003 | Confirm SQLite as the M1 default and the process topology (one bot process vs workers). | Operations Agent | G2 / IMP-208 |
+| OQ-BLOCK-003 / BQ-003 | **Open.** Confirm SQLite as the M1 default and the process topology (one bot process vs workers). Collect with `docs/memory/g2-operational-evidence-runbook.md`; record in a copy of `docs/memory/evidence/g2-operational-acceptance-template.md`. Neither the harness nor any run resolves this. | Operations Agent | G2 / IMP-301 |
 | OQ-B3 | CJK tokenizer decision, or keep `fulltextCjk` unadvertised for M1. | Retrieval Agent | G6 / IMP-606 |
 | OQ-B4 / BQ-004 | Operator privilege model and legal-basis vocabulary before `purge` is enabled. | Privacy & Security Agent | G7 / IMP-702 |
 | BQ-006 | Which delivery outcomes make *partial* voice output context-eligible. | Generation/Delivery Agent | G4 / IMP-405 |
@@ -449,13 +449,75 @@ Production behaviour at this commit is unchanged. The only edit to a file on a
 running code path is `src/config.ts`, which gains a `memory` section whose 16
 flags all default to `false`; no other production module reads it yet.
 
+### G2 operational evidence collection harness (2026-08-02)
+
+This increment adds the mechanism for collecting `OQ-BLOCK-003` evidence. It
+does not collect it, and it does not close the blocker.
+
+- `airi/packages/memory-sqlite/src/benchmark/g2-operational-soak.ts` plus
+  `g2-config.ts`, `g2-path-safety.ts`, `g2-environment.ts`, `g2-metrics.ts`,
+  `g2-thresholds.ts`, and `g2-report.ts`, run by
+  `pnpm -F @proj-airi/memory-sqlite benchmark:g2`. Test-only: it creates its own
+  run-scoped synthetic database through `openSqliteDatabase`, exercises the
+  existing `IdentityRepository`, `RoomRepository`, `EventRepository`,
+  `ReconciliationQueue`, `UnitOfWork`, `createVerifiedBackup`, and
+  `restoreVerifiedBackup`, and adds no new persistence logic.
+- Safety: both directories must be explicit and separate; the OS temporary
+  directory, UNC paths, filesystem roots, and the repository checkout are
+  refused; a directory holding an unmarked database is refused with no override;
+  every run gets its own database filename, marker, and manifest. Backups and
+  restores are written outside the authority directory and never over it.
+- Evidence per run: `run-manifest.json`, `configuration.json`,
+  `environment.json`, streamed `events.jsonl`, `metrics.json`, `summary.json`,
+  and `g2-soak-report.md`, plus staged backups and the restored candidate.
+- `docs/memory/g2-operational-evidence-runbook.md` is the operator procedure and
+  `docs/memory/evidence/g2-operational-acceptance-template.md` is the record to
+  be signed.
+- Verification: SQLite package typecheck; 12 files / 115 tests (27 new in
+  `src/benchmark/g2-harness.test.ts`); package lint 0 warnings / 0 errors; root
+  `git diff --check`; one 25-second smoke soak on a local non-temporary path
+  (`status: completed`, zero correctness failures, four verified backups, a
+  valid restore drill with deletion-obligation replay, three connection
+  reopens). No production or developer database was opened.
+- Deliberate non-claims: results are `measured-not-evaluated` unless an operator
+  supplies an approved threshold document; storage locality is `unknown` unless
+  an operator attests to it; restart coverage is connection reopen, not an
+  operating-system crash; backups are staged locally and no off-host copy is
+  performed or simulated. The optional second-writer probe reports what actually
+  happens, and on the smoke run reported `unexpectedly-succeeded` because no
+  process-level ownership guard exists (ADR-003 `OPEN-BLOCK-007`).
+- Runtime flags, Discord intents, database paths, and the authoritative
+  persistence architecture are unchanged. `OQ-BLOCK-003` stays open, G2 stays
+  unapproved, `IMP-301` stays blocked, and `OQ-BLOCK-004`/`FIND-010` is
+  untouched.
+
+### G2 single-writer ownership remediation (2026-08-02)
+
+- Added `openAuthoritativeSqliteDatabase` and
+  `acquireSqliteWriterOwnership`. A versioned, canonical-path-derived sidecar
+  SQLite lease transaction is held for the explicit handle lifetime. It stores
+  no application data and relies on SQLite/VFS operating-system locks, not PID,
+  timestamp, heartbeat, or stale-file deletion.
+- A live competitor receives typed, sanitized
+  `SqliteWriterOwnershipError`/`SQLITE_WRITER_OWNERSHIP_UNAVAILABLE` within the
+  configured bound. Clean close is idempotent; forced process termination is
+  followed by reacquisition without manual cleanup. Read-only and isolated
+  backup/restore access remain outside writer ownership by design.
+- The G2 harness now uses the guarded authority opener and reports expected
+  refusal, unexpected success, not-run, or probe-infrastructure failure as
+  distinct states, plus guard version, timeout, latency, owner health, release,
+  crash-recovery, and intentionally unguarded connection evidence.
+- This is technical remediation for ADR-003 `OPEN-BLOCK-007`, REQ-OPS-012, and
+  REQ-OPS-013. It is not an approved `IMP-209`, does not approve G2, does not
+  close `OQ-BLOCK-003`, and does not start `IMP-301`.
+
 ## 9. Gate status
 
 | Gate | Status |
 |---|---|
 | Entry (IMP-001…003) | ✅ **passed this increment** |
 | G1 Domain (IMP-101…108) | ✅ **passed this increment** — one contract package, no Discord/DB imports, conformance fixtures cover multi-speaker causality and partial delivery |
-| G2 Persistence | 🚧 **technical validation complete; formal gate pending** — IMP-201 through IMP-208 pass locally, but OQ-BLOCK-003 still requires approved evidence of one authoritative process, local non-network storage, an operational backup location, and a deployment-shaped workload/soak |
+| G2 Persistence | 🚧 **technical validation complete; formal gate pending** — IMP-201 through IMP-208 pass locally, but OQ-BLOCK-003 still requires approved evidence of one authoritative process, local non-network storage, an operational backup location, and a deployment-shaped workload/soak. A collection harness (`pnpm -F @proj-airi/memory-sqlite benchmark:g2`), operator runbook (`docs/memory/g2-operational-evidence-runbook.md`), and acceptance template (`docs/memory/evidence/g2-operational-acceptance-template.md`) now exist; no run of them approves the gate, and no signed record exists yet |
 | G3 Identity propagation | ⛔ not started; also blocked on FIND-010 |
 | G4 Event/delivery | ⛔ not started |
 | G5 Text/voice integration | ⛔ not started |

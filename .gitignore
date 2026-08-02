@@ -16,6 +16,18 @@ GPT-SoVITS/GPT_SoVITS/text/G2PWModel/
 GPT-SoVITS/GPT_SoVITS/text/G2PWModel_1.1.zip
 GPT-SoVITS/GPT_SoVITS/text/g2pw*/
 
+# G2 operational soak evidence. The harness refuses to write inside the
+# checkout, so run output should never appear here; these patterns are a
+# backstop for a copied-in run directory. Templates, runbooks, and the
+# acceptance records themselves stay tracked.
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+g2-synthetic-directory.json
+**/g2-soak-evidence/
+
 # Downloaded at setup time from huggingface.co/bysq/TTS-KurisuMakise
 TTS-KurisuMakise/*
 !TTS-KurisuMakise/PROJECT_SETUP.md
