@@ -170,6 +170,7 @@ violate it. `Open` = neither.
 | IMP-108 | REQ-MEM-002, REQ-MEM-003, REQ-PRIV-002 | `memory-domain/src/{memory-records,provenance,corrections}.ts` | `…/{memory-records,corrections}.test.ts` |
 | IMP-201 | REQ-EVENT-001, REQ-MEM-002, REQ-OPS-001 | `memory-sqlite/src/{schema,migrations,migration-runner}.ts` | `…/{migration-runner,schema/v1,boundaries}.test.ts` |
 | IMP-202 | REQ-ID-001…004 | `memory-sqlite/src/repositories/{identity,alias}.ts`; additive schema v2 | `…/repositories/{identity,alias}.test.ts` |
+| IMP-203 | REQ-SCOPE-001, REQ-SCOPE-002, REQ-RETRIEVAL-001 | `memory-sqlite/src/repositories/{rooms,bindings,policy-data}.ts`; additive schema v3 | `…/repositories/rooms.test.ts` real-SQLite scope matrix |
 
 ---
 
@@ -257,10 +258,39 @@ Run from `airi/`, 2026-08-02. Exact commands and exact results:
   `.\\node_modules\\.bin\\moeru-lint.cmd packages/memory-sqlite` passed with 0
   warnings and 0 errors across 14 files and 93 rules. Full monorepo tests were
   not run because unrelated workspaces are outside IMP-202.
-- G2 remains in progress. IMP-203–208 remain; IMP-208 and OQ-BLOCK-003 remain
+- At the IMP-202 handoff, G2 remained in progress and IMP-203–208 remained; IMP-208 and OQ-BLOCK-003 remain
   unresolved. FIND-010 remains open; no Discord intent was enabled. All memory
   feature flags remain off, runtime composition is unchanged, and rollout stays
-  R1 disabled. The next unblocked increment is IMP-203.
+  R1 disabled. The next unblocked increment at that handoff was IMP-203.
+
+### IMP-203 room, binding, and policy-data repository evidence (2026-08-02)
+
+- Implemented REQ-SCOPE-001, REQ-SCOPE-002, and REQ-RETRIEVAL-001 through
+  exact-scope `RoomRepository`, append-versioned `BindingRepository`, and
+  narrow default-deny `PolicyDataRepository` exports. Unbound resolution is a
+  deterministic physical-room/character singleton; no name, guild, parent, or
+  query-order fallback exists.
+- Added additive migration 3,
+  `room_binding_authorization_repositories`, checksum
+  `c4bac88f79afa93560b3f8a9ca165d075dd5b3aa03350538a006d4dad7ef3ca4`.
+  Migrations 1 and 2 and their checksums remain unchanged. Clean install and
+  v2 upgrade tests preserve IMP-202 identity and alias rows.
+- Real-SQLite scope matrix covers exact large snowflakes, rename/idempotency,
+  locator and room-kind separation, character singleton isolation, temporal
+  membership, history/revisions, stale writes, immediate removal fallback,
+  lifecycle invalidation, DM/guild and cross-guild denial, active uniqueness,
+  foreign keys, failure wrapping, and create/update/removal rollback.
+- Final verification: memory-sqlite typecheck passed; memory-sqlite tests passed
+  (6 files, 37 tests); memory-domain typecheck and tests passed (10 files, 206
+  tests); discord-bot typecheck and tests passed (33 files, 365 tests); direct
+  checked-in moeru-lint passed (19 files, 93 rules, 0 warnings, 0 errors);
+  root `git diff --check` passed with line-ending notices only.
+- No benchmark beyond deterministic row/revision assertions was run because
+  IMP-203 is correctness-scoped. No production database, runtime adapter,
+  feature flag, gateway intent, provider, prompt, voice, generation, or
+  delivery path changed. Rollout stays R1 disabled; G2 remains in progress,
+  IMP-204 through IMP-208 remain, OQ-BLOCK-003 remains unresolved, and FIND-010
+  remains open. The next increment is IMP-204.
 
 Not run, and why:
 
@@ -282,7 +312,7 @@ flags all default to `false`; no other production module reads it yet.
 |---|---|
 | Entry (IMP-001…003) | ✅ **passed this increment** |
 | G1 Domain (IMP-101…108) | ✅ **passed this increment** — one contract package, no Discord/DB imports, conformance fixtures cover multi-speaker causality and partial delivery |
-| G2 Persistence | 🚧 **in progress** — IMP-201 and IMP-202 complete; IMP-203…208 remain, and OQ-BLOCK-003 still blocks IMP-208 sign-off |
+| G2 Persistence | 🚧 **in progress** — IMP-201 through IMP-203 complete; IMP-204…208 remain, and OQ-BLOCK-003 still blocks IMP-208 sign-off |
 | G3 Identity propagation | ⛔ not started; also blocked on FIND-010 |
 | G4 Event/delivery | ⛔ not started |
 | G5 Text/voice integration | ⛔ not started |

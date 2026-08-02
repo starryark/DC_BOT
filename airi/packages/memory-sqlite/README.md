@@ -21,3 +21,16 @@ unsupplied fields, throttle unchanged freshness writes to 24 hours, and update
 platform-observed aliases only on material changes. Alias lookups require one
 exact scope and return all colliding candidates (or an explicit ambiguous
 outcome); they never merge or arbitrarily select people.
+
+IMP-203 adds `RoomRepository`, `BindingRepository`, and
+`PolicyDataRepository`. Rooms use exact Discord locator strings, preserve
+identity across presentation renames, and carry explicit lifecycle state.
+Unbound physical-room/character pairs resolve deterministically to singleton
+logical rooms. Binding mutations are transactional and append versions;
+optimistic expected-version checks reject stale writes, retirement immediately
+restores singleton resolution, and revision evidence changes on narrowing or
+room invalidation. Exact policy queries return only one requested room,
+character, privacy domain, lifecycle, and revision projection; missing,
+ambiguous, cross-guild, DM/guild, expired, or inaccessible state denies by
+returning no evidence. Migration 3 is additive; migrations 1 and 2 are
+unchanged. Runtime composition and feature flags remain untouched.

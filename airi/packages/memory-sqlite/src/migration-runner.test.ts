@@ -41,13 +41,14 @@ describe('imp-201 forward-only migration runner', () => {
   it('migrates an empty SQLite database to the latest schema and records the checksum once', () => {
     const db = database()
 
-    expect(migrate(db)).toEqual([1, 2])
+    expect(migrate(db)).toEqual([1, 2, 3])
     expect(db.prepare('PRAGMA foreign_keys').get()).toEqual({ foreign_keys: 1 })
     expect(db.prepare('SELECT version, name, checksum FROM memory_schema_migrations').all()).toEqual([
       { version: 1, name: 'initial_shared_memory_schema', checksum: migrations[0]?.checksum },
       { version: 2, name: 'identity_alias_repositories', checksum: migrations[1]?.checksum },
+      { version: 3, name: 'room_binding_authorization_repositories', checksum: migrations[2]?.checksum },
     ])
-    expect(latestSchemaVersion).toBe(2)
+    expect(latestSchemaVersion).toBe(3)
   })
 
   it('is a no-op when every known migration is already applied', () => {
@@ -55,7 +56,18 @@ describe('imp-201 forward-only migration runner', () => {
     migrate(db)
 
     expect(migrate(db)).toEqual([])
-    expect(db.prepare('SELECT COUNT(*) AS count FROM memory_schema_migrations').get()).toEqual({ count: 2 })
+    expect(db.prepare('SELECT COUNT(*) AS count FROM memory_schema_migrations').get()).toEqual({ count: 3 })
+  })
+
+  it('upgrades v2 in place without changing identity or alias records', () => {
+    const db = database()
+    migrate(db, migrations.slice(0, 2))
+    db.prepare('INSERT INTO people(person_id,discord_user_id,created_at) VALUES (\'person\',\'18446744073709551615\',\'2026-01-01T00:00:00Z\')').run()
+    db.prepare('INSERT INTO aliases(alias_id,person_id,scope_type,scope_id,value,precedence,visibility,valid_from,source) VALUES (\'alias\',\'person\',\'platform\',\'discord\',\'Alex\',0,\'public\',\'2026-01-01T00:00:00Z\',\'test\')').run()
+
+    expect(migrate(db)).toEqual([3])
+    expect(db.prepare('SELECT person_id,discord_user_id FROM people').get()).toEqual({ person_id: 'person', discord_user_id: '18446744073709551615' })
+    expect(db.prepare('SELECT alias_id,value FROM aliases').get()).toEqual({ alias_id: 'alias', value: 'Alex' })
   })
 
   it('applies supplied migrations in deterministic numeric order', () => {
