@@ -1,5 +1,6 @@
 import type { Discord } from '@proj-airi/server-shared/types'
 import type { Interaction } from 'discord.js'
+
 import type { TextMentionResponder } from '../orchestration/mention-responder'
 
 import { env } from 'node:process'
@@ -9,6 +10,7 @@ import { Client as ServerChannel } from '@proj-airi/server-sdk'
 import { Client, Events, GatewayIntentBits, Partials } from 'discord.js'
 
 import { handleAvatarState, handlePing, handleVoiceTest, registerCommands, VoiceManager } from '../bots/discord/commands'
+import { buildDiscordActorEvidence } from '../memory/discord-actor-snapshot'
 
 const log = useLogg('DiscordAdapter').useGlobalConfig()
 
@@ -252,6 +254,17 @@ export class DiscordAdapter {
         channelId: message.channelId,
         userId: message.author.id,
         displayName: message.member?.displayName ?? message.author.displayName,
+        actorEvidence: buildDiscordActorEvidence({
+          userId: message.author.id,
+          username: message.author.username,
+          globalName: message.author.globalName,
+          guildNickname: message.member?.nickname,
+          displayName: message.member?.displayName ?? message.author.displayName,
+          avatarUrl: message.author.avatarURL(),
+          guildId: message.guildId ?? undefined,
+          observedAtEpochMs: message.createdTimestamp,
+          source: 'gateway',
+        }),
         timestamp: message.createdTimestamp,
         messageId: message.id,
         text,
@@ -323,7 +336,20 @@ export class DiscordAdapter {
       if (!interaction.isChatInputCommand())
         return
 
-      log.log(`Interaction received: /${interaction.commandName} from ${interaction.user.tag}`)
+      const member = interaction.member
+      const actorEvidence = buildDiscordActorEvidence({
+        userId: interaction.user.id,
+        username: interaction.user.username,
+        globalName: interaction.user.globalName,
+        guildNickname: member && 'nickname' in member ? member.nickname : undefined,
+        displayName: member && 'displayName' in member ? member.displayName : interaction.user.displayName,
+        avatarUrl: interaction.user.avatarURL(),
+        guildId: interaction.guildId ?? undefined,
+        observedAtEpochMs: interaction.createdTimestamp,
+        source: 'gateway',
+      })
+      log.withFields({ actorKind: actorEvidence.kind, platformUserId: interaction.user.id })
+        .log(`Interaction received: /${interaction.commandName} from ${interaction.user.tag}`)
 
       switch (interaction.commandName) {
         case 'ping':

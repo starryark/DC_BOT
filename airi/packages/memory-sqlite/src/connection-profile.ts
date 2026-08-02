@@ -13,6 +13,11 @@ export interface SqliteProfile {
   readonly readOnly?: boolean
 }
 
+/** Opens a file without write authority, migrations, or write-capable pragmas. */
+export function openReadOnlySqliteDatabase(path: string, profile: Omit<SqliteProfile, 'readOnly'> = {}): DatabaseSync {
+  return openSqliteDatabase(path, { ...profile, readOnly: true })
+}
+
 /** Opens an explicitly selected file using the milestone-one durability profile. */
 export function openSqliteDatabase(path: string, profile: SqliteProfile = {}): DatabaseSync {
   if (!path || path === ':memory:' || path.startsWith('file::memory:'))

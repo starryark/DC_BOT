@@ -7,7 +7,9 @@ Access mode: writable checkout
 
 ## Decision
 
-Do not begin `IMP-301` or later G3 production work yet.
+Permit only runtime-inert `IMP-301A` actor-evidence capture under
+`g2-technical-continuation-scope.md`. Do not begin `IMP-301B`, later persistent
+G3 work, or production rollout.
 
 The approved backlog makes passed G1 and G2 gates a precondition of `IMP-301`
 (`artifacts/21-implementation-backlog.md`, lines 879-885). G1 has passed and the
@@ -29,7 +31,8 @@ behavior is unchanged.
 | First-increment MUST requirements map to tests | `artifacts/23-requirements-traceability-matrix.md` and completed IMP-001 through IMP-208 evidence | Pass for completed increments |
 | Vector/graph work is gated | Integrated specification and rollout plan keep both disabled | Pass |
 | Writable checkout exists | This report was written in the checkout | Pass |
-| G2 is approved before IMP-301 | OQ-BLOCK-003 remains open | **Blocked** |
+| G2 scope permits IMP-301A | The acceptance template defines coding-only continuation; the local scope record limits it to inert evidence capture | **Pass for IMP-301A only** |
+| G2 operational deployment is approved | OQ-EVIDENCE-003 remains open | **Blocked** |
 
 ## Exact minimum evidence required to pass G2
 
@@ -84,7 +87,7 @@ and volume, attach the process-inventory and storage-locality evidence, name the
 real operational backup destination, approve an operating envelope, and sign the
 acceptance record. `OQ-BLOCK-003` remains open until that signed record exists.
 
-The ADR-003 `OPEN-BLOCK-007` technical remediation now exists:
+The A21-ADR-003 `OPEN-BLOCK-007` technical remediation now exists:
 `openAuthoritativeSqliteDatabase` holds a separate SQLite/VFS lease for the
 canonical authority identity, refuses a live second process with a typed bounded
 error, and releases on clean close or abrupt process termination. Focused real
@@ -99,7 +102,8 @@ the operating envelope and backup destination, and obtain signatures.
 
 ## Additional G3 condition
 
-Before `IMP-305` or any behavior that relies on guild member freshness,
+Before `IMP-305` or any behavior that relies on gateway data unavailable under
+the existing intents,
 OQ-BLOCK-004/FIND-010 must resolve which Discord gateway intents are approved
 and define behavior when member state is unavailable. No new intent is approved
 by this report. Earlier G3 tasks may only proceed after G2 passes and must keep
@@ -122,11 +126,8 @@ used as identity fallback.
 
 ## Next unblocked action
 
-Collect and approve the six G2 evidence items above, following
-`docs/memory/g2-operational-evidence-runbook.md` and recording the result in a
-copy of `docs/memory/evidence/g2-operational-acceptance-template.md`. After the
-gate is recorded as passed, begin `IMP-301` with actor-snapshot regression tests
-before changing Discord ingress behavior.
-
-`OQ-BLOCK-003` remains open. G2 remains unapproved. `IMP-301` remains blocked
-pending completed operational evidence and formal sign-off.
+Complete and validate runtime-inert IMP-301A only. In parallel, operations must
+collect the six deployment evidence items above and record them in a signed copy
+of the acceptance template. `OQ-EVIDENCE-003` remains open; operational G2,
+IMP-301B, shadow writes, prompt reads, and rollout remain blocked pending that
+evidence and formal sign-off.

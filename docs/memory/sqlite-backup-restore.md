@@ -1,6 +1,7 @@
 # SQLite backup and restore procedure
 
-This procedure applies only to the ADR-003 profile: one authoritative DC_BOT
+This procedure applies only to the canonical ADR-001 topology and A21-ADR-003
+SQLite profile: one authoritative DC_BOT
 process, a local non-network filesystem, WAL, foreign keys on every connection,
 `synchronous=FULL`, and short serialized writes. Runtime memory flags remain off.
 
@@ -29,6 +30,9 @@ candidate, surface a persistence failure, and never fall back to ephemeral
 history. There are no down migrations.
 
 Never use a network filesystem or independently managed SQLite writer processes.
+Do not deploy hard links to the authority database, and exclude
+`.dc-bot-writer-*.lease.sqlite*` sidecars from database discovery, backup,
+restore replacement, and cleanup globs.
 Move to PostgreSQL/reconsider topology if either appears, bounded busy failures
 exceed an approved budget, or checkpoint, backup, latency, or throughput fails
 an approved operational SLO.

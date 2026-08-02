@@ -7,6 +7,7 @@ import { Buffer } from 'node:buffer'
 import { describe, expect, it } from 'vitest'
 
 import { DefaultPromptCompiler, estimateTokens } from './prompt-compiler'
+import { buildDiscordActorEvidence } from '../memory/discord-actor-snapshot'
 
 /** A minimal character for deterministic ordering assertions. */
 function makeCharacter(overrides: Partial<CharacterRuntime> = {}): CharacterRuntime {
@@ -49,6 +50,7 @@ function makeInput(text: string): { input: VoiceInputEvent, text: string } {
       channelId: 'c',
       userId: 'u',
       displayName: 'Okabe',
+      actorEvidence: buildDiscordActorEvidence({ userId: 'u', displayName: 'Okabe', observedAtEpochMs: 100, source: 'gateway' }),
       timestamp: 100,
       voiceChannelId: 'c',
       pcm: Buffer.alloc(0),

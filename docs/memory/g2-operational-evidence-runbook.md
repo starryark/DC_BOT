@@ -407,7 +407,9 @@ Only after the acceptance record is signed:
 4. State the approved scope, so it is clear whether `IMP-301` is unblocked for
    coding only or for more.
 
-Until then: `OQ-BLOCK-003` is open, G2 is unapproved, and `IMP-301` is blocked.
+Until then: deployment evidence item `OQ-EVIDENCE-003` is open, operational G2
+is unapproved, and IMP-301B plus every persistence activation remains blocked.
+The separate coding-only scope permits runtime-inert IMP-301A.
 
 ## 16. What must remain disabled before R2 approval
 
@@ -419,5 +421,6 @@ Until then: `OQ-BLOCK-003` is open, G2 is unapproved, and `IMP-301` is blocked.
   memory service.
 - No new Discord gateway intent. `OQ-BLOCK-004` / `FIND-010` is a separate
   blocker that this record does not resolve, and `IMP-305` stays blocked.
-- Only one write-capable process at a time, enforced by deployment discipline
-  until an ownership guard exists.
+- Only one write-capable process at a time. The authoritative public opener
+  enforces a SQLite/VFS ownership lease; deployment inventory must still prove
+  that the real bot runtime uses that authority.

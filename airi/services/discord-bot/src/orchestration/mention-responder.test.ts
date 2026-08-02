@@ -3,6 +3,7 @@ import type { BrainProvider, BrainRequest } from '../providers/brain/types'
 import { describe, expect, it, vi } from 'vitest'
 
 import { BrainRateLimitError } from '../providers/brain/errors'
+import { buildDiscordActorEvidence } from '../memory/discord-actor-snapshot'
 import { MentionResponder } from './mention-responder'
 
 function event(overrides: Record<string, unknown> = {}) {
@@ -14,6 +15,7 @@ function event(overrides: Record<string, unknown> = {}) {
     channelId: 'channel-1',
     userId: 'user-1',
     displayName: 'Mayuri',
+    actorEvidence: buildDiscordActorEvidence({ userId: 'user-1', displayName: 'Mayuri', observedAtEpochMs: 1, source: 'gateway' }),
     timestamp: 1,
     messageId: 'message-1',
     text: 'hello',

@@ -3,6 +3,7 @@ import type { Readable } from 'node:stream'
 
 import type { AudioPlayer, VoiceConnection } from '@discordjs/voice'
 
+import type { IngressActorEvidence } from '../memory/discord-actor-snapshot'
 import type { GuildPlaybackScheduler } from './playback'
 
 /**
@@ -17,6 +18,7 @@ export interface VoiceUtterance {
   channelId: string
   userId: string
   displayName: string
+  actorEvidence: IngressActorEvidence
 
   pcm: Buffer
   sampleRate: 16000
@@ -56,6 +58,7 @@ export type UserCaptureState = 'idle' | 'speaking' | 'finalizing'
 export interface UserCaptureSession {
   userId: string
   displayName: string
+  actorEvidence: IngressActorEvidence
 
   pcmChunks: Buffer[]
   totalBytes: number

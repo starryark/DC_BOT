@@ -12,6 +12,8 @@
  */
 import type { Buffer } from 'node:buffer'
 
+import type { IngressActorEvidence } from '../memory/discord-actor-snapshot'
+
 /**
  * Fields common to every input event. `eventId` identifies the input itself;
  * `turnId` is assigned by the orchestrator to group everything that happens
@@ -27,6 +29,8 @@ export interface BaseInputEvent {
   channelId?: string
   userId: string
   displayName: string
+  /** Immutable transport evidence captured before internal person resolution. */
+  actorEvidence: IngressActorEvidence
 
   timestamp: number
 }

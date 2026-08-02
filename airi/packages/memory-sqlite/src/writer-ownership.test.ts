@@ -1,7 +1,7 @@
 import type { ChildProcess } from 'node:child_process'
 
 import { fork } from 'node:child_process'
-import { mkdir, mkdtemp, rm } from 'node:fs/promises'
+import { link, mkdir, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join, relative, resolve } from 'node:path'
 
@@ -176,6 +176,21 @@ describe('authoritative SQLite writer ownership', () => {
       expect(sqliteWriterLeasePath(path.toUpperCase())).toBe(sqliteWriterLeasePath(path))
     }
     expect(relative(dirname(path), sqliteWriterLeasePath(path))).not.toContain('..')
+  })
+
+  it('refuses authoritative access through a same-directory hard-link alias', async () => {
+    const directory = await root()
+    const path = join(directory, 'authority.db')
+    const alias = join(directory, 'authority-hard-link.db')
+    const owner = openAuthoritativeSqliteDatabase(path)
+    await link(path, alias)
+    try {
+      expect(sqliteWriterLeasePath(alias)).toBe(sqliteWriterLeasePath(path))
+      expect(() => openAuthoritativeSqliteDatabase(alias, { acquisitionTimeoutMs: 25 })).toThrow(SqliteWriterOwnershipError)
+    }
+    finally {
+      owner.close()
+    }
   })
 
   it('returns typed errors and rejects invalid timeout values', async () => {

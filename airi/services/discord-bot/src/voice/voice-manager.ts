@@ -36,6 +36,7 @@ import { useLogg } from '@guiiai/logg'
 
 import { config } from '../config'
 import { DECODE_SAMPLE_RATE } from '../constants/audio'
+import { buildDiscordActorEvidence } from '../memory/discord-actor-snapshot'
 import { convertOpusToWav } from '../utils/audio'
 import { OpusDecoder } from '../utils/opus'
 import { GuildPlaybackScheduler } from './playback'
@@ -287,21 +288,37 @@ export class VoiceManager extends TypedVoiceEmitter {
         return
 
       let member = channel.members.get(userId)
+      let evidenceSource: 'gateway' | 'restFetch' = 'gateway'
       if (!member) {
         try {
           member = await channel.guild.members.fetch(userId)
+          evidenceSource = 'restFetch'
         }
         catch (error) {
           this.logger.withError(error).error('Failed to fetch member')
-          return
         }
       }
       if (member?.user.bot)
         return
 
-      const displayName = member.displayName
+      const user = member?.user ?? this.client.users.cache.get(userId)
+      if (user?.bot)
+        return
+      const displayName = member?.displayName ?? user?.displayName ?? user?.username ?? userId
+      const actorEvidence = buildDiscordActorEvidence({
+        userId,
+        username: user?.username,
+        globalName: user?.globalName,
+        guildNickname: member?.nickname,
+        displayName,
+        avatarUrl: user?.avatarURL(),
+        guildId: session.guildId,
+        observedAtEpochMs: Date.now(),
+        source: evidenceSource,
+        anonymousReason: member || evidenceSource === 'restFetch' ? undefined : 'cacheMiss',
+      })
       const key = captureKey(session.guildId, userId)
-      const capture = this.ensureCapture(session, userId, displayName)
+      const capture = this.ensureCapture(session, userId, displayName, actorEvidence)
 
       // A new speaking burst cancels any pending finalize for this user.
       if (capture.finalizeTimer) {
@@ -316,7 +333,7 @@ export class VoiceManager extends TypedVoiceEmitter {
       // Subscribe + wire the opus decoder once, then keep it alive.
       if (!this.decoders.has(key)) {
         this.logger.withFields({ displayName, userId }).log('User speaking: subscribing')
-        this.subscribeMember(session, member, displayName)
+        this.subscribeUser(session, userId, displayName)
       }
     }
   }
@@ -334,13 +351,14 @@ export class VoiceManager extends TypedVoiceEmitter {
     }
   }
 
-  private ensureCapture(session: GuildVoiceSession, userId: string, displayName: string): UserCaptureSession {
+  private ensureCapture(session: GuildVoiceSession, userId: string, displayName: string, actorEvidence: UserCaptureSession['actorEvidence']): UserCaptureSession {
     const key = captureKey(session.guildId, userId)
     let capture = this.captures.get(key)
     if (!capture) {
       capture = {
         userId,
         displayName,
+        actorEvidence,
         pcmChunks: [],
         totalBytes: 0,
         speechStartedAt: 0,
@@ -350,6 +368,10 @@ export class VoiceManager extends TypedVoiceEmitter {
       this.captures.set(key, capture)
       session.users.set(userId, capture)
     }
+    else if (capture.speechStartedAt === 0) {
+      capture.displayName = displayName
+      capture.actorEvidence = actorEvidence
+    }
     return capture
   }
 
@@ -358,9 +380,8 @@ export class VoiceManager extends TypedVoiceEmitter {
    * route each decoded packet through {@link onPcmPacket}. Built once per user
    * per guild and torn down on session end.
    */
-  private subscribeMember(session: GuildVoiceSession, member: GuildMember, displayName: string) {
+  private subscribeUser(session: GuildVoiceSession, userId: string, displayName: string) {
     const guildId = session.guildId
-    const userId = member.id
     const key = captureKey(guildId, userId)
     const connection = session.connection
 
@@ -509,6 +530,7 @@ export class VoiceManager extends TypedVoiceEmitter {
       channelId: this.sessions.get(guildId)?.channelId ?? '',
       userId,
       displayName: capture.displayName,
+      actorEvidence: capture.actorEvidence,
       pcm,
       sampleRate: 16000,
       channels: 1,

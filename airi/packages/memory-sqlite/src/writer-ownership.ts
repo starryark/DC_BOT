@@ -3,7 +3,7 @@ import type { DatabaseSync } from 'node:sqlite'
 import process from 'node:process'
 
 import { createHash } from 'node:crypto'
-import { existsSync, realpathSync } from 'node:fs'
+import { closeSync, existsSync, openSync, realpathSync, statSync } from 'node:fs'
 import { basename, dirname, join, resolve } from 'node:path'
 import { DatabaseSync as SqliteDatabase } from 'node:sqlite'
 
@@ -89,7 +89,18 @@ export function canonicalSqliteAuthorityIdentity(path: string): string {
 /** Derives a collision-resistant lease file without placing the authority path in its name. */
 export function sqliteWriterLeasePath(authorityPath: string): string {
   const identity = canonicalSqliteAuthorityIdentity(authorityPath)
-  const digest = createHash('sha256').update(`dc-bot-sqlite-writer-v${sqliteWriterOwnershipGuardVersion}\0${identity}`).digest('hex')
+  // Materialize the authority before deriving its filesystem identity. This
+  // makes same-directory hard-link aliases converge on one lease without
+  // depending on presentation paths. Cross-directory hard links are not a
+  // supported deployment topology because the lease remains colocated with
+  // the database for operational discovery and cleanup.
+  if (!existsSync(identity))
+    closeSync(openSync(identity, 'a'))
+  const metadata = statSync(identity, { bigint: true })
+  const stableIdentity = metadata.ino === 0n
+    ? identity
+    : `${metadata.dev}:${metadata.ino}`
+  const digest = createHash('sha256').update(`dc-bot-sqlite-writer-v${sqliteWriterOwnershipGuardVersion}\0${stableIdentity}`).digest('hex')
   return join(dirname(identity), `.dc-bot-writer-${digest}.lease.sqlite`)
 }
 

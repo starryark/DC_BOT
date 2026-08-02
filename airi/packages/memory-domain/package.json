@@ -16,7 +16,9 @@
     "directory": "packages/memory-domain"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./identity": "./src/identity.ts",
+    "./ids": "./src/ids.ts"
   },
   "main": "./src/index.ts",
   "types": "./src/index.ts",

@@ -10,6 +10,7 @@ import type {
 import { Buffer } from 'node:buffer'
 
 import { describe, expect, it } from 'vitest'
+import { buildDiscordActorEvidence } from '../memory/discord-actor-snapshot'
 
 /**
  * InputEvent union narrowing / field presence
@@ -24,6 +25,7 @@ function base(overrides: Partial<BaseInputEvent> = {}): BaseInputEvent {
     turnId: 't1',
     userId: 'u1',
     displayName: 'Tester',
+    actorEvidence: buildDiscordActorEvidence({ userId: 'u1', displayName: 'Tester', observedAtEpochMs: 1, source: 'gateway' }),
     timestamp: 1,
     ...overrides,
   }

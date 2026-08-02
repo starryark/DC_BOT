@@ -5,6 +5,7 @@ import { Buffer } from 'node:buffer'
 import { describe, expect, it } from 'vitest'
 
 import { ConversationFloor, ConversationFloorRegistry } from './conversation-floor'
+import { buildDiscordActorEvidence } from '../memory/discord-actor-snapshot'
 
 const BASE = 1_700_000_000_000
 
@@ -19,6 +20,7 @@ function utterance(userId: string, displayName: string, text: string, startedAt:
       voiceChannelId: 'voice-1',
       userId,
       displayName,
+      actorEvidence: buildDiscordActorEvidence({ userId, displayName, guildId, observedAtEpochMs: startedAt, source: 'gateway' }),
       timestamp: endedAt,
       pcm: Buffer.from([Number(userId.slice(-1))]),
       sampleRate: 16000,

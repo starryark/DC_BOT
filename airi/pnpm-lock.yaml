@@ -5240,6 +5240,9 @@ importers:
       '@proj-airi/discord-avatar-protocol':
         specifier: workspace:^
         version: link:../../packages/discord-avatar-protocol
+      '@proj-airi/memory-domain':
+        specifier: workspace:*
+        version: link:../../packages/memory-domain
       '@proj-airi/server-sdk':
         specifier: workspace:^
         version: link:../../packages/server-sdk

@@ -6,8 +6,8 @@ import type { PromptCompiler } from '../character/prompt-compiler'
 import type { CharacterRuntime } from '../character/types'
 import type { AsrProvider } from '../providers/asr/types'
 import type { BrainProvider } from '../providers/brain/types'
-import type { GptSoVitsLang, TtsProvider } from '../providers/tts/types'
 import type { ResolvedSpeechStyle, StyledSpeechChunk, VoiceProfileCatalog, VoiceReferenceProfile } from '../providers/tts/speech-style-types'
+import type { GptSoVitsLang, TtsProvider } from '../providers/tts/types'
 import type { VoiceUtterance } from '../voice/types'
 import type { VoiceManager } from '../voice/voice-manager'
 import type { AcceptedTurn, CancellationReason, GuildConversationSession } from './conversation-state'
@@ -167,6 +167,7 @@ export class ConversationController {
       voiceChannelId: utterance.channelId,
       userId: utterance.userId,
       displayName: utterance.displayName,
+      actorEvidence: utterance.actorEvidence,
       timestamp: utterance.endedAt,
       pcm: utterance.pcm,
       sampleRate: 16000,

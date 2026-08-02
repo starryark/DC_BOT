@@ -12,6 +12,7 @@ import { env } from 'node:process'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { resetConfigCache } from '../config'
+import { buildDiscordActorEvidence } from '../memory/discord-actor-snapshot'
 import { BrainRateLimitError } from '../providers/brain/errors'
 import { createSingleReferenceCatalog, parseVoiceProfileCatalog } from '../providers/tts/voice-profile-catalog'
 import type { VoiceProfileCatalog } from '../providers/tts/speech-style-types'
@@ -100,6 +101,7 @@ function makeUtterance(overrides: Partial<VoiceUtterance> = {}): VoiceUtterance 
     channelId: 'c1',
     userId: 'u1',
     displayName: 'Tester',
+    actorEvidence: buildDiscordActorEvidence({ userId: 'u1', displayName: 'Tester', observedAtEpochMs: endedAt - 1000, source: 'gateway' }),
     pcm: Buffer.alloc(320),
     sampleRate: 16000,
     channels: 1,

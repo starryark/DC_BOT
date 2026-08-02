@@ -180,8 +180,9 @@ violate it. `Open` = neither.
 
 | ID | Question | Owner role | Blocks |
 |---|---|---|---|
-| OQ-BLOCK-004 / OQ-B1 / FIND-010 | Which Discord gateway intents are approved and available (Message Content, Server Members)? | Discord Operations Agent | G3 / IMP-305 |
-| OQ-BLOCK-003 / BQ-003 | **Open.** Confirm SQLite as the M1 default and the process topology (one bot process vs workers). Collect with `docs/memory/g2-operational-evidence-runbook.md`; record in a copy of `docs/memory/evidence/g2-operational-acceptance-template.md`. Neither the harness nor any run resolves this. | Operations Agent | G2 / IMP-301 |
+| OQ-BLOCK-004 / OQ-B1 / FIND-010 | Which Discord gateway intents are approved and available (Message Content, Server Members)? This blocks only increments that require data unavailable under current intents, including IMP-305; it does not block IMP-301A evidence built from existing ingress data. | Discord Operations Agent | IMP-305 / final G3 |
+| OQ-BLOCK-003 / BQ-003 | **Resolved (architecture).** Canonical ADR-001 selects in-process, file-backed SQLite for M1 with one write-capable process. | Architecture Agent | — |
+| OQ-EVIDENCE-003 | **Open (deployment evidence).** Attest the real process inventory, local storage, backup destination, deployment-shaped soak, approved envelope, and owner sign-off using the G2 runbook and acceptance template. | Operations Agent | G2 operational deployment / IMP-301B |
 | OQ-B3 | CJK tokenizer decision, or keep `fulltextCjk` unadvertised for M1. | Retrieval Agent | G6 / IMP-606 |
 | OQ-B4 / BQ-004 | Operator privilege model and legal-basis vocabulary before `purge` is enabled. | Privacy & Security Agent | G7 / IMP-702 |
 | BQ-006 | Which delivery outcomes make *partial* voice output context-eligible. | Generation/Delivery Agent | G4 / IMP-405 |
@@ -485,10 +486,10 @@ does not collect it, and it does not close the blocker.
   operating-system crash; backups are staged locally and no off-host copy is
   performed or simulated. The optional second-writer probe reports what actually
   happens, and on the smoke run reported `unexpectedly-succeeded` because no
-  process-level ownership guard exists (ADR-003 `OPEN-BLOCK-007`).
+  process-level ownership guard exists (A21-ADR-003 `OPEN-BLOCK-007`).
 - Runtime flags, Discord intents, database paths, and the authoritative
-  persistence architecture are unchanged. `OQ-BLOCK-003` stays open, G2 stays
-  unapproved, `IMP-301` stays blocked, and `OQ-BLOCK-004`/`FIND-010` is
+  persistence architecture are unchanged. Operational G2 stays unapproved,
+  `OQ-EVIDENCE-003` stays open, and `OQ-BLOCK-004`/`FIND-010` is
   untouched.
 
 ### G2 single-writer ownership remediation (2026-08-02)
@@ -507,9 +508,26 @@ does not collect it, and it does not close the blocker.
   refusal, unexpected success, not-run, or probe-infrastructure failure as
   distinct states, plus guard version, timeout, latency, owner health, release,
   crash-recovery, and intentionally unguarded connection evidence.
-- This is technical remediation for ADR-003 `OPEN-BLOCK-007`, REQ-OPS-012, and
+- This is technical remediation for A21-ADR-003 `OPEN-BLOCK-007`, REQ-OPS-012, and
   REQ-OPS-013. It is not an approved `IMP-209`, does not approve G2, does not
-  close `OQ-BLOCK-003`, and does not start `IMP-301`.
+  close deployment evidence item `OQ-EVIDENCE-003` or approve rollout.
+
+### G2 authority API closure and IMP-301A continuation (2026-08-02)
+
+- The package root no longer exports the unguarded write-capable
+  `openSqliteDatabase`; normal public callers use guarded authoritative access
+  or explicit read-only access. A boundary test prevents regression.
+- Same-directory hard-link aliases converge on a metadata-derived lease
+  identity. Cross-directory hard links are prohibited for M1 and tested scope;
+  authoritative database discovery and backup procedures must exclude lease
+  sidecars.
+- `docs/memory/g2-technical-continuation-scope.md` records the narrow scope:
+  technical G2 permits only runtime-inert IMP-301A. Operational G2, IMP-301B,
+  shadow writes, prompt reads, backfill, production writes, and rollout remain
+  pending `OQ-EVIDENCE-003` and owner approval.
+- IMP-301A captures immutable unresolved Discord actor evidence at existing
+  message and voice boundaries without a `PersonId`, new intent, database open,
+  memory read/write, or enabled feature flag.
 
 ## 9. Gate status
 
@@ -517,8 +535,10 @@ does not collect it, and it does not close the blocker.
 |---|---|
 | Entry (IMP-001…003) | ✅ **passed this increment** |
 | G1 Domain (IMP-101…108) | ✅ **passed this increment** — one contract package, no Discord/DB imports, conformance fixtures cover multi-speaker causality and partial delivery |
-| G2 Persistence | 🚧 **technical validation complete; formal gate pending** — IMP-201 through IMP-208 pass locally, but OQ-BLOCK-003 still requires approved evidence of one authoritative process, local non-network storage, an operational backup location, and a deployment-shaped workload/soak. A collection harness (`pnpm -F @proj-airi/memory-sqlite benchmark:g2`), operator runbook (`docs/memory/g2-operational-evidence-runbook.md`), and acceptance template (`docs/memory/evidence/g2-operational-acceptance-template.md`) now exist; no run of them approves the gate, and no signed record exists yet |
-| G3 Identity propagation | ⛔ not started; also blocked on FIND-010 |
+| G2 technical implementation | ✅ complete — persistence validation and guarded public authority boundary pass locally |
+| G2 coding continuation | ✅ approved only for runtime-inert IMP-301A; no memory database or feature activation |
+| G2 operational deployment | 🚧 pending `OQ-EVIDENCE-003`: real host/writer/storage/backup/soak evidence and owner sign-off; no production approval |
+| G3 Identity propagation | 🚧 IMP-301A actor evidence only; IMP-301B and final G3 remain blocked |
 | G4 Event/delivery | ⛔ not started |
 | G5 Text/voice integration | ⛔ not started |
 | G6 Context assembly | ⛔ not started |
@@ -526,8 +546,8 @@ does not collect it, and it does not close the blocker.
 | G8 Evaluation/release | ⛔ not started |
 
 The operator-supplied continuation label `IMP-209` has no approved definition in
-artifact 21. The persistence merge train ends at IMP-208. IMP-301 is the next
-listed coding task, but artifact 21 makes passed G1-G2 gates its precondition;
-therefore it has not started. OQ-BLOCK-004/FIND-010 additionally remains required
-for G3 sign-off and IMP-305, and no new Discord gateway intent is approved or
-enabled.
+artifact 21. The persistence merge train ends at IMP-208. The acceptance
+template's coding-only scope is applied narrowly to IMP-301A; IMP-301B and all
+operational activation remain blocked. OQ-BLOCK-004/FIND-010 remains required
+for work such as IMP-305 that needs additional gateway data, and no new Discord
+gateway intent is approved or enabled.
