@@ -382,6 +382,34 @@ Run from `airi/`, 2026-08-02. Exact commands and exact results:
   Every SQLite test used an in-memory temporary database; no production
   database was opened.
 
+### IMP-207 unit-of-work, idempotency, and reconciliation queue evidence (2026-08-02)
+
+- Migration 7, `unit_of_work_idempotency_reconciliation_queue`, adds canonical
+  idempotency results, lease tokens/payload hashes on the existing v1 queue, and
+  append-only reconciliation evidence. Migrations 1–6 are unchanged. Exact-v6
+  upgrade preserves layered/legacy memory, existing jobs, migration history,
+  and foreign-key integrity.
+- `UnitOfWork` provides a non-nestable `BEGIN IMMEDIATE` database-only boundary.
+  Canonical hashing ignores object insertion order; successful retries return
+  the original durable result and mismatches cannot overwrite it.
+- `ReconciliationQueue` has constraint-backed enqueue deduplication,
+  priority/availability/ID claim order, finite token-fenced leases, expired
+  lease reclamation, exact attempt accounting, injected bounded full-jitter
+  retry, terminal/exhausted dead-lettering, and bounded single-line diagnostic
+  storage. Append-only observations/decisions retain policy and actor evidence.
+- Deterministic failpoints prove rollback before source mutation, between source
+  and enqueue, and after enqueue. These are bounded persistence crash-window
+  tests, not an OS process-kill claim. WAL, busy-timeout, process stress,
+  backup/restore rehearsal, runtime workers, and Discord reconciliation remain
+  IMP-208/later work.
+- Requirement numbering drifts: the IMP-207 backlog maps REQ-DELIVERY-001,
+  REQ-OPS-002, and REQ-MEM-001, while the persistence/event artifacts number
+  the concrete outbox/idempotency rules REQ-OPS-007…011 and REQ-OPS-801…804.
+  The backlog semantics and current domain contracts control this increment.
+- R1 and every runtime memory flag remain disabled. OQ-BLOCK-003 and FIND-010
+  remain open. Recovery is disabling durable writes and restoring the verified
+  pre-v7 snapshot; no down migration exists. IMP-208 is next and unstarted.
+
 Not run, and why:
 
 | Command | Why not |
@@ -402,7 +430,7 @@ flags all default to `false`; no other production module reads it yet.
 |---|---|
 | Entry (IMP-001…003) | ✅ **passed this increment** |
 | G1 Domain (IMP-101…108) | ✅ **passed this increment** — one contract package, no Discord/DB imports, conformance fixtures cover multi-speaker causality and partial delivery |
-| G2 Persistence | 🚧 **in progress** — IMP-201 through IMP-206 complete; IMP-207…208 remain, and OQ-BLOCK-003 still blocks IMP-208 sign-off |
+| G2 Persistence | 🚧 **in progress** — IMP-201 through IMP-207 complete; IMP-208 remains, and OQ-BLOCK-003 still blocks IMP-208 sign-off |
 | G3 Identity propagation | ⛔ not started; also blocked on FIND-010 |
 | G4 Event/delivery | ⛔ not started |
 | G5 Text/voice integration | ⛔ not started |

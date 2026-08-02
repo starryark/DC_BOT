@@ -4,6 +4,7 @@ import { schemaV3 } from '../schema/v3.js'
 import { schemaV4 } from '../schema/v4.js'
 import { schemaV5 } from '../schema/v5.js'
 import { schemaV6 } from '../schema/v6.js'
+import { schemaV7 } from '../schema/v7.js'
 
 /** A deterministic, forward-only SQLite schema change. */
 export interface Migration {
@@ -49,6 +50,12 @@ export const migrations: readonly Migration[] = Object.freeze([
     name: 'layered_memory_provenance_repositories',
     checksum: '339ad95d51c276186ac42487ea8e863c0b0721199c89a0b7661a4f4c10df2b80',
     sql: schemaV6,
+  },
+  {
+    version: 7,
+    name: 'unit_of_work_idempotency_reconciliation_queue',
+    checksum: '2c6d9647b4d404f7eab1363ea8a97c0df536cf3837dd9accaa1933ce929f880d',
+    sql: schemaV7,
   },
 ])
 

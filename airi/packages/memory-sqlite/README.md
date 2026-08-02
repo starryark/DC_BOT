@@ -71,3 +71,26 @@ base-plus-lineage persistence. Facts support half-open as-of reads, current read
 atomic append-only corrections, exact retry deduplication, and deterministic
 chain reconstruction. No retrieval ranking, worker, deletion executor, runtime
 composition, or rollout flag is added.
+
+IMP-207 exports `UnitOfWork`, canonical JSON/hash helpers,
+`executeIdempotently`, and `ReconciliationQueue`. `UnitOfWork` uses a short
+`BEGIN IMMEDIATE` database-only boundary, rejects nesting, preserves the
+original operation error after a successful rollback, and reports rollback
+failure. Callers must perform Discord, model, network, and filesystem work only
+after the transaction returns; SQLite is never claimed atomic with those
+systems. Successful idempotent operations store only a canonical request hash
+and stable JSON result; conflicting key reuse is rejected without replacement.
+
+The durable queue orders claim candidates by priority descending,
+`available_at`, then `job_id`. Claims atomically increment attempts and receive
+a unique lease token, so expired claims can be reclaimed while every stale
+success/retry/cancel/dead-letter transition is fenced—even when a worker name is
+reused. Retry uses injected full jitter with exponential growth capped by the
+caller, clears lease fields, and dead-letters at maximum attempts. Diagnostics
+are classification-only inputs, normalized to one line, and capped at 512
+characters. Reconciliation observations and decisions are append-only and
+retain policy version plus non-private process/operator identity. Migration 7
+is additive; legacy queue rows remain inspectable but require an exact retry or
+policy-controlled reconstruction before hash-based deduplication. No worker
+loop, Discord call, WAL/busy-timeout rollout, runtime composition, or flag is
+enabled.

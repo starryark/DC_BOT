@@ -1,4 +1,7 @@
+export * from './idempotency.js'
 export { migrate } from './migration-runner.js'
 export { latestSchemaVersion, migrations } from './migrations/index.js'
 export type { Migration } from './migrations/index.js'
+export * from './reconciliation-queue.js'
 export * from './repositories/index.js'
+export * from './unit-of-work.js'
