@@ -34,3 +34,16 @@ character, privacy domain, lifecycle, and revision projection; missing,
 ambiguous, cross-guild, DM/guild, expired, or inaccessible state denies by
 returning no evidence. Migration 3 is additive; migrations 1 and 2 are
 unchanged. Runtime composition and feature flags remain untouched.
+
+IMP-204 adds `EventRepository` and `CausalEdgeRepository` behind additive
+migration 4 (`event_causality_repositories`). Event appends atomically allocate
+the logical-room sequence, persist an immutable attributed envelope plus its
+initial lifecycle evidence, explicitly distinguish exact idempotent retries
+from conflicting key reuse, and read one exact physical/logical boundary in
+`occurredAt`, then `eventId` order. Lifecycle changes append evidence; the
+governed-redaction primitive removes payload content while retaining event and
+causal identity. Causal edges retain `(generation, event, role)` cardinality,
+require a trigger, and traverse deterministically in both directions. The
+causal repository references fixture generation rows until IMP-205 implements
+generation ownership. No runtime, delivery, deletion workflow, or flag is
+enabled.

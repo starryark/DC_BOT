@@ -171,6 +171,7 @@ violate it. `Open` = neither.
 | IMP-201 | REQ-EVENT-001, REQ-MEM-002, REQ-OPS-001 | `memory-sqlite/src/{schema,migrations,migration-runner}.ts` | `…/{migration-runner,schema/v1,boundaries}.test.ts` |
 | IMP-202 | REQ-ID-001…004 | `memory-sqlite/src/repositories/{identity,alias}.ts`; additive schema v2 | `…/repositories/{identity,alias}.test.ts` |
 | IMP-203 | REQ-SCOPE-001, REQ-SCOPE-002, REQ-RETRIEVAL-001 | `memory-sqlite/src/repositories/{rooms,bindings,policy-data}.ts`; additive schema v3 | `…/repositories/rooms.test.ts` real-SQLite scope matrix |
+| IMP-204 | REQ-EVENT-001, REQ-EVENT-002, REQ-EVENT-003 | `memory-sqlite/src/repositories/{events,causal-edges}.ts`; additive schema v4 | `…/repositories/events.test.ts` real-SQLite event/causal matrix |
 
 ---
 
@@ -290,7 +291,33 @@ Run from `airi/`, 2026-08-02. Exact commands and exact results:
   feature flag, gateway intent, provider, prompt, voice, generation, or
   delivery path changed. Rollout stays R1 disabled; G2 remains in progress,
   IMP-204 through IMP-208 remain, OQ-BLOCK-003 remains unresolved, and FIND-010
-  remains open. The next increment is IMP-204.
+  remains open. The next increment at that handoff was IMP-204.
+
+### IMP-204 event and causal repository evidence (2026-08-02)
+
+- Migration 4, `event_causality_repositories`, is additive with checksum
+  `cbe385b24720f051a3389fbeb2b1663564ff9beb43c68fe86b41c4ba875512f7`;
+  migrations 1–3 remain unchanged. Clean install and v3 upgrade execute against
+  real SQLite with foreign keys enabled.
+- `EventRepository` atomically stores one immutable attributed inbound envelope,
+  initial lifecycle evidence, and a logical-room sequence. Exact retries return
+  the original event; conflicting key reuse, CAS-shaped input, stale/illegal
+  lifecycle transitions, identity mismatch, and inaccessible/exact-scope
+  mismatches fail without partial writes.
+- Exact reads apply physical/logical/lifecycle predicates in SQL and order by
+  `occurredAt`, then `eventId`; `recordedAt` and insertion order are not used.
+  Governed payload redaction and its lifecycle evidence are one transaction,
+  retaining the event shell and causal edges.
+- `CausalEdgeRepository` persists `(generation, inbound event, cause role)` as
+  many-to-many evidence, requires a trigger, keeps distinct permitted roles,
+  deduplicates exact edge retries, and supports deterministic forward/reverse
+  traversal. Generation creation remains explicitly deferred to IMP-205.
+- Verification: memory-sqlite typecheck and 7 files / 47 tests passed;
+  memory-domain typecheck and 10 files / 206 tests passed; discord-bot typecheck
+  and 33 files / 365 tests passed; package lint passed with 0 warnings/errors.
+  No production database, runtime adapter, Discord path, delivery path, or flag
+  changed. R1 remains disabled; G2 remains in progress; IMP-205 through IMP-208,
+  OQ-BLOCK-003, and FIND-010 remain. The next increment is IMP-205.
 
 Not run, and why:
 
@@ -312,7 +339,7 @@ flags all default to `false`; no other production module reads it yet.
 |---|---|
 | Entry (IMP-001…003) | ✅ **passed this increment** |
 | G1 Domain (IMP-101…108) | ✅ **passed this increment** — one contract package, no Discord/DB imports, conformance fixtures cover multi-speaker causality and partial delivery |
-| G2 Persistence | 🚧 **in progress** — IMP-201 through IMP-203 complete; IMP-204…208 remain, and OQ-BLOCK-003 still blocks IMP-208 sign-off |
+| G2 Persistence | 🚧 **in progress** — IMP-201 through IMP-204 complete; IMP-205…208 remain, and OQ-BLOCK-003 still blocks IMP-208 sign-off |
 | G3 Identity propagation | ⛔ not started; also blocked on FIND-010 |
 | G4 Event/delivery | ⛔ not started |
 | G5 Text/voice integration | ⛔ not started |

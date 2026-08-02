@@ -1,5 +1,7 @@
 export * from './alias.js'
 export * from './bindings.js'
+export * from './causal-edges.js'
+export * from './events.js'
 export * from './identity.js'
 export * from './policy-data.js'
 export * from './rooms.js'
