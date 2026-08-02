@@ -21,6 +21,25 @@ divergence is recorded in §3.
 
 Local paths below are relative to the DC_BOT repository root.
 
+## IMP-202 completion evidence (2026-08-02)
+
+- Repository conformance: `airi/packages/memory-sqlite/src/repositories/identity.test.ts`
+  and `alias.test.ts` use real migrated in-memory SQLite databases and cover
+  snowflake continuity, same-name separation, rename history, partial/null
+  completeness, observation idempotency, exact scope/privacy predicates,
+  inactive validity filtering, ambiguity preservation, foreign keys, and
+  transactional rollback.
+- Write-count benchmark: 10,000 equal-presentation observations produced
+  exactly 10,000 snapshots, 1 platform current row (revision 1), 1 guild current
+  row, 3 aliases, 3 normalized evidence rows, person alias revision 1, and no
+  post-initial `last_seen_at` write inside the 24-hour window.
+- Migration evidence: additive version 2 checksum
+  `259421eed89d09f73a66083737b009b7ec21602257591e93e69a4a7326c054d7`;
+  version 1 checksum remains unchanged.
+- Runtime evidence: package boundary tests remain green; no production database
+  composition, Discord imports, gateway intents, WAL/busy-timeout policy, or
+  feature-flag changes were added.
+
 ## 2. Confirmed repository facts (verified against the local checkout)
 
 | ID | Claim | File · line | Verified |

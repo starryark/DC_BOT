@@ -41,12 +41,13 @@ describe('imp-201 forward-only migration runner', () => {
   it('migrates an empty SQLite database to the latest schema and records the checksum once', () => {
     const db = database()
 
-    expect(migrate(db)).toEqual([1])
+    expect(migrate(db)).toEqual([1, 2])
     expect(db.prepare('PRAGMA foreign_keys').get()).toEqual({ foreign_keys: 1 })
     expect(db.prepare('SELECT version, name, checksum FROM memory_schema_migrations').all()).toEqual([
       { version: 1, name: 'initial_shared_memory_schema', checksum: migrations[0]?.checksum },
+      { version: 2, name: 'identity_alias_repositories', checksum: migrations[1]?.checksum },
     ])
-    expect(latestSchemaVersion).toBe(1)
+    expect(latestSchemaVersion).toBe(2)
   })
 
   it('is a no-op when every known migration is already applied', () => {
@@ -54,7 +55,7 @@ describe('imp-201 forward-only migration runner', () => {
     migrate(db)
 
     expect(migrate(db)).toEqual([])
-    expect(db.prepare('SELECT COUNT(*) AS count FROM memory_schema_migrations').get()).toEqual({ count: 1 })
+    expect(db.prepare('SELECT COUNT(*) AS count FROM memory_schema_migrations').get()).toEqual({ count: 2 })
   })
 
   it('applies supplied migrations in deterministic numeric order', () => {

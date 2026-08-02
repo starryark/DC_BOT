@@ -169,6 +169,7 @@ violate it. `Open` = neither.
 | IMP-107 | REQ-DELIVERY-001…003 | `memory-domain/src/{generation,delivery}.ts` | `…/{generation,delivery}.test.ts` |
 | IMP-108 | REQ-MEM-002, REQ-MEM-003, REQ-PRIV-002 | `memory-domain/src/{memory-records,provenance,corrections}.ts` | `…/{memory-records,corrections}.test.ts` |
 | IMP-201 | REQ-EVENT-001, REQ-MEM-002, REQ-OPS-001 | `memory-sqlite/src/{schema,migrations,migration-runner}.ts` | `…/{migration-runner,schema/v1,boundaries}.test.ts` |
+| IMP-202 | REQ-ID-001…004 | `memory-sqlite/src/repositories/{identity,alias}.ts`; additive schema v2 | `…/repositories/{identity,alias}.test.ts` |
 
 ---
 
@@ -226,6 +227,41 @@ Run from `airi/`, 2026-08-02. Exact commands and exact results:
   requests, deletion tombstones, and quarantinable legacy migration evidence.
 - Runtime composition and all 16 memory feature flags are unchanged and off.
 
+### IMP-202 identity and alias repository evidence (2026-08-02)
+
+- Implemented REQ-ID-001 through REQ-ID-004 in
+  `memory-sqlite/src/repositories/{identity,alias}.ts`, exported through the
+  package root. Observation atomically creates a person plus exact-string
+  Discord external identity, appends idempotent historical snapshots, applies
+  tri-state partial projection updates, isolates guild projections, throttles
+  unchanged `last_seen_at` writes to 24 hours, and writes platform alias
+  evidence only for material changes.
+- Added forward-only migration 2, `identity_alias_repositories`, checksum
+  `259421eed89d09f73a66083737b009b7ec21602257591e93e69a4a7326c054d7`.
+  Migration 1 and checksum
+  `eb437ff3cf9bca1ab28719bff3d526d57e2f6bcdbb98ab48c545ec618518baf9`
+  are unchanged.
+- Exact-scope alias SQL covers platform, character-global, guild, logical-room,
+  and private scopes; only active, temporally valid rows are returned.
+  Collisions return every deterministically ordered candidate or an explicit
+  ambiguous result. Private aliases cannot enter guild/public predicates.
+- Deterministic 10,000-observation benchmark counts: 10,000 historical actor
+  snapshots; 1 platform profile row and revision 1; 1 guild profile row; 3
+  platform-observed aliases; 3 evidence rows; alias revision 1; 0 freshness
+  updates within the 10,000-second interval after the initial write.
+- Verification: memory-sqlite typecheck exit 0; memory-sqlite tests exit 0
+  (5 files, 30 tests); memory-domain typecheck exit 0 and tests exit 0 (10
+  files, 206 tests); discord-bot typecheck exit 0 and tests exit 0 (33 files,
+  365 tests). The requested `pnpm exec moeru-lint packages/memory-sqlite` shim
+  did not resolve on Windows; invoking the same checked-in binary directly as
+  `.\\node_modules\\.bin\\moeru-lint.cmd packages/memory-sqlite` passed with 0
+  warnings and 0 errors across 14 files and 93 rules. Full monorepo tests were
+  not run because unrelated workspaces are outside IMP-202.
+- G2 remains in progress. IMP-203–208 remain; IMP-208 and OQ-BLOCK-003 remain
+  unresolved. FIND-010 remains open; no Discord intent was enabled. All memory
+  feature flags remain off, runtime composition is unchanged, and rollout stays
+  R1 disabled. The next unblocked increment is IMP-203.
+
 Not run, and why:
 
 | Command | Why not |
@@ -246,7 +282,7 @@ flags all default to `false`; no other production module reads it yet.
 |---|---|
 | Entry (IMP-001…003) | ✅ **passed this increment** |
 | G1 Domain (IMP-101…108) | ✅ **passed this increment** — one contract package, no Discord/DB imports, conformance fixtures cover multi-speaker causality and partial delivery |
-| G2 Persistence | 🚧 **in progress** — IMP-201 complete; IMP-202…208 remain, and OQ-BLOCK-003 still blocks IMP-208 sign-off |
+| G2 Persistence | 🚧 **in progress** — IMP-201 and IMP-202 complete; IMP-203…208 remain, and OQ-BLOCK-003 still blocks IMP-208 sign-off |
 | G3 Identity propagation | ⛔ not started; also blocked on FIND-010 |
 | G4 Event/delivery | ⛔ not started |
 | G5 Text/voice integration | ⛔ not started |
