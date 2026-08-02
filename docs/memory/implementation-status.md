@@ -455,10 +455,17 @@ flags all default to `false`; no other production module reads it yet.
 |---|---|
 | Entry (IMP-001…003) | ✅ **passed this increment** |
 | G1 Domain (IMP-101…108) | ✅ **passed this increment** — one contract package, no Discord/DB imports, conformance fixtures cover multi-speaker causality and partial delivery |
-| G2 Persistence | ✅ **IMP-201 through IMP-208 technical envelope passed** — production rollout/G2 approval remains conditioned on OQ-BLOCK-003 deployment evidence |
+| G2 Persistence | 🚧 **technical validation complete; formal gate pending** — IMP-201 through IMP-208 pass locally, but OQ-BLOCK-003 still requires approved evidence of one authoritative process, local non-network storage, an operational backup location, and a deployment-shaped workload/soak |
 | G3 Identity propagation | ⛔ not started; also blocked on FIND-010 |
 | G4 Event/delivery | ⛔ not started |
 | G5 Text/voice integration | ⛔ not started |
 | G6 Context assembly | ⛔ not started |
 | G7 Privacy controls | ⛔ not started |
 | G8 Evaluation/release | ⛔ not started |
+
+The operator-supplied continuation label `IMP-209` has no approved definition in
+artifact 21. The persistence merge train ends at IMP-208. IMP-301 is the next
+listed coding task, but artifact 21 makes passed G1-G2 gates its precondition;
+therefore it has not started. OQ-BLOCK-004/FIND-010 additionally remains required
+for G3 sign-off and IMP-305, and no new Discord gateway intent is approved or
+enabled.
