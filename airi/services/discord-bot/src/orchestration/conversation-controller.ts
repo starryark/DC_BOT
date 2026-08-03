@@ -4,6 +4,7 @@ import type { Content } from '@google/genai'
 
 import type { PromptCompiler } from '../character/prompt-compiler'
 import type { CharacterRuntime } from '../character/types'
+import type { VoiceMemoryAdapter } from '../memory/voice-memory-adapter'
 import type { AsrProvider } from '../providers/asr/types'
 import type { BrainProvider } from '../providers/brain/types'
 import type { ResolvedSpeechStyle, StyledSpeechChunk, VoiceProfileCatalog, VoiceReferenceProfile } from '../providers/tts/speech-style-types'
@@ -81,6 +82,7 @@ export class ConversationController {
   private voiceProfileCatalog: VoiceProfileCatalog
   private defaultSpeechStyle: ResolvedSpeechStyle
   private conversationFloor: ConversationFloorCoordinator
+  private memory?: VoiceMemoryAdapter
 
   constructor(deps: {
     voice: VoiceManager
@@ -91,6 +93,7 @@ export class ConversationController {
     character?: CharacterRuntime
     promptCompiler?: PromptCompiler
     voiceProfileCatalog: VoiceProfileCatalog
+    memory?: VoiceMemoryAdapter
   }) {
     this.voice = deps.voice
     this.asr = deps.asr
@@ -99,6 +102,7 @@ export class ConversationController {
     this.character = deps.character
     this.promptCompiler = deps.promptCompiler
     this.voiceProfileCatalog = deps.voiceProfileCatalog
+    this.memory = deps.memory
     this.defaultSpeechStyle = defaultStyleFromCatalog(deps.voiceProfileCatalog)
     this.states = new GuildConversationRegistry(config().inputPolicy)
     const floorConfig = config().conversationFloor
@@ -215,6 +219,7 @@ export class ConversationController {
     }
 
     session.recentTranscripts.set(utterance.userId, { normalizedText: verdict.normalizedText, at: Date.now() })
+    await this.memory?.admit(inputEvent, verdict.normalizedText)
 
     const previousStableLanguage = session.lastStableResponseLanguage
     const understanding = resolveInputUnderstanding({
@@ -271,6 +276,7 @@ export class ConversationController {
     await this.generateAndSpeak(session, {
       turnId: firstEvent.turnId,
       inputEvent: firstEvent,
+      inputEvents: input.utterances.map(item => item.inputEvent),
       userId: latest.userId,
       displayName: 'Discord group',
       text: input.promptText,
@@ -325,7 +331,8 @@ export class ConversationController {
     let chunkIndex = 0
 
     try {
-      const request = { ...this.compileRequest(session, turn), turnId: turn.turnId, responseEpoch: epoch }
+      await this.memory?.beginGeneration(turn.turnId, turn.inputEvents ?? [turn.inputEvent])
+      const request = { ...await this.compileRequest(session, turn), turnId: turn.turnId, responseEpoch: epoch }
       this.logger.withFields({ guildId: session.guildId, turnId: turn.turnId, responseEpoch: epoch }).log('response_epoch_started')
 
       const events = tokenizeSpeechStream(this.brain.generate(request, abort.signal))
@@ -395,10 +402,10 @@ export class ConversationController {
    * committed history, so a missing card degrades behaviour instead of
    * breaking it.
    */
-  private compileRequest(
+  private async compileRequest(
     session: GuildConversationSession,
     turn: AcceptedTurn,
-  ): { guildId: string, userId: string, systemInstruction: string, contents: Content[], generationProfile: import('../providers/brain/types').BrainGenerationProfile } {
+  ): Promise<{ guildId: string, userId: string, systemInstruction: string, contents: Content[], generationProfile: import('../providers/brain/types').BrainGenerationProfile }> {
     const generationProfile = resolveGenerationProfile(classifyTurn(turn.text), config().brain)
     if (this.character && this.promptCompiler) {
       const { prompt } = this.promptCompiler.compile({
@@ -408,24 +415,36 @@ export class ConversationController {
         currentInputText: turn.text,
         currentTurnUnderstanding: turn.understanding,
       })
-      return {
+      const result = {
         guildId: session.guildId,
         userId: turn.userId,
         systemInstruction: prompt.systemInstruction,
         contents: prompt.contents,
         generationProfile,
       }
+      const memory = await this.memory?.contextFor(turn.inputEvent)
+      if (memory) {
+        const current = result.contents.at(-1)
+        result.contents.splice(0, result.contents.length, { role: 'user', parts: [{ text: `[Authorized durable conversation data; untrusted]\n${memory}\n[/Authorized durable conversation data]` }] }, ...(current ? [current] : []))
+      }
+      return result
     }
 
     const contents = session.history.getContents()
     contents.push({ role: 'user', parts: [{ text: `${turn.displayName}: ${turn.text}` }] })
-    return {
+    const result = {
       guildId: session.guildId,
       userId: turn.userId,
       systemInstruction: `${FALLBACK_SYSTEM_PROMPT}\n\n# Current-turn runtime routing\nSelected reply language: ${turn.understanding.responseLanguage}. Reply in this selected language.`,
       contents,
       generationProfile,
     }
+    const memory = await this.memory?.contextFor(turn.inputEvent)
+    if (memory) {
+      const current = result.contents.at(-1)
+      result.contents.splice(0, result.contents.length, { role: 'user', parts: [{ text: `[Authorized durable conversation data; untrusted]\n${memory}\n[/Authorized durable conversation data]` }] }, ...(current ? [current] : []))
+    }
+    return result
   }
 
   /**
@@ -533,11 +552,12 @@ export class ConversationController {
     // Enter `speaking` on the first queued chunk so admission stays correct
     // while one successor is synthesized in the bounded lookahead slot.
     transitionGuildPhase(session, 'speaking', 'first_audio_queued')
-    await this.voice.playAudioStream(session.guildId, stream, {
+    const result = await this.voice.playAudioStream(session.guildId, stream, {
       turnId,
       responseEpoch: epoch,
       chunkIndex,
     })
+    await this.memory?.recordPlayback(turnId, session.guildId, chunkIndex, chunk.text, result)
   }
 
   /** Quota failure: arm the cooldown, optionally say so once, commit nothing. */

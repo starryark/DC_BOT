@@ -142,6 +142,8 @@ const PREREQUISITES: Partial<Record<keyof MemoryFeatureFlags, readonly (keyof Me
  * satisfied: the gate is evidence, not configuration.
  */
 const M1_GATED: Partial<Record<keyof MemoryFeatureFlags, string>> = {
+  summaries: 'Increment 7 summary worker is optional and has no completed soak evidence; keep FF-SUMMARIES disabled',
+  autoExtraction: 'Increment 7 extraction worker is optional and has no abstention/contradiction soak evidence; keep FF-AUTO-EXTRACTION disabled',
   vectorRetrieval: 'ADR-011: vector retrieval requires an accepted benchmark (IMP-607) before it may be enabled',
   relationshipHypotheses: 'ADR-011: graph/relationship work requires an accepted benchmark before it may be enabled',
   remoteTransport: 'ADR-001: milestone 1 is in-process only; a standalone runtime requires the topology decision at IMP-806',

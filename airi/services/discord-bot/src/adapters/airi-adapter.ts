@@ -1,6 +1,8 @@
 import type { Discord } from '@proj-airi/server-shared/types'
 import type { Interaction } from 'discord.js'
 
+import type { PrivacyMemoryAuthority } from '../memory/privacy-authority'
+import type { DiscordTextMemoryObserver } from '../memory/text-observer'
 import type { TextMentionResponder } from '../orchestration/mention-responder'
 
 import { env } from 'node:process'
@@ -9,7 +11,7 @@ import { useLogg } from '@guiiai/logg'
 import { Client as ServerChannel } from '@proj-airi/server-sdk'
 import { Client, Events, GatewayIntentBits, Partials } from 'discord.js'
 
-import { handleAvatarState, handlePing, handleVoiceTest, registerCommands, VoiceManager } from '../bots/discord/commands'
+import { handleAvatarState, handleMemory, handlePing, handleVoiceTest, registerCommands, VoiceManager } from '../bots/discord/commands'
 import { buildDiscordActorEvidence } from '../memory/discord-actor-snapshot'
 
 const log = useLogg('DiscordAdapter').useGlobalConfig()
@@ -92,6 +94,8 @@ export class DiscordAdapter {
   voiceManager: VoiceManager
   private isReconnecting = false
   private mentionResponder?: TextMentionResponder
+  private textMemoryObserver?: DiscordTextMemoryObserver
+  private privacyMemory?: PrivacyMemoryAuthority
 
   constructor(config: DiscordAdapterConfig) {
     this.discordToken = config.discordToken || env.DISCORD_TOKEN || ''
@@ -129,6 +133,14 @@ export class DiscordAdapter {
 
   setMentionResponder(responder: TextMentionResponder): void {
     this.mentionResponder = responder
+  }
+
+  setTextMemoryObserver(observer: DiscordTextMemoryObserver): void {
+    this.textMemoryObserver = observer
+  }
+
+  setPrivacyMemory(authority: PrivacyMemoryAuthority | undefined): void {
+    this.privacyMemory = authority
   }
 
   private setupEventHandlers(): void {
@@ -272,6 +284,7 @@ export class DiscordAdapter {
 
       try {
         if (this.mentionResponder) {
+          await this.textMemoryObserver?.admit(event, { isDirectMessage, isThread: message.channel.isThread() })
           const refreshTyping = async (): Promise<void> => {
             try {
               await message.channel.sendTyping()
@@ -292,10 +305,12 @@ export class DiscordAdapter {
               },
             })
             const chunks = chunkDiscordText(response)
+            await this.textMemoryObserver?.generated(event, chunks)
             if (chunks.length > 0) {
-              await message.reply({ content: chunks[0], allowedMentions: ALLOWED_MENTIONS })
+              const sentIds = [(await message.reply({ content: chunks[0], allowedMentions: ALLOWED_MENTIONS })).id]
               for (const chunk of chunks.slice(1))
-                await message.channel.send({ content: chunk, allowedMentions: ALLOWED_MENTIONS })
+                sentIds.push((await message.channel.send({ content: chunk, allowedMentions: ALLOWED_MENTIONS })).id)
+              await this.textMemoryObserver?.delivered(event, sentIds)
             }
           }
           finally {
@@ -324,6 +339,7 @@ export class DiscordAdapter {
         })
       }
       catch (error) {
+        await this.textMemoryObserver?.failed(event, error)
         log.withError(error as Error).withFields({
           guildId: message.guildId ?? 'dm',
           channelId: message.channelId,
@@ -354,6 +370,9 @@ export class DiscordAdapter {
       switch (interaction.commandName) {
         case 'ping':
           await handlePing(interaction)
+          break
+        case 'memory':
+          await handleMemory(interaction, actorEvidence, this.privacyMemory)
           break
         case 'summon':
           await this.voiceManager.handleJoinChannelCommand(interaction)

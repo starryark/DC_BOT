@@ -45,6 +45,8 @@ export type CancellationReason = 'disconnect' | 'barge_in' | 'superseded' | 'fai
 export interface AcceptedTurn {
   turnId: string
   inputEvent: VoiceInputEvent
+  /** All separately persisted speaker events contributing to a grouped reply. */
+  inputEvents?: readonly VoiceInputEvent[]
   userId: string
   displayName: string
   text: string

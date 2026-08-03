@@ -1,8 +1,11 @@
 import type { MemoryFeatureFlags } from './memory/feature-flags'
+import type { MemoryMode } from './memory/profile'
 import type { GeminiThinkingLevel } from './providers/brain/types'
 import type { GptSoVitsLang } from './providers/tts/types'
 
 import { env } from 'node:process'
+
+import { memoryProfile } from './memory/profile'
 
 /**
  * Centralized, validated runtime configuration.
@@ -172,7 +175,11 @@ export interface AppConfig {
    * rollout stage R1 is "code merged, runtime disabled". Policy over these
    * values lives in `src/memory/feature-flags.ts`, not here.
    */
-  memory: MemoryFeatureFlags
+  memory: {
+    mode: MemoryMode
+    runtimeRoot?: string
+    flags: MemoryFeatureFlags
+  }
   avatar: {
     enabled: boolean
     relayUrl: string
@@ -229,6 +236,39 @@ function parseBool(raw: string | undefined, fallback: boolean): boolean {
   return fallback
 }
 
+function memoryFlagOverrides(): Partial<MemoryFeatureFlags> {
+  const values: [keyof MemoryFeatureFlags, string | undefined][] = [
+    ['durableEvents', env.MEMORY_FF_DURABLE_EVENTS],
+    ['actorSnapshots', env.MEMORY_FF_ACTOR_SNAPSHOTS],
+    ['preferredAliases', env.MEMORY_FF_PREFERRED_ALIASES],
+    ['sharedRecentContext', env.MEMORY_FF_SHARED_RECENT_CONTEXT],
+    ['roomBindings', env.MEMORY_FF_ROOM_BINDINGS],
+    ['deliveryLifecycle', env.MEMORY_FF_DELIVERY_LIFECYCLE],
+    ['summaries', env.MEMORY_FF_SUMMARIES],
+    ['explicitSemanticMemory', env.MEMORY_FF_EXPLICIT_SEMANTIC_MEMORY],
+    ['autoExtraction', env.MEMORY_FF_AUTO_EXTRACTION],
+    ['fulltextRetrieval', env.MEMORY_FF_FULLTEXT_RETRIEVAL],
+    ['vectorRetrieval', env.MEMORY_FF_VECTOR_RETRIEVAL],
+    ['onDemandRecall', env.MEMORY_FF_ON_DEMAND_RECALL],
+    ['relationshipHypotheses', env.MEMORY_FF_RELATIONSHIP_HYPOTHESES],
+    ['remoteTransport', env.MEMORY_FF_REMOTE_TRANSPORT],
+    ['degradedStatelessMode', env.MEMORY_FF_DEGRADED_STATELESS_MODE],
+    ['durableWriteSpool', env.MEMORY_FF_DURABLE_WRITE_SPOOL],
+  ]
+  return Object.fromEntries(values
+    .filter((entry): entry is [keyof MemoryFeatureFlags, string] => entry[1] != null && entry[1] !== '')
+    .map(([flag, raw]) => [flag, parseStrictMemoryBool(flag, raw)]))
+}
+
+function parseStrictMemoryBool(flag: keyof MemoryFeatureFlags, raw: string): boolean {
+  const normalized = raw.toLowerCase()
+  if (raw === '1' || normalized === 'true')
+    return true
+  if (raw === '0' || normalized === 'false')
+    return false
+  throw new Error(`Invalid low-level memory flag ${flag}`)
+}
+
 /** Constrain GPT_SOVITS_TEXT_LANG to the GPT-SoVITS-accepted target values. */
 function parseTextLangFallback(raw: string | undefined): 'zh' | 'en' | 'ja' | 'auto' {
   const allowed = ['zh', 'en', 'ja', 'auto'] as const
@@ -251,6 +291,7 @@ export function config(): AppConfig {
 
   const backend = (env.BOT_BACKEND || 'direct') === 'airi' ? 'airi' : 'direct'
 
+  const selectedMemoryProfile = memoryProfile(env.MEMORY_MODE, memoryFlagOverrides())
   const result: AppConfig = {
     backend,
 
@@ -347,22 +388,9 @@ export function config(): AppConfig {
       maxGroupUtterances: parseBounded(env.VOICE_MAX_GROUP_UTTERANCES, 4, 100),
     },
     memory: {
-      durableEvents: parseBool(env.MEMORY_FF_DURABLE_EVENTS, false),
-      actorSnapshots: parseBool(env.MEMORY_FF_ACTOR_SNAPSHOTS, false),
-      preferredAliases: parseBool(env.MEMORY_FF_PREFERRED_ALIASES, false),
-      sharedRecentContext: parseBool(env.MEMORY_FF_SHARED_RECENT_CONTEXT, false),
-      roomBindings: parseBool(env.MEMORY_FF_ROOM_BINDINGS, false),
-      deliveryLifecycle: parseBool(env.MEMORY_FF_DELIVERY_LIFECYCLE, false),
-      summaries: parseBool(env.MEMORY_FF_SUMMARIES, false),
-      explicitSemanticMemory: parseBool(env.MEMORY_FF_EXPLICIT_SEMANTIC_MEMORY, false),
-      autoExtraction: parseBool(env.MEMORY_FF_AUTO_EXTRACTION, false),
-      fulltextRetrieval: parseBool(env.MEMORY_FF_FULLTEXT_RETRIEVAL, false),
-      vectorRetrieval: parseBool(env.MEMORY_FF_VECTOR_RETRIEVAL, false),
-      onDemandRecall: parseBool(env.MEMORY_FF_ON_DEMAND_RECALL, false),
-      relationshipHypotheses: parseBool(env.MEMORY_FF_RELATIONSHIP_HYPOTHESES, false),
-      remoteTransport: parseBool(env.MEMORY_FF_REMOTE_TRANSPORT, false),
-      degradedStatelessMode: parseBool(env.MEMORY_FF_DEGRADED_STATELESS_MODE, false),
-      durableWriteSpool: parseBool(env.MEMORY_FF_DURABLE_WRITE_SPOOL, false),
+      mode: selectedMemoryProfile.mode,
+      runtimeRoot: env.MEMORY_RUNTIME_ROOT?.trim() || undefined,
+      flags: selectedMemoryProfile.flags,
     },
 
     avatar: {

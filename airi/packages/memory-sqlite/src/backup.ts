@@ -11,6 +11,44 @@ import { latestSchemaVersion, migrations } from './migrations/index.js'
 
 export interface BackupManifest { readonly format: 1, readonly createdAt: string, readonly schemaVersion: number, readonly migrationChecksums: readonly string[], readonly bytes: number }
 
+export interface DeletionObligation {
+  readonly forgetRequestId: string
+  readonly targetTable: string
+  readonly targetId: string
+}
+
+/** Capture the minimal, content-free deletion fence that must survive backup age. */
+export function captureDeletionObligations(database: DatabaseSync): readonly DeletionObligation[] {
+  return (database.prepare(`SELECT t.forget_request_id,t.target_table,t.target_id FROM deletion_tombstones t JOIN forget_requests f ON f.forget_request_id=t.forget_request_id WHERE f.status='completed' ORDER BY t.created_at,t.tombstone_id`).all() as Array<{ forget_request_id: string, target_table: string, target_id: string }>).map(row => ({ forgetRequestId: row.forget_request_id, targetTable: row.target_table, targetId: row.target_id }))
+}
+
+/** Reapply known obligations to an isolated restore candidate and verify absence. */
+export function replayDeletionObligations(database: DatabaseSync, obligations: readonly DeletionObligation[]): void {
+  const supported: Record<string, { sql: string, verify: string }> = {
+    inbound_event_records: { sql: `UPDATE inbound_event_records SET payload_json=json_object('redacted',json('true')) WHERE event_id=?`, verify: `SELECT count(*) count FROM inbound_event_records WHERE event_id=? AND json_extract(payload_json,'$.redacted') IS NOT 1` },
+    semantic_fact_repository_records: { sql: `UPDATE semantic_fact_repository_records SET tombstoned_by=coalesce(tombstoned_by,'restore-obligation') WHERE fact_id=?`, verify: `SELECT count(*) count FROM semantic_fact_repository_records WHERE fact_id=? AND tombstoned_by IS NULL` },
+    episodic_repository_records: { sql: `UPDATE episodic_repository_records SET tombstoned_by=coalesce(tombstoned_by,'restore-obligation') WHERE episodic_id=?`, verify: `SELECT count(*) count FROM episodic_repository_records WHERE episodic_id=? AND tombstoned_by IS NULL` },
+    summary_repository_records: { sql: `UPDATE summary_repository_records SET stale=1,tombstoned_by=coalesce(tombstoned_by,'restore-obligation') WHERE summary_id=?`, verify: `SELECT count(*) count FROM summary_repository_records WHERE summary_id=? AND tombstoned_by IS NULL` },
+  }
+  database.exec('BEGIN IMMEDIATE')
+  try {
+    for (const obligation of obligations) {
+      const target = supported[obligation.targetTable]
+      if (!target)
+        throw new MemoryError('POLICY_VIOLATION', `unsupported deletion obligation target: ${obligation.targetTable}`)
+      database.prepare(target.sql).run(obligation.targetId)
+      const remaining = database.prepare(target.verify).get(obligation.targetId) as { count: number }
+      if (remaining.count !== 0)
+        throw new MemoryError('PERSISTENCE_FAILED', 'restore deletion obligation verification failed')
+    }
+    database.exec('COMMIT')
+  }
+  catch (error) {
+    database.exec('ROLLBACK')
+    throw error
+  }
+}
+
 function distinct(source: string, destination: string): void {
   if (resolve(source).toLowerCase() === resolve(destination).toLowerCase())
     throw new MemoryError('POLICY_VIOLATION', 'backup and restore paths must not overwrite the authoritative database')

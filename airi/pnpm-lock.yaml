@@ -5243,6 +5243,9 @@ importers:
       '@proj-airi/memory-domain':
         specifier: workspace:*
         version: link:../../packages/memory-domain
+      '@proj-airi/memory-sqlite':
+        specifier: workspace:*
+        version: link:../../packages/memory-sqlite
       '@proj-airi/server-sdk':
         specifier: workspace:^
         version: link:../../packages/server-sdk

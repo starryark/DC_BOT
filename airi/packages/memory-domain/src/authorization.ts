@@ -195,10 +195,10 @@ const DENIAL_ERROR_CODE = {
  */
 export function assertAuthorized(context: AuthorizationContext | undefined, request: AuthorizationRequest): void {
   const decision = authorize(context, request)
-  if (decision.allowed)
-    return
-  throw new MemoryError(DENIAL_ERROR_CODE[request.operation], decision.reason, {
-    retryable: false,
-    details: { operation: request.operation, scopeKind: request.targetScope.kind, denyCode: decision.code },
-  })
+  if (!decision.allowed && 'reason' in decision) {
+    throw new MemoryError(DENIAL_ERROR_CODE[request.operation], decision.reason, {
+      retryable: false,
+      details: { operation: request.operation, scopeKind: request.targetScope.kind, denyCode: decision.code },
+    })
+  }
 }

@@ -28,6 +28,7 @@
     "@proj-airi/audio": "workspace:^",
     "@proj-airi/discord-avatar-protocol": "workspace:^",
     "@proj-airi/memory-domain": "workspace:*",
+    "@proj-airi/memory-sqlite": "workspace:*",
     "@proj-airi/server-sdk": "workspace:^",
     "@proj-airi/server-shared": "workspace:^",
     "@snazzah/davey": "catalog:",

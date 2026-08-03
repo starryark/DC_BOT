@@ -2,13 +2,20 @@ import type { CharacterRuntime } from './character/types'
 
 import process, { env } from 'node:process'
 
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 import { Format, LogLevel, setGlobalFormat, setGlobalLogLevel, useLogg } from '@guiiai/logg'
+import { asCharacterId } from '@proj-airi/memory-domain'
 
 import { DiscordAdapter } from './adapters/airi-adapter'
 import { AvatarPublisher } from './avatar/publisher'
 import { FileCharacterRegistry } from './character/character-registry'
 import { DefaultPromptCompiler } from './character/prompt-compiler'
 import { config } from './config'
+import { createMemoryRuntime } from './memory/runtime'
+import { createTextMemoryAdapter } from './memory/text-memory-adapter'
+import { createVoiceMemoryAdapter } from './memory/voice-memory-adapter'
 import { ConversationController } from './orchestration/conversation-controller'
 import { MentionResponder } from './orchestration/mention-responder'
 import { QwenHttpAsrProvider } from './providers/asr/qwen-http'
@@ -90,27 +97,27 @@ async function main() {
       if (!cfg.tts.voiceModelVersion || !referenceAudio)
         return null
       return {
-          normalizedText: request.text.normalize('NFKC').trim().replace(/\s+/g, ' '),
-          textLanguage: request.language,
-          pronunciationProfileVersion: request.pronunciationProfileVersion,
-          voiceModelVersion: cfg.tts.voiceModelVersion,
-          catalogVersion: conditioning?.catalogVersion ?? voiceProfileCatalog.catalogVersion,
-          profileId: conditioning?.profileId ?? voiceProfileCatalog.defaultProfileId,
-          referenceAudioFingerprint: fingerprint(referenceAudio),
-          promptTextFingerprint: fingerprint(referenceText),
-          promptLanguage: conditioning?.promptLanguage ?? cfg.tts.promptLang,
-          topK: conditioning?.topK ?? 15,
-          topP: conditioning?.topP ?? 1,
-          temperature: conditioning?.temperature ?? 1,
-          repetitionPenalty: conditioning?.repetitionPenalty ?? 1.35,
-          speedFactor: conditioning?.speedFactor ?? 1,
-          fragmentInterval: conditioning?.fragmentInterval ?? 0.3,
-          seed: conditioning?.seed ?? -1,
-          variationIndex: conditioning?.variationIndex ?? 0,
-          mediaType: 'wav',
-          streamingMode: cfg.tts.streamingMode,
-          textSplitMethod: conditioning?.textSplitMethod ?? 'cut0',
-        }
+        normalizedText: request.text.normalize('NFKC').trim().replace(/\s+/g, ' '),
+        textLanguage: request.language,
+        pronunciationProfileVersion: request.pronunciationProfileVersion,
+        voiceModelVersion: cfg.tts.voiceModelVersion,
+        catalogVersion: conditioning?.catalogVersion ?? voiceProfileCatalog.catalogVersion,
+        profileId: conditioning?.profileId ?? voiceProfileCatalog.defaultProfileId,
+        referenceAudioFingerprint: fingerprint(referenceAudio),
+        promptTextFingerprint: fingerprint(referenceText),
+        promptLanguage: conditioning?.promptLanguage ?? cfg.tts.promptLang,
+        topK: conditioning?.topK ?? 15,
+        topP: conditioning?.topP ?? 1,
+        temperature: conditioning?.temperature ?? 1,
+        repetitionPenalty: conditioning?.repetitionPenalty ?? 1.35,
+        speedFactor: conditioning?.speedFactor ?? 1,
+        fragmentInterval: conditioning?.fragmentInterval ?? 0.3,
+        seed: conditioning?.seed ?? -1,
+        variationIndex: conditioning?.variationIndex ?? 0,
+        mediaType: 'wav',
+        streamingMode: cfg.tts.streamingMode,
+        textSplitMethod: conditioning?.textSplitMethod ?? 'cut0',
+      }
     },
   })
   const brain = new GeminiBrainProvider()
@@ -120,15 +127,42 @@ async function main() {
   // controller falls back to the generic prompt so the bot still answers.
   const character = loadCharacter()
   const promptCompiler = character ? new DefaultPromptCompiler() : undefined
+  const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..')
+  const memory = createMemoryRuntime({
+    mode: cfg.memory.mode,
+    flags: cfg.memory.flags,
+    repoRoot: repositoryRoot,
+    configuredRoot: cfg.memory.runtimeRoot,
+  })
+  log.withFields(memory.health).log('memory_status')
+  adapter.setPrivacyMemory(memory.privacy)
+  let textMemory: ReturnType<typeof createTextMemoryAdapter> | undefined
+  let voiceMemory: ReturnType<typeof createVoiceMemoryAdapter> | undefined
+  if (memory.health.durableWritesEnabled) {
+    textMemory = createTextMemoryAdapter({
+      runtime: memory,
+      characterId: asCharacterId(character?.id ?? cfg.character.id.replaceAll(' ', '-')),
+      modelRef: `gemini:${cfg.brain.model}`,
+      onFailure: error => log.withError(error).error('memory_shadow_write_failed'),
+    })
+    adapter.setTextMemoryObserver(textMemory)
+    voiceMemory = createVoiceMemoryAdapter({
+      runtime: memory,
+      characterId: asCharacterId(character?.id ?? cfg.character.id.replaceAll(' ', '-')),
+      modelRef: `gemini:${cfg.brain.model}`,
+      onFailure: error => log.withError(error).error('memory_voice_trace_failed'),
+    })
+  }
 
   if (cfg.backend === 'direct') {
     // The controller subscribes to voice utterances and barge-in events; it is
     // the only orchestrator in direct mode.
-    // eslint-disable-next-line no-new
+
     if (cfg.tts.warmupEnabled)
       await warmVoiceProfiles(rawTts, voiceProfileCatalog)
-    new ConversationController({ voice, asr, brain, tts, character, promptCompiler, voiceProfileCatalog })
-    adapter.setMentionResponder(new MentionResponder({ brain, character, promptCompiler }))
+    // eslint-disable-next-line no-new
+    new ConversationController({ voice, asr, brain, tts, character, promptCompiler, voiceProfileCatalog, memory: voiceMemory })
+    adapter.setMentionResponder(new MentionResponder({ brain, character, promptCompiler, memoryContext: textMemory }))
     log.log('Direct backend active: Qwen ASR → Gemini → GPT-SoVITS, with Discord text replies.')
   }
   else {
@@ -139,13 +173,27 @@ async function main() {
   // reach them without re-constructing providers.
   setServices({ voice, asr, brain, tts, avatar })
 
-  await adapter.start()
-
-  async function gracefulShutdown(signal: string) {
-    log.log(`Received ${signal}, shutting down...`)
-    await adapter.stop()
+  try {
+    await adapter.start()
+  }
+  catch (error) {
     avatar.stop()
-    process.exit(0)
+    await memory.close()
+    throw error
+  }
+
+  let shutdown: Promise<void> | undefined
+  async function gracefulShutdown(signal: string): Promise<void> {
+    if (shutdown)
+      return shutdown
+    log.log(`Received ${signal}, shutting down...`)
+    shutdown = (async () => {
+      await adapter.stop()
+      avatar.stop()
+      await memory.close()
+      process.exitCode = 0
+    })()
+    return shutdown
   }
 
   process.on('SIGINT', async () => {
