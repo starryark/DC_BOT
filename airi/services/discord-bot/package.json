@@ -17,6 +17,15 @@
   "scripts": {
     "start": "tsx --env-file=.env --env-file-if-exists=.config --env-file-if-exists=.env.local src/index.ts",
     "benchmark:voice": "tsx scripts/benchmark-voice.ts",
+    "memory:status": "tsx scripts/memory/index.ts status",
+    "memory:inspect": "tsx scripts/memory/index.ts inspect",
+    "memory:integrity": "tsx scripts/memory/index.ts integrity",
+    "memory:backup": "tsx scripts/memory/index.ts backup",
+    "memory:restore": "tsx scripts/memory/index.ts restore",
+    "memory:reconcile-bindings": "tsx scripts/memory/index.ts reconcile-bindings",
+    "memory:reconcile-deliveries": "tsx scripts/memory/index.ts reconcile-deliveries",
+    "memory:verify-deletion": "tsx scripts/memory/index.ts verify-deletion",
+    "memory:smoke": "tsx scripts/memory/index.ts smoke",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

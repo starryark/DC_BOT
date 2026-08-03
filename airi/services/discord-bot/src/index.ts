@@ -133,6 +133,8 @@ async function main() {
     flags: cfg.memory.flags,
     repoRoot: repositoryRoot,
     configuredRoot: cfg.memory.runtimeRoot,
+    characterId: asCharacterId(character?.id ?? cfg.character.id.replaceAll(' ', '-')),
+    bindingFile: cfg.memory.bindingFile,
   })
   log.withFields(memory.health).log('memory_status')
   adapter.setPrivacyMemory(memory.privacy)

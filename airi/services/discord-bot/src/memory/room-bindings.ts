@@ -1,8 +1,9 @@
-import type { CharacterId, PhysicalLocation } from '@proj-airi/memory-domain'
+import type { BindingId, CharacterId, LogicalRoomId, PhysicalLocation } from '@proj-airi/memory-domain'
 
+import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 
-import { asCharacterId, MemoryError, physicalRoomIdOf } from '@proj-airi/memory-domain'
+import { asBindingId, asCharacterId, asLogicalRoomId, MemoryError, physicalRoomIdOf } from '@proj-airi/memory-domain'
 
 import * as v from 'valibot'
 
@@ -48,6 +49,8 @@ export function parseRoomBindingFile(input: unknown): readonly ConfiguredRoomBin
       channelId: location.channelId,
       ...('guildId' in location ? { guildId: location.guildId } : {}),
     }))
+    if (locations.some(location => location.channelKind === 'dm'))
+      throw new MemoryError('DM_ISOLATION_VIOLATION', `binding ${binding.id} contains a DM location; configured DM binding is disabled for milestone one`)
     const guilds = new Set(locations.map(location => location.guildId ?? 'dm'))
     if (guilds.size !== 1)
       throw new MemoryError('DM_ISOLATION_VIOLATION', `binding ${binding.id} crosses a guild or DM boundary`)
@@ -61,6 +64,32 @@ export function parseRoomBindingFile(input: unknown): readonly ConfiguredRoomBin
     }
     return Object.freeze({ id: binding.id, characterId: asCharacterId(binding.characterId), locations: Object.freeze(locations) })
   })
+}
+
+export interface PersistedConfiguredBindingMember {
+  readonly bindingId: BindingId
+  readonly logicalRoomId: LogicalRoomId
+  readonly characterId: CharacterId
+  readonly location: PhysicalLocation
+}
+
+/** Derives stable repository identities while enforcing the runtime's one-character scope. */
+export function persistedConfiguredBindingMembers(bindings: readonly ConfiguredRoomBinding[], characterId: CharacterId): readonly PersistedConfiguredBindingMember[] {
+  return bindings.flatMap((binding) => {
+    if (binding.characterId !== characterId)
+      throw new MemoryError('UNAUTHORIZED_BIND', `binding ${binding.id} targets character ${binding.characterId}, but this runtime owns ${characterId}`)
+    const logicalRoomId = asLogicalRoomId(stableConfiguredId('logical-room', `${characterId}:${binding.id}`))
+    return binding.locations.map(location => ({
+      bindingId: asBindingId(stableConfiguredId('binding', `${characterId}:${binding.id}:${physicalRoomIdOf(location)}`)),
+      logicalRoomId,
+      characterId,
+      location,
+    }))
+  })
+}
+
+function stableConfiguredId(kind: string, input: string): string {
+  return `configured:${kind}:${createHash('sha256').update(input).digest('hex')}`
 }
 
 /** Reads a local JSON binding file without accepting partial configuration. */

@@ -27,28 +27,41 @@ export function createTextMemoryAdapter(options: TextMemoryAdapterOptions): Disc
   const fail = (event: DiscordMentionInputEvent, error: unknown): void => {
     traces.delete(event.turnId)
     options.onFailure?.(error)
+    if (options.runtime.health.state === 'durableActive')
+      throw error
   }
 
   return {
     contextFor: async (event) => {
       const trace = traces.get(event.turnId)
-      if (!trace || !options.runtime.context || !options.runtime.health.promptUseEnabled)
-        return undefined
-      const result = await boundedContext(options.runtime.context.assembleRecent({
-        authorization: trace.authorization,
-        logicalRoomId: trace.room.logicalRoomId,
-        physicalRoomId: trace.room.physicalRoomId,
-        characterId: options.characterId,
-        maxItems: 24,
-        maxCharacters: 8_000,
-      }), 250)
-      if (result.sentinel !== 'ok')
-        throw new Error('Required durable recent context is unavailable')
-      return result.text
+      if (!options.runtime.health.promptUseEnabled)
+        return { status: 'disabled' }
+      if (!trace || !options.runtime.context)
+        return { status: 'required_unavailable', error: new Error('Required durable recent context trace is unavailable') }
+      try {
+        const result = await boundedContext(options.runtime.context.assembleRecent({
+          authorization: trace.authorization,
+          logicalRoomId: trace.room.logicalRoomId,
+          physicalRoomId: trace.room.physicalRoomId,
+          characterId: options.characterId,
+          maxItems: 24,
+          maxCharacters: 8_000,
+          excludeEventIds: [trace.event.eventId],
+        }), 250)
+        if (result.sentinel !== 'ok')
+          return { status: 'required_unavailable', error: new Error('Required durable recent context is unavailable') }
+        return { status: 'available', text: result.text }
+      }
+      catch (error) {
+        return { status: 'required_unavailable', error: error instanceof Error ? error : new Error(String(error)) }
+      }
     },
     admit: async (event, context) => {
-      if (!options.runtime.ingress || !options.runtime.trace)
+      if (!options.runtime.ingress || !options.runtime.trace) {
+        if (options.runtime.health.state === 'durableActive')
+          throw new Error('Required durable admission authority is unavailable')
         return
+      }
       try {
         const location = locationOf(event, context)
         const ingressAuthorization: AuthorizationContext = {
@@ -86,10 +99,13 @@ export function createTextMemoryAdapter(options: TextMemoryAdapterOptions): Disc
       }
       catch (error) { fail(event, error) }
     },
-    generated: async (event, chunks) => {
+    beginGeneration: async (event) => {
       const trace = traces.get(event.turnId)
-      if (!trace || !options.runtime.trace)
+      if (!trace || !options.runtime.trace) {
+        if (options.runtime.health.state === 'durableActive')
+          throw new Error('Required durable generation causality is unavailable')
         return
+      }
       try {
         const at = timestampFromEpochMs(Date.now())
         const begun = await options.runtime.trace.beginGeneration(trace.authorization, {
@@ -102,24 +118,55 @@ export function createTextMemoryAdapter(options: TextMemoryAdapterOptions): Disc
           startedAt: at,
         })
         trace.generation = begun.generation
-        const segments = await options.runtime.trace.appendSegments(trace.authorization, begun.generation, chunks.map((text, ordinal) => ({ segmentId: asSegmentId(`text:${event.messageId}:${ordinal}`), ordinal, modality: 'text', text })))
-        for (const segment of segments) {
-          const delivery = await options.runtime.trace.beginDelivery(trace.authorization, { segmentId: segment.segmentId, transport: 'discord_text', destinationId: event.channelId ?? event.messageId, idempotencyKey: asRequestId(`text-delivery:${event.messageId}:${segment.ordinal}`), startedAt: at })
-          trace.deliveries.push(await options.runtime.trace.transitionDelivery(trace.authorization, { deliveryId: delivery.deliveryId, from: 'pending', to: 'delivering', evidence: { kind: 'none' }, at }))
-        }
       }
       catch (error) { fail(event, error) }
     },
-    delivered: async (event, messageIds) => {
+    generated: async (event, chunks) => {
+      const trace = traces.get(event.turnId)
+      if (!trace?.generation || !options.runtime.trace) {
+        if (options.runtime.health.state === 'durableActive')
+          throw new Error('Required durable generation trace is unavailable')
+        return
+      }
+      try {
+        const at = timestampFromEpochMs(Date.now())
+        const segments = await options.runtime.trace.appendSegments(trace.authorization, trace.generation, chunks.map((text, ordinal) => ({ segmentId: asSegmentId(`text:${event.messageId}:${ordinal}`), ordinal, modality: 'text', text })))
+        for (const segment of segments) {
+          const delivery = await options.runtime.trace.beginDelivery(trace.authorization, { segmentId: segment.segmentId, transport: 'discord_text', destinationId: event.channelId ?? event.messageId, idempotencyKey: asRequestId(`text-delivery:${event.messageId}:${segment.ordinal}`), startedAt: at })
+          trace.deliveries.push(delivery)
+        }
+        const generated = await options.runtime.trace.transitionGeneration(trace.authorization, trace.generation, 'running', 'generated', at)
+        trace.generation = await options.runtime.trace.transitionGeneration(trace.authorization, generated, 'generated', 'persisted', at)
+      }
+      catch (error) { fail(event, error) }
+    },
+    delivering: async (event, segmentIndex) => {
       const trace = traces.get(event.turnId)
       if (!trace || !options.runtime.trace)
         return
       try {
         const at = timestampFromEpochMs(Date.now())
-        for (const [index, delivery] of trace.deliveries.entries()) {
-          const messageId = messageIds[index]
-          await options.runtime.trace.transitionDelivery(trace.authorization, { deliveryId: delivery.deliveryId, from: 'delivering', to: messageId ? 'delivered' : 'failed', evidence: messageId ? { kind: 'platformMessageId', platformMessageId: messageId } : { kind: 'transportError', errorClass: 'missing-send-receipt' }, at })
-        }
+        const delivery = trace.deliveries[segmentIndex]
+        if (!delivery)
+          throw new Error(`Missing durable text delivery segment ${segmentIndex}`)
+        trace.deliveries[segmentIndex] = await options.runtime.trace.transitionDelivery(trace.authorization, { deliveryId: delivery.deliveryId, from: 'pending', to: 'delivering', evidence: { kind: 'none' }, at })
+      }
+      catch (error) { fail(event, error) }
+    },
+    deliveredSegment: async (event, segmentIndex, messageId) => {
+      const trace = traces.get(event.turnId)
+      if (!trace || !options.runtime.trace)
+        return
+      try {
+        const delivery = trace.deliveries[segmentIndex]
+        if (!delivery)
+          throw new Error(`Missing durable text delivery segment ${segmentIndex}`)
+        trace.deliveries[segmentIndex] = await options.runtime.trace.transitionDelivery(trace.authorization, { deliveryId: delivery.deliveryId, from: 'delivering', to: 'delivered', evidence: { kind: 'platformMessageId', platformMessageId: messageId }, at: timestampFromEpochMs(Date.now()) })
+      }
+      catch (error) { fail(event, error) }
+    },
+    delivered: async (event) => {
+      try {
         traces.delete(event.turnId)
       }
       catch (error) { fail(event, error) }
@@ -128,9 +175,11 @@ export function createTextMemoryAdapter(options: TextMemoryAdapterOptions): Disc
       const trace = traces.get(event.turnId)
       if (trace && options.runtime.trace) {
         const at = timestampFromEpochMs(Date.now())
-        for (const delivery of trace.deliveries) {
+        for (const [index, delivery] of trace.deliveries.entries()) {
+          if (delivery.state === 'delivered' || delivery.state === 'reconciled')
+            continue
           try {
-            await options.runtime.trace.transitionDelivery(trace.authorization, { deliveryId: delivery.deliveryId, from: 'delivering', to: 'failed', evidence: { kind: 'transportError', errorClass: 'discord-send-failed' }, at })
+            trace.deliveries[index] = await options.runtime.trace.transitionDelivery(trace.authorization, { deliveryId: delivery.deliveryId, from: delivery.state, to: 'failed', evidence: { kind: 'transportError', errorClass: 'discord-send-failed' }, at })
           }
           catch (transitionError) { options.onFailure?.(transitionError) }
         }

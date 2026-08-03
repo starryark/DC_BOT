@@ -2,8 +2,8 @@ import type { BrainProvider, BrainRequest } from '../providers/brain/types'
 
 import { describe, expect, it, vi } from 'vitest'
 
-import { BrainRateLimitError } from '../providers/brain/errors'
 import { buildDiscordActorEvidence } from '../memory/discord-actor-snapshot'
+import { BrainRateLimitError } from '../providers/brain/errors'
 import { MentionResponder } from './mention-responder'
 
 function event(overrides: Record<string, unknown> = {}) {
@@ -34,7 +34,7 @@ function fakeBrain(responses: Array<string | Error>): BrainProvider & { requests
   const requests: BrainRequest[] = []
   return {
     requests,
-    async *generate(request) {
+    async* generate(request) {
       requests.push(request)
       const response = responses.shift()
       if (response instanceof Error)
@@ -51,7 +51,7 @@ function mention(responder: MentionResponder, overrides: Record<string, unknown>
   })
 }
 
-describe('MentionResponder', () => {
+describe('mentionResponder', () => {
   it('removes ACT and DELAY control syntax from returned and remembered text', async () => {
     const brain = fakeBrain([
       '<|ACT:"emotion":{"name":"happy","intensity":0.8}|>Hello<|DELAY:1|> there',
@@ -74,6 +74,32 @@ describe('MentionResponder', () => {
     await mention(responder, { text: 'follow up' })
     expect(textOf(brain.requests[1]!)).toContain('first question')
     expect(textOf(brain.requests[1]!)).toContain('first answer')
+  })
+
+  it('uses current input only when active durable context is valid but empty', async () => {
+    const brain = fakeBrain(['first answer', 'second answer'])
+    const responder = new MentionResponder({
+      brain,
+      memoryContext: { contextFor: async () => ({ status: 'available', text: '' }) },
+    })
+    await mention(responder, { text: 'legacy secret' })
+    await mention(responder, { text: 'current question' })
+
+    const prompt = textOf(brain.requests[1]!)
+    expect(prompt).toContain('current question')
+    expect(prompt).not.toContain('legacy secret')
+    expect(prompt).not.toContain('first answer')
+  })
+
+  it('does not call the model when active durable context is required but unavailable', async () => {
+    const brain = fakeBrain(['must not run'])
+    const responder = new MentionResponder({
+      brain,
+      memoryContext: { contextFor: async () => ({ status: 'required_unavailable', error: new Error('context failed') }) },
+    })
+
+    await expect(mention(responder)).rejects.toThrow('context failed')
+    expect(brain.requests).toHaveLength(0)
   })
 
   it.each([
@@ -130,11 +156,13 @@ describe('MentionResponder', () => {
 
   it('serializes same-room requests and preserves their history order', async () => {
     let release!: () => void
-    const gate = new Promise<void>(resolve => { release = resolve })
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
     const starts: string[] = []
     let invocation = 0
     const brain: BrainProvider = {
-      async *generate(request) {
+      async* generate(request) {
         const current = invocation++ === 0 ? 'one' : 'two'
         starts.push(current)
         if (current === 'one')
@@ -157,10 +185,12 @@ describe('MentionResponder', () => {
 
   it('allows generation in different rooms to overlap', async () => {
     let release!: () => void
-    const gate = new Promise<void>(resolve => { release = resolve })
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
     const starts: string[] = []
     const brain: BrainProvider = {
-      async *generate(request) {
+      async* generate(request) {
         starts.push(request.guildId)
         await gate
         yield 'ok'
@@ -176,7 +206,7 @@ describe('MentionResponder', () => {
 
   it('caps accumulated streamed model output', async () => {
     const brain: BrainProvider = {
-      async *generate() {
+      async* generate() {
         for (let i = 0; i < 20; i++)
           yield 'x'.repeat(1_000)
       },

@@ -178,6 +178,7 @@ export interface AppConfig {
   memory: {
     mode: MemoryMode
     runtimeRoot?: string
+    bindingFile?: string
     flags: MemoryFeatureFlags
   }
   avatar: {
@@ -390,6 +391,7 @@ export function config(): AppConfig {
     memory: {
       mode: selectedMemoryProfile.mode,
       runtimeRoot: env.MEMORY_RUNTIME_ROOT?.trim() || undefined,
+      bindingFile: env.MEMORY_BINDING_FILE?.trim() || undefined,
       flags: selectedMemoryProfile.flags,
     },
 

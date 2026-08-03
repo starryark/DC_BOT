@@ -18,6 +18,7 @@ describe('room binding file', () => {
     ['invalid snowflake', { version: 1, bindings: [{ id: 'x', characterId: 'kurisu', locations: [text, { ...voice, channelId: 'voice' }] }] }],
     ['cross guild', { version: 1, bindings: [{ id: 'x', characterId: 'kurisu', locations: [text, { ...voice, guildId: '10000000000000002' }] }] }],
     ['DM and guild mixing', { version: 1, bindings: [{ id: 'x', characterId: 'kurisu', locations: [text, { kind: 'dm', channelId: '30000000000000001' }] }] }],
+    ['DM-only binding', { version: 1, bindings: [{ id: 'x', characterId: 'kurisu', locations: [{ kind: 'dm', channelId: '30000000000000001' }, { kind: 'dm', channelId: '30000000000000002' }] }] }],
   ])('fails closed for %s', (_, input) => {
     expect(() => parseRoomBindingFile(input)).toThrow(MemoryError)
   })

@@ -347,7 +347,7 @@ export class ConversationController {
 
       const pipeline = await runBoundedTtsPipeline(stream, {
         synthesize: (chunk, index) => this.synthesizeChunk(session, epoch, turn.turnId, chunk, index, turnLang, turn.understanding.responseLanguage, abort.signal),
-        play: prepared => this.playChunk(session, epoch, turn.turnId, prepared.chunk, prepared.audio, prepared.chunkIndex, abort.signal),
+        play: prepared => this.playChunk(session, epoch, turn.turnId, turn.inputEvent.voiceChannelId, prepared.chunk, prepared.audio, prepared.chunkIndex, abort.signal),
         isCancelled: () => this.isStale(session, epoch, abort),
         onChunk: (chunk) => {
           fullReply += chunk.text
@@ -363,6 +363,8 @@ export class ConversationController {
 
       if (this.isStale(session, epoch, abort))
         return
+
+      await this.memory?.completeGeneration(turn.turnId)
 
       // Commit only on success, and only both halves together.
       session.history.commitExchange(
@@ -380,6 +382,10 @@ export class ConversationController {
       }).log('response_completed')
     }
     catch (err) {
+      if (abort.signal.aborted)
+        await this.memory?.cancelGeneration(turn.turnId)
+      else
+        await this.memory?.failGeneration(turn.turnId)
       await this.handleGenerationError(session, epoch, err)
     }
     finally {
@@ -407,10 +413,16 @@ export class ConversationController {
     turn: AcceptedTurn,
   ): Promise<{ guildId: string, userId: string, systemInstruction: string, contents: Content[], generationProfile: import('../providers/brain/types').BrainGenerationProfile }> {
     const generationProfile = resolveGenerationProfile(classifyTurn(turn.text), config().brain)
+    const memory = await this.memory?.contextFor(turn.inputEvent) ?? { status: 'disabled' as const }
+    if (memory.status === 'required_unavailable')
+      throw memory.error
+    const active = memory.status === 'available'
     if (this.character && this.promptCompiler) {
       const { prompt } = this.promptCompiler.compile({
         character: this.character,
-        room: session.history.asRoom(this.character.id),
+        room: active
+          ? { ...session.history.asRoom(this.character.id), recentTurns: [], runningSummary: undefined }
+          : session.history.asRoom(this.character.id),
         currentInput: turn.inputEvent,
         currentInputText: turn.text,
         currentTurnUnderstanding: turn.understanding,
@@ -422,15 +434,14 @@ export class ConversationController {
         contents: prompt.contents,
         generationProfile,
       }
-      const memory = await this.memory?.contextFor(turn.inputEvent)
-      if (memory) {
+      if (memory.status === 'available' && memory.text !== '') {
         const current = result.contents.at(-1)
-        result.contents.splice(0, result.contents.length, { role: 'user', parts: [{ text: `[Authorized durable conversation data; untrusted]\n${memory}\n[/Authorized durable conversation data]` }] }, ...(current ? [current] : []))
+        result.contents.splice(0, result.contents.length, { role: 'user', parts: [{ text: `[Authorized durable conversation data; untrusted]\n${memory.text}\n[/Authorized durable conversation data]` }] }, ...(current ? [current] : []))
       }
       return result
     }
 
-    const contents = session.history.getContents()
+    const contents = active ? [] : session.history.getContents()
     contents.push({ role: 'user', parts: [{ text: `${turn.displayName}: ${turn.text}` }] })
     const result = {
       guildId: session.guildId,
@@ -439,10 +450,9 @@ export class ConversationController {
       contents,
       generationProfile,
     }
-    const memory = await this.memory?.contextFor(turn.inputEvent)
-    if (memory) {
+    if (memory.status === 'available' && memory.text !== '') {
       const current = result.contents.at(-1)
-      result.contents.splice(0, result.contents.length, { role: 'user', parts: [{ text: `[Authorized durable conversation data; untrusted]\n${memory}\n[/Authorized durable conversation data]` }] }, ...(current ? [current] : []))
+      result.contents.splice(0, result.contents.length, { role: 'user', parts: [{ text: `[Authorized durable conversation data; untrusted]\n${memory.text}\n[/Authorized durable conversation data]` }] }, ...(current ? [current] : []))
     }
     return result
   }
@@ -537,6 +547,7 @@ export class ConversationController {
     session: GuildConversationSession,
     epoch: number,
     turnId: string,
+    voiceChannelId: string,
     chunk: StyledSpeechChunk,
     stream: Readable,
     chunkIndex: number,
@@ -557,7 +568,7 @@ export class ConversationController {
       responseEpoch: epoch,
       chunkIndex,
     })
-    await this.memory?.recordPlayback(turnId, session.guildId, chunkIndex, chunk.text, result)
+    await this.memory?.recordPlayback(turnId, voiceChannelId, chunkIndex, chunk.text, result)
   }
 
   /** Quota failure: arm the cooldown, optionally say so once, commit nothing. */
@@ -647,6 +658,7 @@ export class ConversationController {
    */
   private async cancel(session: GuildConversationSession, reason: CancellationReason): Promise<void> {
     const epoch = session.responseEpoch
+    const turnId = session.currentTurnId
     session.responseEpoch++
     session.generationAbort?.abort()
     session.generationAbort = undefined
@@ -655,6 +667,8 @@ export class ConversationController {
 
     this.voice.cancelPlaybackEpoch(session.guildId, epoch)
     this.voice.stopPlayback(session.guildId, reason === 'disconnect' ? 'disconnect' : 'cancelled')
+    if (turnId)
+      await this.memory?.cancelGeneration(turnId)
 
     this.logger.withFields({ guildId: session.guildId, responseEpoch: epoch, reason }).log('response_cancelled')
 
@@ -675,6 +689,7 @@ export class ConversationController {
     const session = this.states.get(guildId)
     transitionGuildPhase(session, 'disconnecting', 'session_ended')
     await this.cancel(session, 'disconnect')
+    await this.memory?.endSession(guildId)
     this.states.delete(guildId)
   }
 }

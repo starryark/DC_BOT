@@ -7,6 +7,7 @@ import type {
   DeliveryAttempt,
   DeliveryTransition,
   GenerationAttempt,
+  GenerationState,
   InboundEventEnvelope,
   OutputSegment,
 } from '@proj-airi/memory-domain'
@@ -26,6 +27,7 @@ export interface BegunGeneration {
 export interface TraceMemoryAuthority {
   appendEvent: (authorization: AuthorizationContext, input: AppendEventInput) => Promise<AppendedEvent>
   beginGeneration: (authorization: AuthorizationContext, input: BeginGenerationInput) => Promise<BegunGeneration>
+  transitionGeneration: (authorization: AuthorizationContext, generation: GenerationAttempt, from: GenerationState, to: GenerationState, at: import('@proj-airi/memory-domain').Timestamp) => Promise<GenerationAttempt>
   appendSegments: (authorization: AuthorizationContext, generation: GenerationAttempt, segments: readonly Omit<OutputSegment, 'generationId'>[]) => Promise<readonly OutputSegment[]>
   beginDelivery: (authorization: AuthorizationContext, input: BeginDeliveryInput) => Promise<DeliveryAttempt>
   transitionDelivery: (authorization: AuthorizationContext, transition: DeliveryTransition) => Promise<DeliveryAttempt>

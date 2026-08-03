@@ -1,7 +1,7 @@
 /* eslint-disable antfu/consistent-list-newline, antfu/if-newline, perfectionist/sort-named-imports, style/brace-style, style/max-statements-per-line, ts/consistent-type-definitions */
 import type { DatabaseSync } from 'node:sqlite'
 
-import type { AppendEventInput, EventId, EventLifecycleState, EventLifecycleTransition, InboundEventEnvelope, LogicalRoomId, PhysicalRoomId, Timestamp } from '@proj-airi/memory-domain'
+import type { AppendEventInput, CharacterId, EventId, EventLifecycleState, EventLifecycleTransition, InboundEventEnvelope, LogicalRoomId, PhysicalRoomId, Timestamp } from '@proj-airi/memory-domain'
 
 import { createHash, randomUUID } from 'node:crypto'
 
@@ -83,6 +83,19 @@ export class EventRepository {
       return (this.db.prepare(`SELECT e.* FROM inbound_event_records e JOIN physical_room_records p ON p.physical_room_id=e.physical_room_id JOIN logical_room_repository_records l ON l.logical_room_id=e.logical_room_id WHERE e.logical_room_id=? AND e.physical_room_id=? AND p.lifecycle NOT IN ('inaccessible','deleted') ORDER BY e.occurred_at,e.event_id`).all(scope.logicalRoomId, scope.physicalRoomId) as EventRow[]).map(envelope)
     }
     catch (error) { persistence('SQLite ordered event read failed', error) }
+  }
+
+  /** Reads at most `limit` newest usable inbound events across one authorized logical room. */
+  recentForLogical(scope: { logicalRoomId: LogicalRoomId, characterId: CharacterId, limit: number, excludeEventIds?: readonly EventId[] }): readonly InboundEventEnvelope[] {
+    if (!Number.isSafeInteger(scope.limit) || scope.limit < 1 || scope.limit > 1_000)
+      throw new RangeError('logical-room event limit must be between 1 and 1000')
+    const excluded = scope.excludeEventIds ?? []
+    const exclusion = excluded.length ? `AND e.event_id NOT IN (${excluded.map(() => '?').join(',')})` : ''
+    try {
+      const rows = this.db.prepare(`SELECT e.* FROM inbound_event_records e JOIN logical_room_repository_records l ON l.logical_room_id=e.logical_room_id WHERE e.logical_room_id=? AND l.character_id=? ${exclusion} AND json_extract(e.payload_json,'$.redacted') IS NOT 1 AND (SELECT to_state FROM inbound_event_lifecycle x WHERE x.event_id=e.event_id ORDER BY ordinal DESC LIMIT 1) NOT IN ('redacted','tombstoned') ORDER BY e.occurred_at DESC,e.room_sequence DESC,e.event_id DESC LIMIT ?`).all(scope.logicalRoomId, scope.characterId, ...excluded, scope.limit) as EventRow[]
+      return rows.reverse().map(envelope)
+    }
+    catch (error) { persistence('SQLite bounded logical-room event read failed', error) }
   }
 
   lifecycle(eventId: EventId): readonly EventLifecycleTransition[] {

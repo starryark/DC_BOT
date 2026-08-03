@@ -1,10 +1,9 @@
-import { existsSync, mkdtempSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { afterEach, describe, expect, it } from 'vitest'
-
 import { asCharacterId, asRequestId, asSegmentId, asTimestamp } from '@proj-airi/memory-domain'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import { buildDiscordActorEvidence } from './discord-actor-snapshot'
 import { memoryProfile } from './profile'
@@ -23,11 +22,49 @@ function tempRoot(): string {
 }
 
 describe('createMemoryRuntime', () => {
+  it('shares authorized logical-room history across configured text and voice members and retires removed members on restart', async () => {
+    const repo = tempRoot()
+    const bindingFile = join(repo, 'bindings.json')
+    const characterId = asCharacterId('kurisu')
+    const textLocation = { platform: 'discord' as const, guildId: '10000000000000001', channelId: '30000000000000001', channelKind: 'guildText' as const }
+    const voiceLocation = { platform: 'discord' as const, guildId: '10000000000000001', channelId: '30000000000000002', channelKind: 'guildVoice' as const }
+    writeFileSync(bindingFile, JSON.stringify({ version: 1, bindings: [{ id: 'lab', characterId, locations: [{ kind: 'guildText', guildId: textLocation.guildId, channelId: textLocation.channelId }, { kind: 'guildVoice', guildId: voiceLocation.guildId, channelId: voiceLocation.channelId }] }] }))
+    const runtime = createMemoryRuntime({ ...memoryProfile('active', {}), repoRoot: repo, characterId, bindingFile })
+    expect(runtime.health.bindingReconciliation?.created).toBe(2)
+    const ingressAuthorization = { principal: { botUserId: 'bot', operations: ['identity:observe', 'room:read'] as const, scopes: [{ kind: 'guild' as const, id: textLocation.guildId }], operator: false }, characterId }
+    const evidence = buildDiscordActorEvidence({ userId: '20000000000000001', displayName: 'Alex', guildId: textLocation.guildId, observedAtEpochMs: Date.now() + 1_000, source: 'gateway' })
+    const text = await runtime.ingress!.resolve({ authorization: ingressAuthorization, actorEvidence: evidence, location: textLocation, observationKey: 'bound:text' })
+    const voice = await runtime.ingress!.resolve({ authorization: ingressAuthorization, actorEvidence: evidence, location: voiceLocation, observationKey: 'bound:voice' })
+    expect(voice.room.logicalRoomId).toBe(text.room.logicalRoomId)
+    const authorization = { principal: { botUserId: 'bot', operations: ['event:write', 'context:read'] as const, scopes: [{ kind: 'logical_room' as const, id: text.room.logicalRoomId }], operator: false }, characterId, logicalRoomId: text.room.logicalRoomId }
+    await runtime.trace!.appendEvent(authorization, { idempotencyKey: asRequestId('bound-event'), kind: 'user_text', actor: text.actor, physicalRoomId: text.room.physicalRoomId, logicalRoomId: text.room.logicalRoomId, occurredAt: asTimestamp('2026-08-02T10:00:00.000Z'), payload: { content: 'cross-room durable history' }, retentionClass: 'transcript' })
+    const context = await runtime.context!.assembleRecent({ authorization, logicalRoomId: voice.room.logicalRoomId, physicalRoomId: voice.room.physicalRoomId, characterId, maxItems: 10, maxCharacters: 500 })
+    expect(context.text).toContain('cross-room durable history')
+    expect(context.manifest.bindingRevision).toBeGreaterThan(0)
+    const privacyInput = { actorEvidence: evidence, discordUserId: '20000000000000001', guildId: textLocation.guildId, channelId: textLocation.channelId, channelKind: 'guildText' as const, observedAt: Date.now() + 1_000 }
+    const status = await runtime.privacy!.execute({ ...privacyInput, operation: { kind: 'status' } })
+    expect(status.message).toContain('1 requester event')
+    expect(status.message).toContain('Explicit semantic memory is disabled')
+    const remember = await runtime.privacy!.execute({ ...privacyInput, operation: { kind: 'remember', predicate: 'favorite', value: 'Dr Pepper' } })
+    expect(remember.code).toBe('capability_disabled')
+    const afterDisabledWrite = await runtime.privacy!.execute({ ...privacyInput, operation: { kind: 'status' } })
+    expect(afterDisabledWrite.message).toContain('0 existing explicit fact')
+    expect(afterDisabledWrite.message).toContain('1 requester event')
+    await runtime.close()
+
+    writeFileSync(bindingFile, JSON.stringify({ version: 1, bindings: [] }))
+    const restarted = createMemoryRuntime({ ...memoryProfile('active', {}), repoRoot: repo, characterId, bindingFile })
+    expect(restarted.health.bindingReconciliation?.retired).toBe(2)
+    const isolatedVoice = await restarted.ingress!.resolve({ authorization: ingressAuthorization, actorEvidence: evidence, location: voiceLocation, observationKey: 'bound:voice:retired' })
+    expect(isolatedVoice.room.logicalRoomId).not.toBe(text.room.logicalRoomId)
+    await restarted.close()
+  })
+
   it('does no filesystem work in off mode', async () => {
     const repo = tempRoot()
     const expected = join(repo, '.local', 'memory')
     const profile = memoryProfile('off', {})
-    const runtime = createMemoryRuntime({ ...profile, repoRoot: repo })
+    const runtime = createMemoryRuntime({ ...profile, repoRoot: repo, characterId: asCharacterId('kurisu') })
     expect(runtime.health.status).toBe('off')
     expect(existsSync(expected)).toBe(false)
     await runtime.close()
@@ -36,17 +73,17 @@ describe('createMemoryRuntime', () => {
   it('opens shadow authority and releases writer ownership on close', async () => {
     const repo = tempRoot()
     const profile = memoryProfile('shadow', {})
-    const first = createMemoryRuntime({ ...profile, repoRoot: repo })
+    const first = createMemoryRuntime({ ...profile, repoRoot: repo, characterId: asCharacterId('kurisu') })
     expect(existsSync(join(repo, '.local', 'memory', 'authority', 'memory.sqlite'))).toBe(true)
-    expect(() => createMemoryRuntime({ ...profile, repoRoot: repo })).toThrow('ownership')
+    expect(() => createMemoryRuntime({ ...profile, repoRoot: repo, characterId: asCharacterId('kurisu') })).toThrow('ownership')
     await first.close()
-    const replacement = createMemoryRuntime({ ...profile, repoRoot: repo })
+    const replacement = createMemoryRuntime({ ...profile, repoRoot: repo, characterId: asCharacterId('kurisu') })
     await replacement.close()
   })
 
   it('resolves one Discord identity across text and voice without merging names', async () => {
     const repo = tempRoot()
-    const runtime = createMemoryRuntime({ ...memoryProfile('shadow', {}), repoRoot: repo })
+    const runtime = createMemoryRuntime({ ...memoryProfile('shadow', {}), repoRoot: repo, characterId: asCharacterId('kurisu') })
     const authorization = {
       principal: {
         botUserId: '99999999999999999',
@@ -95,7 +132,7 @@ describe('createMemoryRuntime', () => {
 
   it('denies ingress before creating identity or room records', async () => {
     const repo = tempRoot()
-    const runtime = createMemoryRuntime({ ...memoryProfile('shadow', {}), repoRoot: repo })
+    const runtime = createMemoryRuntime({ ...memoryProfile('shadow', {}), repoRoot: repo, characterId: asCharacterId('kurisu') })
     const input = {
       authorization: {
         principal: { botUserId: '99999999999999999', operations: [] as const, scopes: [] as const, operator: false },
@@ -111,7 +148,7 @@ describe('createMemoryRuntime', () => {
 
   it('persists idempotent events, multi-cause generations, and evidenced text delivery', async () => {
     const repo = tempRoot()
-    const runtime = createMemoryRuntime({ ...memoryProfile('shadow', {}), repoRoot: repo })
+    const runtime = createMemoryRuntime({ ...memoryProfile('shadow', {}), repoRoot: repo, characterId: asCharacterId('kurisu') })
     const characterId = asCharacterId('kurisu')
     const ingressAuthorization = {
       principal: { botUserId: '99999999999999999', operations: ['identity:observe', 'room:read'] as const, scopes: [{ kind: 'guild' as const, id: '10000000000000001' }], operator: false },
@@ -144,10 +181,13 @@ describe('createMemoryRuntime', () => {
     expect(retry.deduplicated).toBe(true)
 
     const generation = await runtime.trace!.beginGeneration(authorization, {
-      idempotencyKey: asRequestId('turn:1'), logicalRoomId: resolved.room.logicalRoomId, characterId,
+      idempotencyKey: asRequestId('turn:1'),
+      logicalRoomId: resolved.room.logicalRoomId,
+      characterId,
       causes: [{ inboundEventId: first.envelope.eventId, role: 'trigger' }],
       evidence: { observedRoomVersion: 1, observedEventIds: [first.envelope.eventId], contextManifestHash: 'manifest', observedBindingVersion: 0, capturedAt: asTimestamp('2026-08-02T10:00:01.000Z') },
-      modelRef: 'test/model', startedAt: asTimestamp('2026-08-02T10:00:01.000Z'),
+      modelRef: 'test/model',
+      startedAt: asTimestamp('2026-08-02T10:00:01.000Z'),
     })
     expect(generation.edges).toHaveLength(1)
     const [segment] = await runtime.trace!.appendSegments(authorization, generation.generation, [{ segmentId: asSegmentId('segment:1'), ordinal: 0, modality: 'text', text: 'hi' }])
@@ -159,6 +199,18 @@ describe('createMemoryRuntime', () => {
     expect(context.text).toContain('hello')
     expect(context.text).toContain('hi')
     expect(context.text).not.toContain(String(resolved.actor.kind === 'attributed' ? resolved.actor.personId : ''))
+    await runtime.privacy!.execute({
+      operation: { kind: 'forget' },
+      actorEvidence: buildDiscordActorEvidence({ userId: '20000000000000001', displayName: 'Alex', guildId: '10000000000000001', observedAtEpochMs: Date.now(), source: 'gateway' }),
+      discordUserId: '20000000000000001',
+      guildId: '10000000000000001',
+      channelId: '30000000000000001',
+      channelKind: 'guildText',
+      observedAt: Date.now(),
+    })
+    const forgotten = await runtime.context!.assembleRecent({ authorization, logicalRoomId: resolved.room.logicalRoomId, physicalRoomId: resolved.room.physicalRoomId, characterId, maxItems: 10, maxCharacters: 500 })
+    expect(forgotten.text).not.toContain('hello')
+    expect(forgotten.text).not.toContain('hi')
     await runtime.close()
   })
 })

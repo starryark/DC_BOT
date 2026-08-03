@@ -21,6 +21,44 @@ beforeEach(() => { db = new SQLiteDatabase(':memory:'); migrate(db); db.prepare(
 afterEach(() => db.close())
 
 describe('imp-203 real SQLite scope matrix', () => {
+  it('reconciles one configured owner idempotently and retires removed members without touching unmanaged bindings', () => {
+    const rooms = new RoomRepository(db)
+    const bindings = new BindingRepository(db)
+    const one = guild('101')
+    const two = guild('102', 'guildVoice')
+    const logical = asLogicalRoomId('configured-logical')
+    const members = [
+      { bindingId: asBindingId('configured-one'), logicalRoomId: logical, characterId: character, location: one },
+      { bindingId: asBindingId('configured-two'), logicalRoomId: logical, characterId: character, location: two },
+    ]
+    const first = bindings.reconcileConfigured({ owner: 'config:test', members, at: at(1) })
+    expect(first.created).toEqual([asBindingId('configured-one'), asBindingId('configured-two')])
+    expect(bindings.reconcileConfigured({ owner: 'config:test', members, at: at(2) }).unchanged).toHaveLength(2)
+
+    const unmanagedLocation = guild('103')
+    const unmanagedPhysical = rooms.observe({ location: unmanagedLocation, observedAt: at(1) }).physicalRoomId
+    const unmanagedLogical = asLogicalRoomId('unmanaged-logical')
+    bindings.ensureLogicalRoom({ logicalRoomId: unmanagedLogical, characterId: character, privacyDomain: 'guild', guildId: unmanagedLocation.guildId, createdAt: at(1) })
+    const unmanaged = bindings.create({ bindingId: asBindingId('unmanaged'), physicalRoomId: unmanagedPhysical, logicalRoomId: unmanagedLogical, characterId: character, idempotencyKey: 'unmanaged', bindingKind: 'explicit', policy: { crossChannelHistory: true, direction: 'bidirectional' }, validFrom: at(1), authorizedBy: 'operator' })
+
+    const reduced = bindings.reconcileConfigured({ owner: 'config:test', members: [members[0]!], at: at(3) })
+    expect(reduced.retired).toEqual([asBindingId('configured-two')])
+    expect(rooms.resolve(two, character, at(3)).roomKind).toBe('isolated')
+    expect(bindings.current(unmanaged.bindingId)).toBeDefined()
+  })
+
+  it('rolls back the complete configured reconciliation when any member cannot be persisted', () => {
+    const bindings = new BindingRepository(db)
+    db.exec('CREATE TRIGGER reject_configured_member BEFORE INSERT ON room_binding_records WHEN NEW.binding_id=\'configured-two\' BEGIN SELECT RAISE(ABORT,\'forced\'); END')
+    const members = [
+      { bindingId: asBindingId('configured-one'), logicalRoomId: asLogicalRoomId('configured-logical'), characterId: character, location: guild('111') },
+      { bindingId: asBindingId('configured-two'), logicalRoomId: asLogicalRoomId('configured-logical'), characterId: character, location: guild('112', 'guildVoice') },
+    ]
+    expect(() => bindings.reconcileConfigured({ owner: 'config:test', members, at: at(1) })).toThrowError(MemoryError)
+    expect(db.prepare('SELECT binding_id FROM room_binding_records').all()).toEqual([])
+    expect(db.prepare('SELECT physical_room_id FROM physical_room_records').all()).toEqual([])
+  })
+
   it('preserves exact snowflakes, locator domains, kinds, rename identity, and observation idempotency', () => {
     const rooms = new RoomRepository(db); const huge = guild('18446744073709551615')
     const first = rooms.observe({ location: huge, observedAt: at(1), displayName: 'general' })

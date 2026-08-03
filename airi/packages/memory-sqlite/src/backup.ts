@@ -7,6 +7,7 @@ import { backup, DatabaseSync as SqliteDatabase } from 'node:sqlite'
 
 import { MemoryError } from '@proj-airi/memory-domain'
 
+import { applyDeletionTarget, deletionTarget, verifyDeletionTarget } from './deletion-targets.js'
 import { latestSchemaVersion, migrations } from './migrations/index.js'
 
 export interface BackupManifest { readonly format: 1, readonly createdAt: string, readonly schemaVersion: number, readonly migrationChecksums: readonly string[], readonly bytes: number }
@@ -24,22 +25,12 @@ export function captureDeletionObligations(database: DatabaseSync): readonly Del
 
 /** Reapply known obligations to an isolated restore candidate and verify absence. */
 export function replayDeletionObligations(database: DatabaseSync, obligations: readonly DeletionObligation[]): void {
-  const supported: Record<string, { sql: string, verify: string }> = {
-    inbound_event_records: { sql: `UPDATE inbound_event_records SET payload_json=json_object('redacted',json('true')) WHERE event_id=?`, verify: `SELECT count(*) count FROM inbound_event_records WHERE event_id=? AND json_extract(payload_json,'$.redacted') IS NOT 1` },
-    semantic_fact_repository_records: { sql: `UPDATE semantic_fact_repository_records SET tombstoned_by=coalesce(tombstoned_by,'restore-obligation') WHERE fact_id=?`, verify: `SELECT count(*) count FROM semantic_fact_repository_records WHERE fact_id=? AND tombstoned_by IS NULL` },
-    episodic_repository_records: { sql: `UPDATE episodic_repository_records SET tombstoned_by=coalesce(tombstoned_by,'restore-obligation') WHERE episodic_id=?`, verify: `SELECT count(*) count FROM episodic_repository_records WHERE episodic_id=? AND tombstoned_by IS NULL` },
-    summary_repository_records: { sql: `UPDATE summary_repository_records SET stale=1,tombstoned_by=coalesce(tombstoned_by,'restore-obligation') WHERE summary_id=?`, verify: `SELECT count(*) count FROM summary_repository_records WHERE summary_id=? AND tombstoned_by IS NULL` },
-  }
   database.exec('BEGIN IMMEDIATE')
   try {
     for (const obligation of obligations) {
-      const target = supported[obligation.targetTable]
-      if (!target)
-        throw new MemoryError('POLICY_VIOLATION', `unsupported deletion obligation target: ${obligation.targetTable}`)
-      database.prepare(target.sql).run(obligation.targetId)
-      const remaining = database.prepare(target.verify).get(obligation.targetId) as { count: number }
-      if (remaining.count !== 0)
-        throw new MemoryError('PERSISTENCE_FAILED', 'restore deletion obligation verification failed')
+      const target = deletionTarget(obligation.targetTable, obligation.targetId)
+      applyDeletionTarget(database, target, 'restore-obligation')
+      verifyDeletionTarget(database, target)
     }
     database.exec('COMMIT')
   }

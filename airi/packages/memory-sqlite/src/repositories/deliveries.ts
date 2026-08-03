@@ -8,6 +8,7 @@ import { asDeliveryId, asGenerationId, asRequestId, asSegmentId, asTimestamp, as
 export interface CreateDeliveryResult { attempt: DeliveryAttempt, deduplicated: boolean }
 export interface EligibleAssistantOutput { segment: OutputSegment, text: string, attempt: DeliveryAttempt }
 export interface ExactOutputScope { logicalRoomId: LogicalRoomId, physicalRoomId: PhysicalRoomId, characterId: CharacterId }
+export interface LogicalOutputScope { logicalRoomId: LogicalRoomId, characterId: CharacterId }
 type Row = Record<string, string | number | null>
 
 function persistence(message: string, cause: unknown): never { if (cause instanceof MemoryError) throw cause; throw new MemoryError('PERSISTENCE_FAILED', message, { cause }) }
@@ -63,5 +64,18 @@ export class DeliveryRepository {
       return rows.flatMap((row) => { const output: OutputSegment = { segmentId: asSegmentId(String(row.segment_id)), generationId: asGenerationId(String(row.generation_id)), ordinal: Number(row.ordinal), modality: String(row.modality) as OutputSegment['modality'], text: String(row.exact_text) }; const delivery = attempt(row); const text = eligibleSegmentText(output, delivery, policy); return text == null ? [] : [{ segment: output, text, attempt: delivery }] })
     }
     catch (error) { persistence('SQLite context-eligible output lookup failed', error) }
+  }
+
+  /** Reads a bounded newest-first candidate set, then applies delivery eligibility without a physical-room history filter. */
+  eligibleForLogical(scope: LogicalOutputScope & { limit: number, excludeEventIds?: readonly string[] }, policy: ContextEligibilityPolicy = STRICT_CONTEXT_ELIGIBILITY): readonly EligibleAssistantOutput[] {
+    if (!Number.isSafeInteger(scope.limit) || scope.limit < 1 || scope.limit > 1_000)
+      throw new RangeError('logical-room output limit must be between 1 and 1000')
+    const excluded = scope.excludeEventIds ?? []
+    const exclusion = excluded.length ? `AND NOT EXISTS (SELECT 1 FROM generation_causal_edges ce WHERE ce.generation_id=g.generation_id AND ce.inbound_event_id IN (${excluded.map(() => '?').join(',')}))` : ''
+    try {
+      const rows = this.db.prepare(`SELECT s.*,d.* FROM output_segment_records s JOIN generation_attempt_records g ON g.generation_id=s.generation_id JOIN delivery_attempt_records d ON d.delivery_id=(SELECT d2.delivery_id FROM delivery_attempt_records d2 WHERE d2.segment_id=s.segment_id ORDER BY d2.attempt_number DESC,d2.delivery_id DESC LIMIT 1) WHERE g.logical_room_id=? AND g.character_id=? ${exclusion} AND NOT EXISTS (SELECT 1 FROM deletion_tombstones t WHERE t.target_table='output_segment_records' AND t.target_id=s.segment_id) ORDER BY d.last_transition_at DESC,s.ordinal DESC,s.segment_id DESC LIMIT ?`).all(scope.logicalRoomId, scope.characterId, ...excluded, scope.limit) as Row[]
+      return rows.reverse().flatMap((row) => { const output: OutputSegment = { segmentId: asSegmentId(String(row.segment_id)), generationId: asGenerationId(String(row.generation_id)), ordinal: Number(row.ordinal), modality: String(row.modality) as OutputSegment['modality'], text: String(row.exact_text) }; const delivery = attempt(row); const text = eligibleSegmentText(output, delivery, policy); return text == null ? [] : [{ segment: output, text, attempt: delivery }] })
+    }
+    catch (error) { persistence('SQLite bounded logical-room output read failed', error) }
   }
 }

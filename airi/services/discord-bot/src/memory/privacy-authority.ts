@@ -20,6 +20,7 @@ export interface PrivacyCommandInput {
 
 export interface PrivacyCommandResult {
   message: string
+  code?: 'capability_disabled'
   attachment?: { name: string, data: string }
 }
 

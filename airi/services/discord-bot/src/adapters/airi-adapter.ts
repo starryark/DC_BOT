@@ -285,6 +285,7 @@ export class DiscordAdapter {
       try {
         if (this.mentionResponder) {
           await this.textMemoryObserver?.admit(event, { isDirectMessage, isThread: message.channel.isThread() })
+          await this.textMemoryObserver?.beginGeneration(event)
           const refreshTyping = async (): Promise<void> => {
             try {
               await message.channel.sendTyping()
@@ -306,12 +307,14 @@ export class DiscordAdapter {
             })
             const chunks = chunkDiscordText(response)
             await this.textMemoryObserver?.generated(event, chunks)
-            if (chunks.length > 0) {
-              const sentIds = [(await message.reply({ content: chunks[0], allowedMentions: ALLOWED_MENTIONS })).id]
-              for (const chunk of chunks.slice(1))
-                sentIds.push((await message.channel.send({ content: chunk, allowedMentions: ALLOWED_MENTIONS })).id)
-              await this.textMemoryObserver?.delivered(event, sentIds)
+            for (const [index, chunk] of chunks.entries()) {
+              await this.textMemoryObserver?.delivering(event, index)
+              const sent = index === 0
+                ? await message.reply({ content: chunk, allowedMentions: ALLOWED_MENTIONS })
+                : await message.channel.send({ content: chunk, allowedMentions: ALLOWED_MENTIONS })
+              await this.textMemoryObserver?.deliveredSegment(event, index, sent.id)
             }
+            await this.textMemoryObserver?.delivered(event)
           }
           finally {
             clearInterval(typingInterval)
