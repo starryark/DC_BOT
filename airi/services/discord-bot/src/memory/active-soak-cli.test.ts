@@ -60,7 +60,6 @@ function attestationDocument(commitSha: string) {
     format: 1,
     runId: RUN_ID,
     commitSha,
-    reviewerIndependenceDeclared: true,
     scenarios: SOAK_SCENARIOS.map((scenario, index) => ({
       id: scenario.id,
       from: `2026-08-02T10:00:${String(index * 4).padStart(2, '0')}.000Z`,

@@ -6,7 +6,9 @@ Active-ready means eligible for deliberate opt-in deployment. It never changes t
 
 ## Prerequisites
 
-Use a dedicated credential installed only in a private guild, an absolute isolated memory root, private text/thread/voice locations, working ASR/model/TTS/playback, a human observer, and a reviewer who did not implement the report tooling.
+Use a dedicated credential installed only in a private guild, an absolute isolated memory root, private text/thread/voice locations, working ASR/model/TTS/playback, and a human observer.
+
+This procedure carries **no independent-review requirement**. A qualification produced by it is an operator-attested runtime qualification and nothing more: it does not certify that anyone other than the operator examined the evidence. Do not describe a run qualified here as independently reviewed.
 
 ### The memory character id
 
@@ -88,7 +90,6 @@ The machine assertions are:
   "format": 1,
   "runId": "<matches run state>",
   "commitSha": "<full 40-character sha>",
-  "reviewerIndependenceDeclared": true,
   "scenarios": [
     { "id": "empty-history-text", "from": "<iso>", "to": "<iso>", "observed": "pass", "note": "optional, max 280 chars" }
   ],
@@ -98,7 +99,7 @@ The machine assertions are:
 }
 ```
 
-`reviewerIndependenceDeclared` is the operator's self-report that an independent reviewer was identified before execution. It is not machine proof of anything: no durable record can show who reviewed a run. The dated reviewer decision produced in "Review and promotion" remains the authoritative record of independence, and acceptance depends on it, not on this flag.
+The attestation carries no independence declaration. The schema is strict, so an older attestation still containing `reviewerIndependenceDeclared` is refused outright rather than accepted and ignored — a document that still claims an independent review must not be able to produce a report.
 
 Each of the thirteen scenario ids must appear **exactly once**, with `from` strictly before `to`. No two windows may overlap or touch. Scenario presence is decided by inclusive timestamp range, so overlapping windows would let one generation satisfy several scenarios' evidence checks and collapse thirteen required executions into one; touching windows would double-count a record landing on the shared boundary. This runbook identifies no permitted overlap. In particular the `active-to-off-rollback` window must sit wholly after the active period, or active generations would be miscounted as post-rollback prompt use.
 
@@ -138,15 +139,14 @@ The only documented rollback is:
 
 Do not roll directly from active to shadow; current policy rejects that transition as split-brain. A later off-to-shadow start is a separate rollout transition.
 
-## Review and promotion
+## Promotion
 
-The reviewer must confirm exact pre-model manifests, delivery observations, deletion and old-backup restore, and the active-to-off drill at the same full commit, and must run `verify` themselves against the checkout being promoted. The reviewer must not be the implementer of the report tooling or the primary observer, and their decision must be dated and must name the reviewer and observer roles.
+The operator must confirm exact pre-model manifests, delivery observations, deletion and old-backup restore, and the active-to-off drill at the same full commit, and must run `verify` against the checkout being promoted.
 
-Only then may the promotion targets state that recent active memory is evidence-qualified for deliberate opt-in use at the reviewed commit and configuration. The promotion targets are exactly:
+Only then may the promotion targets state that recent active memory is operator-qualified for deliberate opt-in use at the qualified commit and configuration. Promotion records must say **operator-qualified**, never "reviewed" or "independently verified", because no second party examined the evidence. The promotion targets are exactly:
 
 - `docs/memory/CURRENT.md`
 - `docs/memory/evidence/evidence-index.md`
-- the dated reviewer decision document
 
 A documentation-only promotion commit does not become the qualified runtime SHA; the record must say that the live soak qualified the candidate SHA, not the commit that writes the record down.
 

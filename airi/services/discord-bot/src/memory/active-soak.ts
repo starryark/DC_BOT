@@ -66,17 +66,19 @@ const attestationSchema = v.strictObject({
   format: v.literal(1),
   runId: v.string(),
   commitSha: hex(40),
-  /**
-   * The operator's declaration that an independent reviewer was identified
-   * before execution.
-   *
-   * This is a self-report, not machine proof: nothing in a database can show
-   * who reviewed a run. Acceptance still requires the separate dated reviewer
-   * decision, which remains the authoritative record of independence. The
-   * field exists only so an attestation written without a reviewer in place
-   * cannot be parsed at all.
-   */
-  reviewerIndependenceDeclared: v.literal(true),
+  // NOTICE:
+  // `reviewerIndependenceDeclared` was removed deliberately, not forgotten.
+  //
+  // It required a literal `true`, so an attestation written without an
+  // independent reviewer could not be parsed at all. On a single-operator
+  // deployment no such reviewer exists, which made every run unqualifiable
+  // rather than merely unreviewed.
+  //
+  // The field is deleted rather than defaulted to `true`, because a default
+  // would have the report assert an independent review that never happened.
+  // A report produced by this schema makes no independence claim whatsoever,
+  // and `verify` no longer treats independence as an acceptance rule.
+  // Reinstate the field, not a default, if a reviewer role is restored.
   scenarios: v.array(v.strictObject({
     id: v.picklist(scenarioIds),
     from: isoTimestamp,

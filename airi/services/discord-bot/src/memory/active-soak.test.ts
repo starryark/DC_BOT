@@ -81,7 +81,6 @@ function rawAttestation(overrides: Record<string, unknown> = {}) {
     format: 1,
     runId: 'soak-001',
     commitSha,
-    reviewerIndependenceDeclared: true,
     scenarios: attestedScenarios(),
     rollbackDrillPassed: true,
     deletionVerified: true,
@@ -162,8 +161,16 @@ describe('active soak run state and attestation', () => {
     expect(() => parseRunState({ ...runState(), scenarios: ['not-a-scenario'] })).toThrow(/invalid/i)
   })
 
-  it('rejects an attestation that omits the independent-reviewer declaration', () => {
-    expect(() => parseAttestation(rawAttestation({ reviewerIndependenceDeclared: false }))).toThrow(/invalid or incomplete/i)
+  // The independence gate was removed for single-operator deployments. The
+  // schema is strict, so a stale attestation still carrying the field is
+  // refused rather than silently accepted — which keeps a report from being
+  // produced from a document that still claims an independent review.
+  it('refuses an attestation still carrying the removed independent-reviewer declaration', () => {
+    expect(() => parseAttestation(rawAttestation({ reviewerIndependenceDeclared: true }))).toThrow(/invalid or incomplete/i)
+  })
+
+  it('accepts an attestation that makes no independence claim at all', () => {
+    expect(() => parseAttestation(rawAttestation())).not.toThrow()
   })
 
   it('refuses to report when the attestation belongs to a different run or commit', () => {
