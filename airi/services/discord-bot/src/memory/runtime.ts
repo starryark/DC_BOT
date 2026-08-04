@@ -10,7 +10,7 @@ import type { TraceMemoryAuthority } from './trace-authority'
 import { createHash, randomUUID } from 'node:crypto'
 import { mkdirSync } from 'node:fs'
 
-import { asDeliveryId, asGenerationId, assertAuthorized, asTimestamp, attributedActor, buildCausalEdges, projectPresentation } from '@proj-airi/memory-domain'
+import { asCharacterId, asDeliveryId, asGenerationId, assertAuthorized, asTimestamp, attributedActor, buildCausalEdges, isValidId, MemoryError, projectPresentation } from '@proj-airi/memory-domain'
 import { BindingRepository, CausalEdgeRepository, DeliveryRepository, EventRepository, GenerationRepository, IdentityRepository, openAuthoritativeSqliteDatabase, OutputRepository, PolicyDataRepository, PrivacyOperationRepository, PrivacyRepository, RoomRepository } from '@proj-airi/memory-sqlite'
 
 import { memoryPosture } from './feature-flags'
@@ -45,6 +45,43 @@ export interface CreateMemoryRuntimeOptions {
   configuredRoot?: string
   characterId: CharacterId
   bindingFile?: string
+}
+
+/**
+ * Derives the memory {@link CharacterId} from the configured character key
+ * (`CHARACTER_ID`), which is the identity an operator must also write into
+ * `binding.characterId`.
+ *
+ * Memory identity is taken from the configured key and never from a loaded
+ * card's `id`. The card is optional and may fail to load, so keying memory off
+ * it would move durable identity between `Makise Kurisu` and `Makise-Kurisu`
+ * depending on whether a JSON file happened to parse, orphaning every row
+ * written under the other spelling. The card keeps its own folder and display
+ * identity; only this value crosses into the memory domain.
+ *
+ * Character folders are named for humans, but domain ids reject whitespace so a
+ * display name can never become a durable author (ADR-006). Spaces are the one
+ * difference that is bridged; every other invalid character still throws,
+ * because an id quietly coerced into something else would not match the
+ * operator's binding file and would silently isolate the run.
+ *
+ * Before:
+ * - "Makise Kurisu"
+ *
+ * After:
+ * - "Makise-Kurisu"
+ */
+export function memoryCharacterIdOf(configuredCharacterKey: string): CharacterId {
+  // Trim first: a trailing space in `CHARACTER_ID=` would otherwise become a
+  // trailing hyphen and produce an id that no binding file would ever match.
+  const token = configuredCharacterKey.trim().replaceAll(' ', '-')
+  if (!isValidId(token)) {
+    throw new MemoryError('INVALID_ID', `CHARACTER_ID '${configuredCharacterKey}' cannot be used as a memory character id: '${token}' is not a token of [A-Za-z0-9_:.-] up to 128 characters`, {
+      retryable: false,
+      details: { kind: 'CharacterId' },
+    })
+  }
+  return asCharacterId(token)
 }
 
 /** Owns the only approved Discord runtime import of the SQLite implementation. */

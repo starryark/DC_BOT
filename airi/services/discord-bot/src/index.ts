@@ -6,14 +6,13 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { Format, LogLevel, setGlobalFormat, setGlobalLogLevel, useLogg } from '@guiiai/logg'
-import { asCharacterId } from '@proj-airi/memory-domain'
 
 import { DiscordAdapter } from './adapters/airi-adapter'
 import { AvatarPublisher } from './avatar/publisher'
 import { FileCharacterRegistry } from './character/character-registry'
 import { DefaultPromptCompiler } from './character/prompt-compiler'
 import { config } from './config'
-import { createMemoryRuntime } from './memory/runtime'
+import { createMemoryRuntime, memoryCharacterIdOf } from './memory/runtime'
 import { createTextMemoryAdapter } from './memory/text-memory-adapter'
 import { createVoiceMemoryAdapter } from './memory/voice-memory-adapter'
 import { ConversationController } from './orchestration/conversation-controller'
@@ -128,12 +127,16 @@ async function main() {
   const character = loadCharacter()
   const promptCompiler = character ? new DefaultPromptCompiler() : undefined
   const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..')
+  // One memory identity for the whole process, derived from the configured
+  // character key rather than the loaded card, so the runtime, both adapters,
+  // and the operator's `binding.characterId` cannot disagree.
+  const memoryCharacterId = memoryCharacterIdOf(cfg.character.id)
   const memory = createMemoryRuntime({
     mode: cfg.memory.mode,
     flags: cfg.memory.flags,
     repoRoot: repositoryRoot,
     configuredRoot: cfg.memory.runtimeRoot,
-    characterId: asCharacterId(character?.id ?? cfg.character.id.replaceAll(' ', '-')),
+    characterId: memoryCharacterId,
     bindingFile: cfg.memory.bindingFile,
   })
   log.withFields(memory.health).log('memory_status')
@@ -143,14 +146,14 @@ async function main() {
   if (memory.health.durableWritesEnabled) {
     textMemory = createTextMemoryAdapter({
       runtime: memory,
-      characterId: asCharacterId(character?.id ?? cfg.character.id.replaceAll(' ', '-')),
+      characterId: memoryCharacterId,
       modelRef: `gemini:${cfg.brain.model}`,
       onFailure: error => log.withError(error).error('memory_shadow_write_failed'),
     })
     adapter.setTextMemoryObserver(textMemory)
     voiceMemory = createVoiceMemoryAdapter({
       runtime: memory,
-      characterId: asCharacterId(character?.id ?? cfg.character.id.replaceAll(' ', '-')),
+      characterId: memoryCharacterId,
       modelRef: `gemini:${cfg.brain.model}`,
       onFailure: error => log.withError(error).error('memory_voice_trace_failed'),
     })

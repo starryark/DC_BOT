@@ -1,14 +1,15 @@
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join, resolve as resolvePath } from 'node:path'
 
 import { asCharacterId, asRequestId, asSegmentId, asTimestamp } from '@proj-airi/memory-domain'
 import { openReadOnlySqliteDatabase } from '@proj-airi/memory-sqlite'
 import { afterEach, describe, expect, it } from 'vitest'
 
+import { FileCharacterRegistry } from '../character/character-registry'
 import { buildDiscordActorEvidence } from './discord-actor-snapshot'
 import { memoryProfile } from './profile'
-import { createMemoryRuntime } from './runtime'
+import { createMemoryRuntime, memoryCharacterIdOf } from './runtime'
 
 const roots: string[] = []
 afterEach(() => {
@@ -22,7 +23,82 @@ function tempRoot(): string {
   return root
 }
 
+// The LIVE card lives at <DC_BOT>/Makise Kurisu/card.json — five directories
+// above src/memory. Its folder name is the configured CHARACTER_ID, spaces and
+// all, which is exactly the condition these tests pin down.
+const LIVE_CHARACTER_KEY = 'Makise Kurisu'
+const LIVE_CARD_DIR = resolvePath(__dirname, '../../../../..', LIVE_CHARACTER_KEY)
+
+describe('memoryCharacterIdOf', () => {
+  it('derives a valid memory id from a successfully loaded character whose folder id contains a space', () => {
+    // ROOT CAUSE:
+    //
+    // The character registry returns the configured folder id verbatim as
+    // `character.id`, so a card that loads successfully yields "Makise Kurisu".
+    // `src/index.ts` passed that value straight into `asCharacterId`, and the
+    // space-to-hyphen fallback only applied when NO character had loaded:
+    //
+    //   asCharacterId(character?.id ?? cfg.character.id.replaceAll(' ', '-'))
+    //
+    // Domain ids reject whitespace, so the healthy path — a card that loads —
+    // threw INVALID_ID during argument evaluation, before createMemoryRuntime
+    // ran, taking the bot down at boot even with memory off. The unhealthy path
+    // produced "Makise-Kurisu" instead, so durable identity depended on whether
+    // a JSON file parsed.
+    //
+    // We fixed this by deriving one id from the configured character key alone,
+    // via memoryCharacterIdOf, and passing that single value to the runtime and
+    // both adapters. The card keeps its own folder/display identity.
+    const character = new FileCharacterRegistry({ characterRoots: { [LIVE_CHARACTER_KEY]: LIVE_CARD_DIR } }).load(LIVE_CHARACTER_KEY)
+    expect(character.id).toBe(LIVE_CHARACTER_KEY)
+    expect(() => asCharacterId(character.id)).toThrow('must be a non-empty token')
+    expect(memoryCharacterIdOf(LIVE_CHARACTER_KEY)).toBe('Makise-Kurisu')
+  })
+
+  it('ignores surrounding whitespace so a stray space in CHARACTER_ID cannot fork the identity', () => {
+    expect(memoryCharacterIdOf('  Makise Kurisu ')).toBe('Makise-Kurisu')
+  })
+
+  it('names CHARACTER_ID when the configured key cannot be normalized at all', () => {
+    // Coercing this into some other token would silently isolate the run from
+    // the operator's binding file, so it must fail loudly instead.
+    expect(() => memoryCharacterIdOf('Makise/Kurisu')).toThrow('CHARACTER_ID')
+  })
+})
+
 describe('createMemoryRuntime', () => {
+  it('starts active and reconciles a binding written with the normalized memory id', async () => {
+    const repo = tempRoot()
+    const bindingFile = join(repo, 'bindings.json')
+    const characterId = memoryCharacterIdOf(LIVE_CHARACTER_KEY)
+    // Written as a literal, not from `characterId`: this is the exact string an
+    // operator must put in `binding.characterId`, and the binding file schema
+    // rejects the whitespace-bearing folder name outright.
+    const binding = (character: string) => JSON.stringify({
+      version: 1,
+      bindings: [{
+        id: 'lab',
+        characterId: character,
+        locations: [
+          { kind: 'guildText', guildId: '10000000000000001', channelId: '30000000000000001' },
+          { kind: 'guildVoice', guildId: '10000000000000001', channelId: '30000000000000002' },
+        ],
+      }],
+    })
+
+    writeFileSync(bindingFile, binding('Makise-Kurisu'))
+    const runtime = createMemoryRuntime({ ...memoryProfile('active', {}), repoRoot: repo, characterId, bindingFile })
+    expect(runtime.health.mode).toBe('active')
+    expect(runtime.health.status).toBe('healthy')
+    expect(runtime.health.bindingReconciliation?.created).toBe(2)
+    await runtime.close()
+
+    const rawFolderBinding = join(repo, 'raw-folder-bindings.json')
+    writeFileSync(rawFolderBinding, binding(LIVE_CHARACTER_KEY))
+    expect(() => createMemoryRuntime({ ...memoryProfile('active', {}), repoRoot: repo, characterId, bindingFile: rawFolderBinding }))
+      .toThrow('room binding file is invalid')
+  })
+
   it('shares authorized logical-room history across configured text and voice members and retires removed members on restart', async () => {
     const repo = tempRoot()
     const bindingFile = join(repo, 'bindings.json')

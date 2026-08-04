@@ -8,6 +8,17 @@ Active-ready means eligible for deliberate opt-in deployment. It never changes t
 
 Use a dedicated credential installed only in a private guild, an absolute isolated memory root, private text/thread/voice locations, working ASR/model/TTS/playback, a human observer, and a reviewer who did not implement the report tooling.
 
+### The memory character id
+
+`binding.characterId` must be the runtime's **memory** character id, which is derived from the configured `CHARACTER_ID` by replacing spaces with hyphens — not the character card's folder or display name. The bundled persona is configured as `CHARACTER_ID=Makise Kurisu`, so its bindings must say `"characterId": "Makise-Kurisu"`. Domain ids reject whitespace, so the folder spelling is refused by the binding schema, and a binding naming any other character is refused as `UNAUTHORIZED_BIND` at reconciliation.
+
+Confirm the id before `prepare`, from `services/discord-bot`, without opening Discord or the authority:
+
+```
+pnpm exec tsx --env-file=.env --env-file-if-exists=.config --env-file-if-exists=.env.local \
+  -e "import { config } from './src/config.ts'; import { memoryCharacterIdOf } from './src/memory/runtime.ts'; process.stdout.write(memoryCharacterIdOf(config().character.id) + '\n');"
+```
+
 Never commit credentials, raw logs, the private binding specification, raw identifier mappings, the pre-soak backup, the run-state file, or the report HMAC key. Only three artifacts are committed: the redacted JSON report, the reviewer's Markdown decision, and any defect/rerun record.
 
 `--out` must therefore be an absolute directory **outside** the repository checkout; `prepare` and `report` both refuse an output location inside it, because a run state, backup, or manifest under the checkout can be staged by an ordinary `git add`.
