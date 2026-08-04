@@ -1,7 +1,7 @@
 import type { DatabaseSync } from 'node:sqlite'
 
 import { randomUUID } from 'node:crypto'
-import { access, copyFile, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
+import { access, chmod, copyFile, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { backup, DatabaseSync as SqliteDatabase } from 'node:sqlite'
 
@@ -79,6 +79,11 @@ export async function createVerifiedBackup(source: DatabaseSync, sourcePath: str
     await requireUnused(destination)
     await requireUnused(manifestPath)
     await backup(source, partial)
+    // A snapshot is a complete copy of sensitive plaintext, so it is narrowed to
+    // the owner before it is published under its final name. Windows honours no
+    // POSIX bit but the read-only flag, so on that platform the private location
+    // of the destination is what actually protects the file.
+    await chmod(partial, 0o600)
     const verification = new SqliteDatabase(partial, { readOnly: true })
     try {
       verifyDatabase(verification)
@@ -86,7 +91,7 @@ export async function createVerifiedBackup(source: DatabaseSync, sourcePath: str
     finally { verification.close() }
     const bytes = (await stat(partial)).size
     const manifest = Object.freeze({ format: 1 as const, createdAt, schemaVersion: latestSchemaVersion, migrationChecksums: migrations.map(item => item.checksum), bytes })
-    await writeFile(manifestPartial, JSON.stringify(manifest), { encoding: 'utf8', flag: 'wx' })
+    await writeFile(manifestPartial, JSON.stringify(manifest), { encoding: 'utf8', flag: 'wx', mode: 0o600 })
     await rename(manifestPartial, manifestPath)
     await rename(partial, destination)
     return manifest

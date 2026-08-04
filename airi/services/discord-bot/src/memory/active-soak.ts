@@ -10,8 +10,8 @@ import * as v from 'valibot'
  *
  * This module owns the run identity, the identifier-redaction rule, the
  * machine assertions derived from durable records, and the acceptance rules a
- * reviewer relies on. The CLI in `scripts/memory/active-soak.ts` only supplies
- * process, filesystem, and git facts.
+ * reviewer relies on. The stages in `scripts/memory/active-soak-stages.ts` only
+ * supply process, filesystem, and git facts.
  *
  * The report is content-free by construction: every raw identifier is replaced
  * by a run-scoped HMAC, and no message text, transcript, display name, or
@@ -66,7 +66,17 @@ const attestationSchema = v.strictObject({
   format: v.literal(1),
   runId: v.string(),
   commitSha: hex(40),
-  reviewerIndependent: v.literal(true),
+  /**
+   * The operator's declaration that an independent reviewer was identified
+   * before execution.
+   *
+   * This is a self-report, not machine proof: nothing in a database can show
+   * who reviewed a run. Acceptance still requires the separate dated reviewer
+   * decision, which remains the authoritative record of independence. The
+   * field exists only so an attestation written without a reviewer in place
+   * cannot be parsed at all.
+   */
+  reviewerIndependenceDeclared: v.literal(true),
   scenarios: v.array(v.strictObject({
     id: v.picklist(scenarioIds),
     from: isoTimestamp,
@@ -93,12 +103,72 @@ export function parseRunState(input: unknown): SoakRunState {
 }
 
 export function parseAttestation(input: unknown): SoakAttestation {
+  let attestation: SoakAttestation
   try {
-    return v.parse(attestationSchema, input)
+    attestation = v.parse(attestationSchema, input)
   }
   catch (cause) {
     throw new MemoryError('INVALID_PAYLOAD', 'soak attestation is invalid or incomplete', { cause })
   }
+
+  // Coverage is checked after parsing rather than inside the schema so the
+  // operator sees which scenario is missing, duplicated, or overlapping instead
+  // of one opaque validation failure.
+  const failures = scenarioCoverageFailures(attestation.scenarios)
+  if (failures.length > 0)
+    throw new MemoryError('POLICY_VIOLATION', `soak attestation scenario coverage is unusable: ${failures.join('; ')}`)
+  return attestation
+}
+
+/** One executed scenario window, in the shape both the attestation and the report expose. */
+export interface SoakScenarioWindow {
+  readonly id: SoakScenarioId
+  readonly from: string
+  readonly to: string
+}
+
+/**
+ * Applies the one-window-per-scenario rule shared by the attestation and the
+ * verifier.
+ *
+ * Scenario presence is decided by timestamp range, so overlapping windows would
+ * let a single generation satisfy several scenarios' evidence checks at once —
+ * collapsing thirteen required executions into one. Adjacent windows are
+ * rejected for the same reason: both window queries are inclusive, so a record
+ * landing exactly on a shared boundary would be counted twice. The runbook
+ * identifies no permitted overlap, so none is accepted here.
+ *
+ * Failures are returned rather than thrown so the verifier can report every
+ * problem in one pass; `parseAttestation` raises them together.
+ */
+export function scenarioCoverageFailures(entries: readonly SoakScenarioWindow[]): readonly string[] {
+  const failures: string[] = []
+
+  const occurrences = new Map<string, number>()
+  for (const entry of entries)
+    occurrences.set(entry.id, (occurrences.get(entry.id) ?? 0) + 1)
+  for (const scenario of SOAK_SCENARIOS) {
+    const seen = occurrences.get(scenario.id) ?? 0
+    if (seen === 0)
+      failures.push(`scenario ${scenario.id} has no human attestation`)
+    else if (seen > 1)
+      failures.push(`scenario ${scenario.id} is attested ${seen} times; exactly one execution window is required`)
+  }
+
+  for (const entry of entries) {
+    if (!(Date.parse(entry.from) < Date.parse(entry.to)))
+      failures.push(`scenario ${entry.id} window does not start strictly before it ends`)
+  }
+
+  const ordered = [...entries].sort((left, right) => Date.parse(left.from) - Date.parse(right.from))
+  for (let index = 1; index < ordered.length; index++) {
+    const previous = ordered[index - 1]!
+    const current = ordered[index]!
+    if (Date.parse(current.from) <= Date.parse(previous.to))
+      failures.push(`scenario windows ${previous.id} and ${current.id} overlap; each scenario needs its own execution window`)
+  }
+
+  return Object.freeze(failures)
 }
 
 /**
@@ -148,6 +218,14 @@ export interface SoakReport {
   readonly schemaVersion: number
   readonly memoryMode: 'active'
   readonly bindingFileDigest: string
+  /**
+   * Digest of the pre-soak backup bound to this run.
+   *
+   * Published so a reviewer can confirm which snapshot the run started from
+   * without receiving the backup's private path, which would disclose the
+   * operator's evidence layout.
+   */
+  readonly preSoakBackupDigest: string
   readonly generatedAt: string
   readonly window: { readonly from: string, readonly to: string }
   readonly counts: Readonly<Record<string, number>>
@@ -160,6 +238,7 @@ export interface SoakReport {
     readonly deliveries: number
   }[]
   readonly unresolvedDeliveries: readonly string[]
+  /** Counted inside the `forget-deletion-migration-replay` window, so residue from an earlier run cannot stand in for the executed scenario. */
   readonly deletion: { readonly forgetRequests: number, readonly tombstones: number, readonly verified: boolean }
   readonly restore: { readonly oldBackupRestoreVerified: boolean }
   readonly rollback: { readonly drillPassed: boolean }
@@ -193,6 +272,11 @@ function row(reader: SoakEvidenceReader, sql: string, ...params: readonly (strin
 
 function count(reader: SoakEvidenceReader, table: string): number {
   return Number(row(reader, `SELECT count(*) count FROM ${table}`)?.count ?? 0)
+}
+
+/** Inclusive on both ends, which is why {@link scenarioCoverageFailures} also rejects windows that merely touch. */
+function countBetween(reader: SoakEvidenceReader, table: string, column: string, from: string, to: string): number {
+  return Number(row(reader, `SELECT count(*) count FROM ${table} WHERE ${column}>=? AND ${column}<=?`, from, to)?.count ?? 0)
 }
 
 /**
@@ -272,20 +356,24 @@ export function buildSoakReport(input: {
     .map(record => redact('delivery', String(record.delivery_id)))
 
   const semanticWrites = count(database, 'semantic_memories')
-  const forgetRequests = count(database, 'forget_requests')
-  const tombstones = count(database, 'deletion_tombstones')
   const unverifiedTombstones = rows(database, 'SELECT tombstone_id FROM deletion_tombstones WHERE redaction_state<>\'verified\'').map(record => redact('tombstone', String(record.tombstone_id)))
 
-  const scenarios = attestation.scenarios.map((scenario) => {
-    const inWindow = (table: string, column: string) => Number(row(database, `SELECT count(*) count FROM ${table} WHERE ${column}>=? AND ${column}<=?`, scenario.from, scenario.to)?.count ?? 0)
-    return {
-      id: scenario.id,
-      observed: scenario.observed,
-      window: { from: scenario.from, to: scenario.to },
-      generations: inWindow('generation_attempt_records', 'started_at'),
-      deliveries: inWindow('delivery_attempt_records', 'started_at'),
-    }
-  })
+  // Deletion evidence is scoped to the window of the scenario that must produce
+  // it. A forget request left behind by an earlier run would otherwise satisfy
+  // the deletion gate without the operator executing scenario 12 at all.
+  const deletionWindow = attestation.scenarios.find(scenario => scenario.id === 'forget-deletion-migration-replay')
+  if (!deletionWindow)
+    throw new MemoryError('POLICY_VIOLATION', 'attestation omits the forget-deletion-migration-replay window that deletion evidence is scoped to')
+  const forgetRequests = countBetween(database, 'forget_requests', 'requested_at', deletionWindow.from, deletionWindow.to)
+  const tombstones = countBetween(database, 'deletion_tombstones', 'created_at', deletionWindow.from, deletionWindow.to)
+
+  const scenarios = attestation.scenarios.map(scenario => ({
+    id: scenario.id,
+    observed: scenario.observed,
+    window: { from: scenario.from, to: scenario.to },
+    generations: countBetween(database, 'generation_attempt_records', 'started_at', scenario.from, scenario.to),
+    deliveries: countBetween(database, 'delivery_attempt_records', 'started_at', scenario.from, scenario.to),
+  }))
 
   const windows = attestation.scenarios.flatMap(scenario => [scenario.from, scenario.to]).sort()
 
@@ -296,6 +384,7 @@ export function buildSoakReport(input: {
     schemaVersion: runState.schemaVersion,
     memoryMode: runState.memoryMode,
     bindingFileDigest: runState.bindingFileDigest,
+    preSoakBackupDigest: runState.preSoakBackupDigest,
     generatedAt,
     window: { from: windows[0] ?? runState.createdAt, to: windows.at(-1) ?? generatedAt },
     counts: Object.freeze({
@@ -308,6 +397,9 @@ export function buildSoakReport(input: {
       roomBindings: count(database, 'room_binding_records'),
       semanticMemories: semanticWrites,
       privacyOperations: count(database, 'privacy_operation_records'),
+      // Whole-database totals; the per-scenario deletion evidence is reported separately.
+      forgetRequests: count(database, 'forget_requests'),
+      deletionTombstones: count(database, 'deletion_tombstones'),
     }),
     assertions: Object.freeze([
       { id: 'every-generation-has-pre-model-manifest', passed: missingManifest.length === 0, offenders: Object.freeze(missingManifest) },
@@ -356,6 +448,7 @@ const reportSchema = v.strictObject({
   schemaVersion: v.pipe(v.number(), v.integer()),
   memoryMode: v.string(),
   bindingFileDigest: hex(64),
+  preSoakBackupDigest: hex(64),
   generatedAt: isoTimestamp,
   window: v.strictObject({ from: isoTimestamp, to: isoTimestamp }),
   counts: v.record(v.string(), v.number()),
@@ -396,11 +489,7 @@ export function verifySoakReport(input: { report: unknown, expectedCommitSha: st
   if (report.memoryMode !== 'active')
     failures.push('report was not produced from an active-mode run')
 
-  const attested = new Set(report.scenarios.map(scenario => scenario.id))
-  for (const scenario of SOAK_SCENARIOS) {
-    if (!attested.has(scenario.id))
-      failures.push(`scenario ${scenario.id} has no human attestation`)
-  }
+  failures.push(...scenarioCoverageFailures(report.scenarios.map(scenario => ({ id: scenario.id, from: scenario.window.from, to: scenario.window.to }))))
   for (const scenario of report.scenarios) {
     if (scenario.observed !== 'pass')
       failures.push(`scenario ${scenario.id} was observed as failed`)
@@ -424,6 +513,14 @@ export function verifySoakReport(input: { report: unknown, expectedCommitSha: st
 
   if (report.unresolvedDeliveries.length > 0)
     failures.push(`${report.unresolvedDeliveries.length} delivery attempt(s) remain unresolved`)
+
+  // Absence of an unverified tombstone is satisfied by a database that never
+  // deleted anything, so the deletion gate additionally requires the scenario
+  // to have produced real forget and tombstone records of its own.
+  if (report.deletion.forgetRequests < 1)
+    failures.push('the deletion scenario window contains no durable forget request')
+  if (report.deletion.tombstones < 1)
+    failures.push('the deletion scenario window contains no durable deletion tombstone')
   if (!report.deletion.verified)
     failures.push('deletion evidence was not verified')
   if (!report.restore.oldBackupRestoreVerified)

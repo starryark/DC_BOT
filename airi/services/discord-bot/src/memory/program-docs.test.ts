@@ -2,7 +2,10 @@ import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join, normalize, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { latestSchemaVersion } from '@proj-airi/memory-sqlite'
 import { describe, expect, it } from 'vitest'
+
+import { SOAK_SCENARIOS } from './active-soak'
 
 /**
  * Governance tests for the shared-memory program docs (IMP-001).
@@ -11,18 +14,29 @@ import { describe, expect, it } from 'vitest'
  * evidence: every repository fact carries a reference that still resolves, and
  * every doc cross-link resolves. A stale evidence index is worse than none —
  * downstream agents treat its rows as "confirmed" without re-checking.
+ *
+ * The active-soak runbook and its promotion targets are governed here too,
+ * because those are the documents a reviewer reads to decide whether A8 may
+ * close; a runbook that drifts from the tool is what would let an unqualified
+ * commit be promoted.
  */
 
 // src/memory -> src -> discord-bot -> services -> airi -> repository root
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../../../..')
 const MEMORY_DOCS = join(REPO_ROOT, 'docs', 'memory')
 
+const STATUS_PAGE = join(MEMORY_DOCS, 'CURRENT.md')
+const EVIDENCE_INDEX = join(MEMORY_DOCS, 'evidence', 'evidence-index.md')
+const ACTIVE_SOAK_RUNBOOK = join(REPO_ROOT, 'airi', 'docs', 'memory', 'runbooks', 'active-memory-soak-and-rollout.md')
+
 const DOCS = [
   join(MEMORY_DOCS, 'implementation-status.md'),
-  join(MEMORY_DOCS, 'evidence', 'evidence-index.md'),
+  STATUS_PAGE,
+  EVIDENCE_INDEX,
   join(MEMORY_DOCS, 'adr', 'README.md'),
   join(MEMORY_DOCS, 'adr', '0000-template.md'),
   join(REPO_ROOT, 'docs', 'runbooks', 'memory-rollout.md'),
+  ACTIVE_SOAK_RUNBOOK,
 ]
 
 function read(path: string): string {
@@ -89,5 +103,32 @@ describe('shared-memory program docs', () => {
     const registry = read(join(MEMORY_DOCS, 'adr', 'README.md'))
     for (let n = 1; n <= 16; n++)
       expect(registry).toContain(`ADR-${String(n).padStart(3, '0')}`)
+  })
+})
+
+describe('active-memory soak governance', () => {
+  it('the runbook documents every scenario the tool requires', () => {
+    const runbook = read(ACTIVE_SOAK_RUNBOOK)
+    for (const scenario of SOAK_SCENARIOS)
+      expect(runbook, `scenario ${scenario.id} is not in the runbook`).toContain(scenario.id)
+  })
+
+  it('the runbook names its promotion targets so a reviewer knows which documents A8 may change', () => {
+    const runbook = read(ACTIVE_SOAK_RUNBOOK)
+    for (const target of ['docs/memory/CURRENT.md', 'docs/memory/evidence/evidence-index.md'])
+      expect(runbook).toContain(target)
+  })
+
+  it('the status page records the current schema version and keeps A8 open until a soak is reviewed', () => {
+    const status = read(STATUS_PAGE)
+    expect(status).toContain(`Latest SQLite schema: v${latestSchemaVersion}.`)
+    expect(status).toContain('A8 remains open')
+    // Promotion may only be recorded against a reviewed candidate SHA and a
+    // redacted report, neither of which exists in this repository yet.
+    expect(status).toContain('Active-ready is not claimed')
+  })
+
+  it('the evidence index states that no live soak has been executed', () => {
+    expect(read(EVIDENCE_INDEX)).toContain('No live soak has been executed')
   })
 })

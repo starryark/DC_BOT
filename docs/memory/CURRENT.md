@@ -4,7 +4,7 @@
 
 - `memory-domain` owns identity, aliases, rooms, authorization, events,
   causality, generation, delivery, correction, provenance, and `MemoryPort`.
-- `memory-sqlite` owns schema migrations through v7, repositories,
+- `memory-sqlite` owns schema migrations through v8, repositories,
   unit-of-work, connection durability checks, backup, reconciliation, and the
   cross-process writer-ownership guard.
 - Discord actor evidence is frozen from event-local data without using names as
@@ -20,12 +20,19 @@
 
 ## Active work item
 
-Active-memory stabilization tasks A1-A7 are implemented. A8 remains open until
-the private Discord soak is executed and reviewed; active-ready is not claimed.
+Active-memory stabilization tasks A1-A7 are implemented. The active-soak
+evidence programme T001-T004 is committed on `main`: schema v8 generation-context
+manifests, persisted privacy operations, the `pnpm memory:active-soak`
+prepare/report/verify tool, its policy module and tests, and the private-soak
+runbook.
+
+A8 remains open. No private Discord soak has been executed, no redacted report
+exists, and no independent reviewer decision exists. Active-ready is not claimed
+for any commit. Committed tooling is evidence *machinery*, not evidence.
 
 ## Schema and rollout
 
-- Latest SQLite schema: v7.
+- Latest SQLite schema: v8.
 - Runtime rollout: off by default; production and ordinary local use remain in
   shadow. Active is an implementation/test target pending the A8 soak gate.
 - Default memory flags: all false (`ephemeral`).
@@ -85,3 +92,30 @@ the private Discord soak is executed and reviewed; active-ready is not claimed.
   `docs/memory/evidence/active-stabilization-2026-08-03.md`.
 - A private Discord soak was not executable in this environment. Active-ready
   remains blocked; no activation documentation was promoted.
+
+## Active-soak evidence boundary hardening (2026-08-04)
+
+Pre-soak hardening of the A8 evidence tooling. No runtime behaviour, migration
+SQL, migration checksum, or default flag changed.
+
+- `prepare` and `report` refuse an output directory inside the repository
+  checkout, so the run state, pre-soak backup, and backup manifest cannot be
+  staged.
+- Private artifacts are published owner-only where POSIX modes are
+  authoritative, and `prepare` fails closed if they are not. Windows requires an
+  ACL-protected evidence directory instead; the runbook records that and
+  `prepare` reports which regime applied.
+- `report` opens only the authority bound during `prepare`; `--root` may restate
+  the bound root but may not redirect to another database.
+- Each of the thirteen scenarios must be attested exactly once, with
+  `from` strictly before `to` and no overlapping or touching windows.
+- The deletion gate requires the `forget-deletion-migration-replay` window to
+  contain at least one durable forget request and at least one tombstone; an
+  empty database no longer satisfies it by absence.
+- The redacted report carries the pre-soak backup digest but never its path.
+- The attestation's reviewer-independence flag is documented as an operator
+  self-report; the dated reviewer decision remains authoritative.
+- Operator-level tests cover dirty worktree, wrong commit, in-repository output,
+  in-repository runtime root, missing authority, unparsable and multi-guild
+  bindings, reused run identity, backup and digest creation, report authority
+  mismatch, and nonzero `verify` exit status.

@@ -2,7 +2,7 @@ import type { DatabaseSync } from 'node:sqlite'
 
 import type { GenerationAttempt } from '@proj-airi/memory-domain'
 
-import type { SoakAttestation, SoakRunState } from './active-soak'
+import type { SoakAttestation, SoakRunState, SoakScenarioId } from './active-soak'
 
 import { DatabaseSync as SQLiteDatabase } from 'node:sqlite'
 
@@ -10,20 +10,45 @@ import { asCharacterId, asGenerationId, asPersonId, asRequestId, asTimestamp, at
 import { EventRepository, GenerationRepository, migrate, RoomRepository } from '@proj-airi/memory-sqlite'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { assertPrivateGuildSoakBinding, buildSoakReport, createRedactor, parseAttestation, parseRunState, SOAK_SCENARIOS, verifySoakReport } from './active-soak'
+import { assertPrivateGuildSoakBinding, buildSoakReport, createRedactor, parseAttestation, parseRunState, scenarioCoverageFailures, SOAK_SCENARIOS, verifySoakReport } from './active-soak'
 
 let db: DatabaseSync
+let sequence: number
+let room: ReturnType<typeof createRoom> | undefined
 
 const time = (second: number) => asTimestamp(`2026-08-02T10:00:${String(second).padStart(2, '0')}.000Z`)
 const characterId = asCharacterId('character-a')
 const location = { platform: 'discord' as const, guildId: '99999999999999999', channelId: '18446744073709551615', channelKind: 'guildText' as const }
 const commitSha = 'a'.repeat(40)
 const redactionKey = 'b'.repeat(64)
+const backupDigest = 'd'.repeat(64)
+
+/** Scenarios the verifier does not expect to produce a durable generation. */
+const GENERATION_FREE_SCENARIOS = new Set<string>(['startup-binding-reconciliation', 'disabled-remember-correct', 'active-to-off-rollback'])
+
+const scenarioOrder = new Map<string, number>(SOAK_SCENARIOS.map((scenario, index) => [scenario.id, index]))
+
+/**
+ * Gives each scenario a distinct three-second window separated by a one-second
+ * gap. Both window queries are inclusive, so touching windows would let one
+ * durable record answer two scenario-presence checks.
+ */
+function scenarioWindow(id: string) {
+  const start = (scenarioOrder.get(id) ?? 0) * 4
+  return { from: time(start), to: time(start + 2) }
+}
+
+/** The instant inside a scenario's own window where that scenario's durable records are written. */
+function scenarioInstant(id: string) {
+  return time((scenarioOrder.get(id) ?? 0) * 4 + 1)
+}
 
 beforeEach(() => {
   db = new SQLiteDatabase(':memory:')
   migrate(db)
   db.prepare('INSERT INTO people(person_id,discord_user_id,created_at,kind,updated_at) VALUES (?,?,?,?,?)').run('person-a', '18446744073709551615', time(0), 'account_subject', time(0))
+  sequence = 0
+  room = undefined
 })
 afterEach(() => db.close())
 
@@ -39,64 +64,95 @@ function runState(overrides: Partial<SoakRunState> = {}): SoakRunState {
     memoryMode: 'active',
     schemaVersion: 8,
     preSoakBackupPath: '/isolated/out/soak-001.pre-soak.db',
-    preSoakBackupDigest: 'd'.repeat(64),
+    preSoakBackupDigest: backupDigest,
     redactionKey,
     scenarios: SOAK_SCENARIOS.map(scenario => scenario.id),
     ...overrides,
   })
 }
 
-/**
- * The rollback drill runs after the bot is reconfigured to `off`, so its window
- * must not overlap the active period. Overlapping windows would let active
- * generations be miscounted as post-rollback prompt use.
- */
-function scenarioWindow(id: string) {
-  return id === 'active-to-off-rollback' ? { from: time(30), to: time(40) } : { from: time(0), to: time(9) }
+function attestedScenarios() {
+  return SOAK_SCENARIOS.map(scenario => ({ id: scenario.id, ...scenarioWindow(scenario.id), observed: 'pass' as const }))
 }
 
-function attestation(overrides: Partial<SoakAttestation> = {}): SoakAttestation {
-  return parseAttestation({
+/** The attestation shape before parsing, so coverage rejections can be exercised. */
+function rawAttestation(overrides: Record<string, unknown> = {}) {
+  return {
     format: 1,
     runId: 'soak-001',
     commitSha,
-    reviewerIndependent: true,
-    scenarios: SOAK_SCENARIOS.map(scenario => ({ id: scenario.id, ...scenarioWindow(scenario.id), observed: 'pass' as const })),
+    reviewerIndependenceDeclared: true,
+    scenarios: attestedScenarios(),
     rollbackDrillPassed: true,
     deletionVerified: true,
     oldBackupRestoreVerified: true,
     ...overrides,
-  })
+  }
 }
 
-/** Persists one durable generation with a complete pre-model manifest. */
-function seedGeneration(): GenerationAttempt {
+function attestation(overrides: Partial<SoakAttestation> = {}): SoakAttestation {
+  return parseAttestation(rawAttestation(overrides))
+}
+
+function createRoom() {
   const rooms = new RoomRepository(db)
-  const physicalRoomId = rooms.observe({ location, observedAt: time(0) }).physicalRoomId
-  const logicalRoomId = rooms.resolve(location, characterId, time(0)).logicalRoomId
+  return {
+    physicalRoomId: rooms.observe({ location, observedAt: time(0) }).physicalRoomId,
+    logicalRoomId: rooms.resolve(location, characterId, time(0)).logicalRoomId,
+  }
+}
+
+/** Every seeded generation shares one bound room, so `manifest-items-stay-in-room` stays meaningful. */
+function ensureRoom() {
+  room ??= createRoom()
+  return room
+}
+
+/** Persists one durable generation with a complete pre-model manifest inside the given scenario's window. */
+function seedGeneration(scenarioId: string = 'empty-history-text'): GenerationAttempt {
+  const { physicalRoomId, logicalRoomId } = ensureRoom()
+  const capturedAt = scenarioWindow(scenarioId).from
+  const startedAt = scenarioInstant(scenarioId)
   const actor = attributedActor(asPersonId('person-a'), { platform: 'discord', platformUserId: '18446744073709551615', displayNameAtEvent: 'Alice', guildId: location.guildId, observedAt: time(0), source: 'gateway' })
-  let eventNo = 0
-  const events = new EventRepository(db, () => `event-${++eventNo}`, () => time(1))
-  const event = events.append({ idempotencyKey: asRequestId('event-key'), kind: 'user_text', actor, physicalRoomId, logicalRoomId, occurredAt: time(1), payload: { content: 'hello' }, retentionClass: 'transcript' }).envelope
+  const events = new EventRepository(db, () => `event-${++sequence}`, () => capturedAt)
+  const event = events.append({ idempotencyKey: asRequestId(`event-key-${scenarioId}`), kind: 'user_text', actor, physicalRoomId, logicalRoomId, occurredAt: capturedAt, payload: { content: 'hello' }, retentionClass: 'transcript' }).envelope
+  // Each appended event advances the durable room version, and a generation may
+  // only claim the current one; seeding several scenarios means re-reading it.
+  const roomVersion = Number((db.prepare('SELECT current_version FROM logical_rooms WHERE logical_room_id=?').get(logicalRoomId) as { current_version: number }).current_version)
   const attempt: GenerationAttempt = {
-    generationId: asGenerationId('generation-a'),
-    idempotencyKey: asRequestId('generation-key'),
+    generationId: asGenerationId(`generation-${scenarioId}`),
+    idempotencyKey: asRequestId(`generation-key-${scenarioId}`),
     logicalRoomId,
     characterId,
     state: 'prepared',
     evidence: {
-      observedRoomVersion: 1,
+      observedRoomVersion: roomVersion,
       observedEventIds: [event.eventId],
       contextManifestHash: '',
-      contextManifest: { formatVersion: 1, logicalRoomVersion: 1, bindingRevision: 0, maxItems: 24, maxCharacters: 8_000, candidateReadLimit: 96, truncated: false, items: [{ sourceType: 'inbound', eventId: event.eventId }] },
+      contextManifest: { formatVersion: 1, logicalRoomVersion: roomVersion, bindingRevision: 0, maxItems: 24, maxCharacters: 8_000, candidateReadLimit: 96, truncated: false, items: [{ sourceType: 'inbound', eventId: event.eventId }] },
       observedBindingVersion: 0,
-      capturedAt: time(2),
+      capturedAt,
     },
     modelRef: 'provider/model/prompt-v1',
-    startedAt: time(2),
+    startedAt,
   }
-  let idNo = 0
-  return new GenerationRepository(db, () => `transition-${++idNo}`).create(attempt).attempt
+  return new GenerationRepository(db, () => `transition-${++sequence}`).create(attempt).attempt
+}
+
+/** Seeds one generation for every scenario the verifier expects durable generation evidence from. */
+function seedScenarioGenerations(): void {
+  for (const scenario of SOAK_SCENARIOS) {
+    if (!GENERATION_FREE_SCENARIOS.has(scenario.id))
+      seedGeneration(scenario.id)
+  }
+}
+
+/** Writes the durable forget request and verified tombstone that scenario 12 must produce. */
+function seedDeletionEvidence(at = scenarioInstant('forget-deletion-migration-replay')): void {
+  db.prepare('INSERT INTO forget_requests(forget_request_id,subject_type,subject_id,scope_json,requested_at,status,version,completed_at,idempotency_key) VALUES (?,?,?,?,?,?,?,?,?)')
+    .run('forget-1', 'fact_id', 'memory-canary', '{}', at, 'completed', 1, at, 'forget-idem-1')
+  db.prepare('INSERT INTO deletion_tombstones(tombstone_id,forget_request_id,target_table,target_id,redaction_state,created_at,verified_at) VALUES (?,?,?,?,?,?,?)')
+    .run('tombstone-1', 'forget-1', 'semantic_memories', 'memory-canary', 'verified', at, at)
 }
 
 describe('active soak run state and attestation', () => {
@@ -107,13 +163,43 @@ describe('active soak run state and attestation', () => {
   })
 
   it('rejects an attestation that omits the independent-reviewer declaration', () => {
-    expect(() => parseAttestation({ ...attestation(), reviewerIndependent: false })).toThrow(/invalid or incomplete/i)
+    expect(() => parseAttestation(rawAttestation({ reviewerIndependenceDeclared: false }))).toThrow(/invalid or incomplete/i)
   })
 
   it('refuses to report when the attestation belongs to a different run or commit', () => {
     seedGeneration()
-    expect(() => buildSoakReport({ database: db, runState: runState(), attestation: attestation({ runId: 'other-run' }), generatedAt: time(9) })).toThrow(/different soak run/)
-    expect(() => buildSoakReport({ database: db, runState: runState(), attestation: attestation({ commitSha: 'f'.repeat(40) }), generatedAt: time(9) })).toThrow(/candidate commit/)
+    expect(() => buildSoakReport({ database: db, runState: runState(), attestation: attestation({ runId: 'other-run' }), generatedAt: time(59) })).toThrow(/different soak run/)
+    expect(() => buildSoakReport({ database: db, runState: runState(), attestation: attestation({ commitSha: 'f'.repeat(40) }), generatedAt: time(59) })).toThrow(/candidate commit/)
+  })
+})
+
+describe('active soak scenario coverage', () => {
+  it('accepts exactly one non-overlapping window per scenario', () => {
+    expect(scenarioCoverageFailures(attestedScenarios())).toEqual([])
+  })
+
+  it('rejects a scenario attested twice', () => {
+    const duplicated = [...attestedScenarios(), { id: 'dm-isolation' as SoakScenarioId, ...scenarioWindow('dm-isolation'), observed: 'pass' as const }]
+
+    expect(() => parseAttestation(rawAttestation({ scenarios: duplicated }))).toThrow(/dm-isolation is attested 2 times/)
+  })
+
+  it('rejects a window that does not start before it ends', () => {
+    const reversed = attestedScenarios().map(scenario => scenario.id === 'restart-continuity' ? { ...scenario, from: scenario.to, to: scenario.from } : scenario)
+
+    expect(() => parseAttestation(rawAttestation({ scenarios: reversed }))).toThrow(/restart-continuity window does not start strictly before it ends/)
+  })
+
+  it('rejects two scenarios that share an execution window', () => {
+    const overlapping = attestedScenarios().map(scenario => scenario.id === 'dm-isolation' ? { ...scenario, ...scenarioWindow('unbound-guild-isolation') } : scenario)
+
+    expect(() => parseAttestation(rawAttestation({ scenarios: overlapping }))).toThrow(/overlap; each scenario needs its own execution window/)
+  })
+
+  it('rejects windows that merely touch, because both range queries are inclusive', () => {
+    const touching = attestedScenarios().map(scenario => scenario.id === 'dm-isolation' ? { ...scenario, from: scenarioWindow('unbound-guild-isolation').to } : scenario)
+
+    expect(scenarioCoverageFailures(touching)).toContainEqual(expect.stringContaining('overlap'))
   })
 })
 
@@ -146,21 +232,29 @@ describe('active soak identifier redaction', () => {
 
   it('keeps raw identifiers out of the emitted report', () => {
     seedGeneration()
-    const report = buildSoakReport({ database: db, runState: runState(), attestation: attestation(), generatedAt: time(9) })
+    const report = buildSoakReport({ database: db, runState: runState(), attestation: attestation(), generatedAt: time(59) })
     const serialized = JSON.stringify(report)
 
-    expect(serialized).not.toContain('generation-a')
+    expect(serialized).not.toContain('generation-empty-history-text')
     expect(serialized).not.toContain('event-1')
     expect(serialized).not.toContain(location.guildId)
     expect(serialized).not.toContain(location.channelId)
     expect(serialized).not.toContain('hello')
+  })
+
+  it('publishes the pre-soak backup digest but never its path', () => {
+    seedGeneration()
+    const report = buildSoakReport({ database: db, runState: runState(), attestation: attestation(), generatedAt: time(59) })
+
+    expect(report.preSoakBackupDigest).toBe(backupDigest)
+    expect(JSON.stringify(report)).not.toContain('pre-soak.db')
   })
 })
 
 describe('active soak machine assertions', () => {
   it('passes every assertion for a generation with complete pre-model evidence', () => {
     seedGeneration()
-    const report = buildSoakReport({ database: db, runState: runState(), attestation: attestation(), generatedAt: time(9) })
+    const report = buildSoakReport({ database: db, runState: runState(), attestation: attestation(), generatedAt: time(59) })
 
     expect(report.assertions.filter(item => !item.passed)).toEqual([])
     expect(report.counts.generations).toBe(1)
@@ -174,7 +268,7 @@ describe('active soak machine assertions', () => {
     db.prepare('DELETE FROM generation_context_manifest_items WHERE generation_id=?').run(attempt.generationId)
     db.prepare('DELETE FROM generation_context_manifests WHERE generation_id=?').run(attempt.generationId)
 
-    const report = buildSoakReport({ database: db, runState: runState(), attestation: attestation(), generatedAt: time(9) })
+    const report = buildSoakReport({ database: db, runState: runState(), attestation: attestation(), generatedAt: time(59) })
     const assertion = report.assertions.find(item => item.id === 'every-generation-has-pre-model-manifest')
 
     expect(assertion?.passed).toBe(false)
@@ -185,25 +279,50 @@ describe('active soak machine assertions', () => {
     const attempt = seedGeneration()
     db.prepare('UPDATE generation_context_manifests SET max_items=? WHERE generation_id=?').run(999, attempt.generationId)
 
-    const report = buildSoakReport({ database: db, runState: runState(), attestation: attestation(), generatedAt: time(9) })
+    const report = buildSoakReport({ database: db, runState: runState(), attestation: attestation(), generatedAt: time(59) })
 
     expect(report.assertions.find(item => item.id === 'manifest-digest-reconstructs')?.passed).toBe(false)
   })
 
   it('fails when evidence was captured after the model started', () => {
     const attempt = seedGeneration()
-    db.prepare('UPDATE generation_attempt_records SET captured_at=? WHERE generation_id=?').run(time(8), attempt.generationId)
+    db.prepare('UPDATE generation_attempt_records SET captured_at=? WHERE generation_id=?').run(time(58), attempt.generationId)
 
-    const report = buildSoakReport({ database: db, runState: runState(), attestation: attestation(), generatedAt: time(9) })
+    const report = buildSoakReport({ database: db, runState: runState(), attestation: attestation(), generatedAt: time(59) })
 
     expect(report.assertions.find(item => item.id === 'evidence-captured-before-model-start')?.passed).toBe(false)
   })
 })
 
+describe('active soak deletion evidence', () => {
+  it('counts only forget and tombstone records written inside the deletion scenario window', () => {
+    seedScenarioGenerations()
+    // Written during scenario 2's window, which is where an earlier run's
+    // leftover deletion records would sit relative to this run's scenario 12.
+    seedDeletionEvidence(scenarioInstant('empty-history-text'))
+
+    const report = buildSoakReport({ database: db, runState: runState(), attestation: attestation(), generatedAt: time(59) })
+
+    expect(report.deletion.forgetRequests).toBe(0)
+    expect(report.deletion.tombstones).toBe(0)
+    expect(report.counts.forgetRequests).toBe(1)
+    expect(report.counts.deletionTombstones).toBe(1)
+  })
+})
+
 describe('active soak verification', () => {
+  function seedCompleteRun(): void {
+    seedScenarioGenerations()
+    seedDeletionEvidence()
+  }
+
+  function buildReport(overrides: Partial<SoakAttestation> = {}) {
+    return buildSoakReport({ database: db, runState: runState(), attestation: attestation(overrides), generatedAt: time(59) })
+  }
+
   function reportFor(overrides: Partial<SoakAttestation> = {}) {
-    seedGeneration()
-    return buildSoakReport({ database: db, runState: runState(), attestation: attestation(overrides), generatedAt: time(9) })
+    seedCompleteRun()
+    return buildReport(overrides)
   }
 
   it('accepts a complete, passing report at the reviewed commit', () => {
@@ -218,7 +337,8 @@ describe('active soak verification', () => {
   })
 
   it('rejects a report that omits a required scenario attestation', () => {
-    const report = reportFor({ scenarios: SOAK_SCENARIOS.slice(0, 4).map(scenario => ({ id: scenario.id, ...scenarioWindow(scenario.id), observed: 'pass' as const })) })
+    const complete = reportFor()
+    const report = { ...complete, scenarios: complete.scenarios.slice(0, 4) }
 
     const verdict = verifySoakReport({ report, expectedCommitSha: commitSha, expectedSchemaVersion: 8 })
 
@@ -226,8 +346,19 @@ describe('active soak verification', () => {
     expect(verdict.failures).toContainEqual(expect.stringContaining('has no human attestation'))
   })
 
+  it('rejects a report whose scenario windows overlap', () => {
+    const report = reportFor()
+    const isolationWindow = report.scenarios.find(scenario => scenario.id === 'unbound-guild-isolation')!.window
+    const overlapped = { ...report, scenarios: report.scenarios.map(scenario => scenario.id === 'dm-isolation' ? { ...scenario, window: isolationWindow } : scenario) }
+
+    const verdict = verifySoakReport({ report: overlapped, expectedCommitSha: commitSha, expectedSchemaVersion: 8 })
+
+    expect(verdict.ok).toBe(false)
+    expect(verdict.failures).toContainEqual(expect.stringContaining('overlap'))
+  })
+
   it('rejects a scenario the human observed as failed even when machine evidence passes', () => {
-    const report = reportFor({ scenarios: SOAK_SCENARIOS.map(scenario => ({ id: scenario.id, ...scenarioWindow(scenario.id), observed: scenario.id === 'bound-text-voice-recall' ? 'fail' as const : 'pass' as const })) })
+    const report = reportFor({ scenarios: attestedScenarios().map(scenario => ({ ...scenario, observed: scenario.id === 'bound-text-voice-recall' ? 'fail' as const : 'pass' as const })) })
 
     const verdict = verifySoakReport({ report, expectedCommitSha: commitSha, expectedSchemaVersion: 8 })
 
@@ -235,9 +366,21 @@ describe('active soak verification', () => {
     expect(verdict.failures).toContainEqual('scenario bound-text-voice-recall was observed as failed')
   })
 
+  it('rejects a deletion scenario that produced no forget request or tombstone', () => {
+    seedScenarioGenerations()
+    const report = buildSoakReport({ database: db, runState: runState(), attestation: attestation(), generatedAt: time(59) })
+
+    const verdict = verifySoakReport({ report, expectedCommitSha: commitSha, expectedSchemaVersion: 8 })
+
+    expect(verdict.ok).toBe(false)
+    expect(verdict.failures).toContainEqual('the deletion scenario window contains no durable forget request')
+    expect(verdict.failures).toContainEqual('the deletion scenario window contains no durable deletion tombstone')
+  })
+
   it('rejects unverified deletion, unverified old-backup restore, and a failed rollback drill', () => {
+    seedCompleteRun()
     for (const [key, expected] of [['deletionVerified', 'deletion evidence was not verified'], ['oldBackupRestoreVerified', 'old-backup restore was not verified'], ['rollbackDrillPassed', 'active-to-off rollback drill did not pass']] as const) {
-      const verdict = verifySoakReport({ report: reportFor({ [key]: false }), expectedCommitSha: commitSha, expectedSchemaVersion: 8 })
+      const verdict = verifySoakReport({ report: buildReport({ [key]: false }), expectedCommitSha: commitSha, expectedSchemaVersion: 8 })
       expect(verdict.failures).toContainEqual(expected)
     }
   })
