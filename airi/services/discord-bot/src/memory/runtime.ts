@@ -215,25 +215,25 @@ export function createMemoryRuntime(options: CreateMemoryRuntimeOptions): Memory
         const inbound = events.recentForLogical({ logicalRoomId: request.logicalRoomId, characterId: request.characterId, limit: candidateReadLimit, excludeEventIds: request.excludeEventIds })
           .flatMap(event => event.payload.redacted || !event.payload.content
             ? []
-            : [{ id: event.eventId, sourceType: 'inbound' as const, personRef: event.actor.kind === 'attributed' ? `P:${event.actor.personId}` : undefined, text: event.payload.content, at: event.occurredAt }])
+            : [{ id: event.eventId, sourceType: 'inbound' as const, personRef: event.actor.kind === 'attributed' ? `P:${event.actor.personId}` : undefined, modality: event.kind === 'user_voice' ? 'voice' as const : 'text' as const, text: event.payload.content, at: event.occurredAt }])
         const assistant = deliveries.eligibleForLogical(
           { logicalRoomId: request.logicalRoomId, characterId: request.characterId, limit: candidateReadLimit, excludeEventIds: request.excludeEventIds },
           { allowPartialAssistantOutput: false, treatCompletedPlaybackAsEligible: true },
         )
-          .map(output => ({ id: output.segment.segmentId, sourceType: 'assistant_output' as const, segmentId: output.segment.segmentId, deliveryId: output.attempt.deliveryId, deliveryState: output.attempt.state, deliveryStateAt: output.attempt.lastTransitionAt, text: output.text, at: output.attempt.lastTransitionAt }))
+          .map(output => ({ id: output.segment.segmentId, sourceType: 'assistant_output' as const, segmentId: output.segment.segmentId, deliveryId: output.attempt.deliveryId, deliveryState: output.attempt.state, deliveryStateAt: output.attempt.lastTransitionAt, modality: output.segment.modality, text: output.text, at: output.attempt.lastTransitionAt }))
         const ordered = [...inbound, ...assistant]
           .sort((a, b) => Date.parse(a.at) - Date.parse(b.at) || a.id.localeCompare(b.id))
           .slice(-request.maxItems)
         const localPeople = new Map<string, string>()
         const selected = ordered.map((item) => {
           if (!('personRef' in item) || typeof item.personRef !== 'string' || !item.personRef)
-            return { text: item.text }
+            return { text: item.text, modality: item.modality }
           let local = localPeople.get(item.personRef)
           if (!local) {
             local = `P${localPeople.size + 1}`
             localPeople.set(item.personRef, local)
           }
-          return { text: item.text, personRef: local }
+          return { text: item.text, modality: item.modality, personRef: local }
         })
         const serialized = serializePromptContext(selected, request.maxCharacters)
         const truncated = serialized.truncated || inbound.length + assistant.length > ordered.length || inbound.length === candidateReadLimit || assistant.length === candidateReadLimit
