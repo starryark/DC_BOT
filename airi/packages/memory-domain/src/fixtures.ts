@@ -185,6 +185,7 @@ export const FIXTURE_SNAPSHOT_EVIDENCE: SnapshotEvidence = Object.freeze({
   observedRoomVersion: 10,
   observedEventIds: FIXTURE_GROUP_TURN_EVENTS.map(event => event.eventId),
   contextManifestHash: 'manifest-abc123',
+  contextManifest: Object.freeze({ formatVersion: 1, logicalRoomVersion: 10, bindingRevision: 0, maxItems: 10, maxCharacters: 2_000, candidateReadLimit: 40, truncated: false, items: Object.freeze([]) }),
   observedBindingVersion: 0,
   capturedAt: T1,
 })

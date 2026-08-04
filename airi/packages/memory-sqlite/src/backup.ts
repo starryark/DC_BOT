@@ -8,6 +8,7 @@ import { backup, DatabaseSync as SqliteDatabase } from 'node:sqlite'
 import { MemoryError } from '@proj-airi/memory-domain'
 
 import { applyDeletionTarget, deletionTarget, verifyDeletionTarget } from './deletion-targets.js'
+import { migrate } from './migration-runner.js'
 import { latestSchemaVersion, migrations } from './migrations/index.js'
 
 export interface BackupManifest { readonly format: 1, readonly createdAt: string, readonly schemaVersion: number, readonly migrationChecksums: readonly string[], readonly bytes: number }
@@ -104,12 +105,16 @@ export async function restoreVerifiedBackup(backupPath: string, destination: str
     await requireUnused(destination)
     const manifest = JSON.parse(await readFile(`${backupPath}.manifest.json`, 'utf8')) as BackupManifest
     const backupBytes = (await stat(backupPath)).size
-    if (manifest.format !== 1 || manifest.schemaVersion !== latestSchemaVersion || manifest.bytes !== backupBytes || manifest.migrationChecksums.length !== migrations.length || manifest.migrationChecksums.some((value, index) => value !== migrations[index]!.checksum))
+    const knownPrefix = Number.isSafeInteger(manifest.schemaVersion) && manifest.schemaVersion > 0 && manifest.schemaVersion <= latestSchemaVersion
+      && manifest.migrationChecksums.length === manifest.schemaVersion
+      && manifest.migrationChecksums.every((value, index) => value === migrations[index]?.checksum)
+    if (manifest.format !== 1 || manifest.bytes !== backupBytes || !knownPrefix)
       throw new MemoryError('PERSISTENCE_FAILED', 'backup manifest is missing, malformed, or does not match the snapshot')
     await copyFile(backupPath, partial)
     const restored = new SqliteDatabase(partial)
     try {
       restored.exec('PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL')
+      migrate(restored)
       verifyDatabase(restored)
       reapplyObligations(restored)
       verifyDatabase(restored)

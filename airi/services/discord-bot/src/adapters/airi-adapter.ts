@@ -285,7 +285,7 @@ export class DiscordAdapter {
       try {
         if (this.mentionResponder) {
           await this.textMemoryObserver?.admit(event, { isDirectMessage, isThread: message.channel.isThread() })
-          await this.textMemoryObserver?.beginGeneration(event)
+          const preparedMemory = await this.textMemoryObserver?.prepareForModel(event)
           const refreshTyping = async (): Promise<void> => {
             try {
               await message.channel.sendTyping()
@@ -304,6 +304,7 @@ export class DiscordAdapter {
                 isThread: message.channel.isThread(),
                 repliedToText: referencedMessage?.content,
               },
+              memoryContext: preparedMemory?.context,
             })
             const chunks = chunkDiscordText(response)
             await this.textMemoryObserver?.generated(event, chunks)

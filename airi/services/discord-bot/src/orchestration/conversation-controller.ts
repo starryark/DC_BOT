@@ -5,6 +5,7 @@ import type { Content } from '@google/genai'
 import type { PromptCompiler } from '../character/prompt-compiler'
 import type { CharacterRuntime } from '../character/types'
 import type { VoiceMemoryAdapter } from '../memory/voice-memory-adapter'
+import type { MemoryContextResult } from '../memory/text-observer'
 import type { AsrProvider } from '../providers/asr/types'
 import type { BrainProvider } from '../providers/brain/types'
 import type { ResolvedSpeechStyle, StyledSpeechChunk, VoiceProfileCatalog, VoiceReferenceProfile } from '../providers/tts/speech-style-types'
@@ -331,8 +332,8 @@ export class ConversationController {
     let chunkIndex = 0
 
     try {
-      await this.memory?.beginGeneration(turn.turnId, turn.inputEvents ?? [turn.inputEvent])
-      const request = { ...await this.compileRequest(session, turn), turnId: turn.turnId, responseEpoch: epoch }
+      const prepared = await this.memory?.prepareGeneration(turn.turnId, turn.inputEvents ?? [turn.inputEvent])
+      const request = { ...await this.compileRequest(session, turn, prepared?.context), turnId: turn.turnId, responseEpoch: epoch }
       this.logger.withFields({ guildId: session.guildId, turnId: turn.turnId, responseEpoch: epoch }).log('response_epoch_started')
 
       const events = tokenizeSpeechStream(this.brain.generate(request, abort.signal))
@@ -411,9 +412,10 @@ export class ConversationController {
   private async compileRequest(
     session: GuildConversationSession,
     turn: AcceptedTurn,
+    preparedMemory?: MemoryContextResult,
   ): Promise<{ guildId: string, userId: string, systemInstruction: string, contents: Content[], generationProfile: import('../providers/brain/types').BrainGenerationProfile }> {
     const generationProfile = resolveGenerationProfile(classifyTurn(turn.text), config().brain)
-    const memory = await this.memory?.contextFor(turn.inputEvent) ?? { status: 'disabled' as const }
+    const memory = preparedMemory ?? { status: 'disabled' as const }
     if (memory.status === 'required_unavailable')
       throw memory.error
     const active = memory.status === 'available'

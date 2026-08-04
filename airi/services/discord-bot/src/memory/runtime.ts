@@ -11,7 +11,7 @@ import { createHash, randomUUID } from 'node:crypto'
 import { mkdirSync } from 'node:fs'
 
 import { asDeliveryId, asGenerationId, assertAuthorized, asTimestamp, attributedActor, buildCausalEdges, projectPresentation } from '@proj-airi/memory-domain'
-import { BindingRepository, CausalEdgeRepository, DeliveryRepository, EventRepository, GenerationRepository, IdentityRepository, openAuthoritativeSqliteDatabase, OutputRepository, PolicyDataRepository, PrivacyRepository, RoomRepository } from '@proj-airi/memory-sqlite'
+import { BindingRepository, CausalEdgeRepository, DeliveryRepository, EventRepository, GenerationRepository, IdentityRepository, openAuthoritativeSqliteDatabase, OutputRepository, PolicyDataRepository, PrivacyOperationRepository, PrivacyRepository, RoomRepository } from '@proj-airi/memory-sqlite'
 
 import { memoryPosture } from './feature-flags'
 import { serializePromptContext } from './prompt-context'
@@ -82,6 +82,7 @@ export function createMemoryRuntime(options: CreateMemoryRuntimeOptions): Memory
   const outputs = new OutputRepository(handle.database)
   const deliveries = new DeliveryRepository(handle.database)
   const privacyRepository = new PrivacyRepository(handle.database)
+  const privacyOperations = new PrivacyOperationRepository(handle.database)
   const policyData = new PolicyDataRepository(handle.database)
   let bindingManifest
   try {
@@ -170,7 +171,7 @@ export function createMemoryRuntime(options: CreateMemoryRuntimeOptions): Memory
           throw new RangeError('recent context maxItems must be between 1 and 250')
         const scope = policyData.findExact({ physicalRoomId: request.physicalRoomId, logicalRoomId: request.logicalRoomId, characterId: request.characterId, at: asTimestamp(new Date().toISOString()) })
         if (!scope)
-          return { sentinel: 'noDurableContext' as const, text: '', includedItems: 0, truncated: false, manifest: { selected: [], truncated: false, bindingRevision: 0, candidateReadLimit: 0 } }
+          return { sentinel: 'noDurableContext' as const, text: '', includedItems: 0, truncated: false, manifest: { formatVersion: 1 as const, logicalRoomVersion: rooms.currentVersion(request.logicalRoomId), maxItems: request.maxItems, maxCharacters: request.maxCharacters, selected: [], truncated: false, bindingRevision: 0, candidateReadLimit: 0 } }
         // Each source reads at most four candidates per requested item. The
         // combined repository read bound is therefore 8 * maxItems.
         const candidateReadLimit = request.maxItems * 4
@@ -182,7 +183,7 @@ export function createMemoryRuntime(options: CreateMemoryRuntimeOptions): Memory
           { logicalRoomId: request.logicalRoomId, characterId: request.characterId, limit: candidateReadLimit, excludeEventIds: request.excludeEventIds },
           { allowPartialAssistantOutput: false, treatCompletedPlaybackAsEligible: true },
         )
-          .map(output => ({ id: output.segment.segmentId, sourceType: 'assistant_output' as const, deliveryStatus: output.attempt.state, text: output.text, at: output.attempt.lastTransitionAt }))
+          .map(output => ({ id: output.segment.segmentId, sourceType: 'assistant_output' as const, segmentId: output.segment.segmentId, deliveryId: output.attempt.deliveryId, deliveryState: output.attempt.state, deliveryStateAt: output.attempt.lastTransitionAt, text: output.text, at: output.attempt.lastTransitionAt }))
         const ordered = [...inbound, ...assistant]
           .sort((a, b) => Date.parse(a.at) - Date.parse(b.at) || a.id.localeCompare(b.id))
           .slice(-request.maxItems)
@@ -199,7 +200,7 @@ export function createMemoryRuntime(options: CreateMemoryRuntimeOptions): Memory
         })
         const serialized = serializePromptContext(selected, request.maxCharacters)
         const truncated = serialized.truncated || inbound.length + assistant.length > ordered.length || inbound.length === candidateReadLimit || assistant.length === candidateReadLimit
-        return { sentinel: 'ok' as const, ...serialized, manifest: { selected: ordered.slice(0, serialized.includedItems).map(item => ({ id: item.id, sourceType: item.sourceType, ...('deliveryStatus' in item ? { deliveryStatus: item.deliveryStatus } : {}) })), truncated, bindingRevision: scope.bindingRevision, candidateReadLimit } }
+        return { sentinel: 'ok' as const, ...serialized, manifest: { formatVersion: 1 as const, logicalRoomVersion: rooms.currentVersion(request.logicalRoomId), maxItems: request.maxItems, maxCharacters: request.maxCharacters, selected: ordered.slice(0, serialized.includedItems).map(item => item.sourceType === 'inbound' ? { sourceType: 'inbound' as const, eventId: item.id } : { sourceType: 'assistant_output' as const, segmentId: item.segmentId, deliveryId: item.deliveryId, deliveryState: item.deliveryState, deliveryStateAt: item.deliveryStateAt }), truncated, bindingRevision: scope.bindingRevision, candidateReadLimit } }
       },
     },
     privacy: {
@@ -214,25 +215,33 @@ export function createMemoryRuntime(options: CreateMemoryRuntimeOptions): Memory
           throw new Error('Privacy operations require an attributable requester')
         const personId = resolved.actor.personId
         const now = asTimestamp(new Date(input.observedAt).toISOString())
-        if (input.operation.kind === 'status') {
-          const counts = privacyRepository.counts(personId, resolved.room.logicalRoomId)
-          return { message: `Memory is ${options.mode}. Explicit semantic memory is disabled. This room has ${counts.events} requester event(s) and ${counts.facts} existing explicit fact(s).` }
+        const begun = privacyOperations.begin({ requestId: input.requestId, operationKind: input.operation.kind, personId, logicalRoomId: resolved.room.logicalRoomId, inputHash: createHash('sha256').update(JSON.stringify(input.operation)).digest('hex'), requestedAt: now })
+        try {
+          if (input.operation.kind === 'status') {
+            const counts = privacyRepository.counts(personId, resolved.room.logicalRoomId)
+            privacyOperations.complete(begun.record.operationId, { completedAt: now, outcomeCode: 'succeeded' })
+            return { operationId: begun.record.operationId, message: `Memory is ${options.mode}. Explicit semantic memory is disabled. This room has ${counts.events} requester event(s) and ${counts.facts} existing explicit fact(s).` }
+          }
+          if (input.operation.kind === 'show' || input.operation.kind === 'export') {
+            const payload = privacyRepository.export(personId, resolved.room.logicalRoomId)
+            privacyOperations.complete(begun.record.operationId, { completedAt: now, outcomeCode: 'succeeded' })
+            if (input.operation.kind === 'export')
+              return { operationId: begun.record.operationId, message: 'Your current-room memory export is attached.', attachment: { name: `memory-export-${input.observedAt}.json`, data: JSON.stringify(payload, null, 2) } }
+            return { operationId: begun.record.operationId, message: payload.facts.length ? payload.facts.map(fact => `${fact.factId}: ${fact.predicate} = ${fact.value}`).join('\n').slice(0, 1900) : 'No active explicit facts are stored for you in this room.' }
+          }
+          if (input.operation.kind === 'remember' || input.operation.kind === 'correct') {
+            privacyOperations.complete(begun.record.operationId, { completedAt: now, outcomeCode: 'capability_disabled' })
+            return { operationId: begun.record.operationId, code: 'capability_disabled', message: input.operation.kind === 'remember' ? 'Explicit semantic memory is disabled; nothing was stored.' : 'Explicit semantic memory correction is disabled; nothing was changed.' }
+          }
+          const forgetRequestId = stableTraceId('forget', begun.record.operationId)
+          const forgotten = privacyRepository.forget(forgetRequestId, personId, resolved.room.logicalRoomId, now)
+          privacyOperations.complete(begun.record.operationId, { completedAt: now, outcomeCode: 'succeeded', forgetRequestId: forgotten.forgetRequestId })
+          return { operationId: begun.record.operationId, message: 'Forget completed and verified for your data in this room. A minimal deletion obligation was retained for backup restore.' }
         }
-        if (input.operation.kind === 'show' || input.operation.kind === 'export') {
-          const payload = privacyRepository.export(personId, resolved.room.logicalRoomId)
-          if (input.operation.kind === 'export')
-            return { message: 'Your current-room memory export is attached.', attachment: { name: `memory-export-${input.observedAt}.json`, data: JSON.stringify(payload, null, 2) } }
-          return { message: payload.facts.length ? payload.facts.map(fact => `${fact.factId}: ${fact.predicate} = ${fact.value}`).join('\n').slice(0, 1900) : 'No active explicit facts are stored for you in this room.' }
+        catch (error) {
+          privacyOperations.complete(begun.record.operationId, { completedAt: now, outcomeCode: 'failed' })
+          throw error
         }
-        if (input.operation.kind === 'remember') {
-          return { code: 'capability_disabled', message: 'Explicit semantic memory is disabled; nothing was stored.' }
-        }
-        if (input.operation.kind === 'correct') {
-          return { code: 'capability_disabled', message: 'Explicit semantic memory correction is disabled; nothing was changed.' }
-        }
-        const requestId = stableTraceId('forget', `${personId}:${resolved.room.logicalRoomId}:${input.observedAt}`)
-        privacyRepository.forget(requestId, personId, resolved.room.logicalRoomId, now)
-        return { message: 'Forget completed and verified for your data in this room. A minimal deletion obligation was retained for backup restore.' }
       },
     },
     close: async () => handle.close(),

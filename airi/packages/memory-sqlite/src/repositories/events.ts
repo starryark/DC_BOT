@@ -29,7 +29,7 @@ function envelope(row: EventRow): InboundEventEnvelope {
     attributedActor(asPersonId(String(row.author_person_id)), actor.snapshot)
   return {
     eventId: asEventId(String(row.event_id)), idempotencyKey: asRequestId(String(row.idempotency_key)), kind: String(row.event_kind) as InboundEventEnvelope['kind'], actor,
-    physicalRoomId: asPhysicalRoomId(String(row.physical_room_id)), logicalRoomId: asLogicalRoomId(String(row.logical_room_id)), occurredAt: asTimestamp(String(row.occurred_at)), recordedAt: asTimestamp(String(row.recorded_at)),
+    physicalRoomId: asPhysicalRoomId(String(row.physical_room_id)), logicalRoomId: asLogicalRoomId(String(row.logical_room_id)), roomVersion: Number(row.room_sequence), occurredAt: asTimestamp(String(row.occurred_at)), recordedAt: asTimestamp(String(row.recorded_at)),
     payload: JSON.parse(String(row.payload_json)) as InboundEventEnvelope['payload'], retentionClass: String(row.retention_class) as InboundEventEnvelope['retentionClass'],
   }
 }

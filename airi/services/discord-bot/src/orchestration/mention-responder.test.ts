@@ -78,12 +78,9 @@ describe('mentionResponder', () => {
 
   it('uses current input only when active durable context is valid but empty', async () => {
     const brain = fakeBrain(['first answer', 'second answer'])
-    const responder = new MentionResponder({
-      brain,
-      memoryContext: { contextFor: async () => ({ status: 'available', text: '' }) },
-    })
-    await mention(responder, { text: 'legacy secret' })
-    await mention(responder, { text: 'current question' })
+    const responder = new MentionResponder({ brain })
+    await responder.respond({ event: event({ text: 'legacy secret' }), context: { isDirectMessage: false, isThread: false }, memoryContext: { status: 'available', text: '' } })
+    await responder.respond({ event: event({ text: 'current question' }), context: { isDirectMessage: false, isThread: false }, memoryContext: { status: 'available', text: '' } })
 
     const prompt = textOf(brain.requests[1]!)
     expect(prompt).toContain('current question')
@@ -93,12 +90,9 @@ describe('mentionResponder', () => {
 
   it('does not call the model when active durable context is required but unavailable', async () => {
     const brain = fakeBrain(['must not run'])
-    const responder = new MentionResponder({
-      brain,
-      memoryContext: { contextFor: async () => ({ status: 'required_unavailable', error: new Error('context failed') }) },
-    })
+    const responder = new MentionResponder({ brain })
 
-    await expect(mention(responder)).rejects.toThrow('context failed')
+    await expect(responder.respond({ event: event(), context: { isDirectMessage: false, isThread: false }, memoryContext: { status: 'required_unavailable', error: new Error('context failed') } })).rejects.toThrow('context failed')
     expect(brain.requests).toHaveLength(0)
   })
 

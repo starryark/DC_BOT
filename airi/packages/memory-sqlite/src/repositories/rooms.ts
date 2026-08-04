@@ -1,7 +1,7 @@
 /* eslint-disable style/max-statements-per-line, antfu/if-newline, style/brace-style */
 import type { DatabaseSync } from 'node:sqlite'
 
-import type { CharacterId, PhysicalLocation, PhysicalRoomId, RoomResolution, Timestamp } from '@proj-airi/memory-domain'
+import type { CharacterId, LogicalRoomId, PhysicalLocation, PhysicalRoomId, RoomResolution, Timestamp } from '@proj-airi/memory-domain'
 
 import { asLogicalRoomId, asPhysicalRoomId, isolatedLogicalRoomId, MemoryError, physicalRoomIdOf } from '@proj-airi/memory-domain'
 
@@ -49,6 +49,14 @@ export class RoomRepository {
       return { physicalRoomId: asPhysicalRoomId(row.physical_room_id), location: { platform: 'discord', channelId: row.channel_id, channelKind, ...(row.guild_id == null ? {} : { guildId: row.guild_id }) }, displayName: row.display_name ?? undefined, parentChannelId: row.parent_channel_id ?? undefined, lifecycle: row.lifecycle, revision: row.revision }
     }
     catch (error) { fail('SQLite exact room lookup failed', error) }
+  }
+
+  /** Current append version used in pre-model snapshot evidence. */
+  currentVersion(logicalRoomId: LogicalRoomId): number {
+    const row = this.db.prepare('SELECT current_version FROM logical_rooms WHERE logical_room_id=?').get(logicalRoomId) as { current_version: number } | undefined
+    if (!row)
+      throw new MemoryError('TARGET_NOT_FOUND', 'logical room does not exist')
+    return row.current_version
   }
 
   resolve(location: PhysicalLocation, characterId: CharacterId, at: Timestamp): RoomResolution {

@@ -3,13 +3,14 @@ import type { ChildProcess } from 'node:child_process'
 import type { DatabaseSync } from 'node:sqlite'
 
 import { fork } from 'node:child_process'
-import { copyFile, mkdtemp, readFile, rm } from 'node:fs/promises'
+import { copyFile, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { DatabaseSync as SqliteDatabase } from 'node:sqlite'
 
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { createVerifiedBackup, restoreVerifiedBackup, verifyDatabase } from './backup.js'
+import { captureDeletionObligations, createVerifiedBackup, replayDeletionObligations, restoreVerifiedBackup, verifyDatabase } from './backup.js'
 import { classifySqliteFailure, openSqliteDatabase } from './connection-profile.js'
 import { executeIdempotently } from './idempotency.js'
 import { migrate } from './migration-runner.js'
@@ -132,6 +133,77 @@ describe('imp-208 file-backed SQLite profile', () => {
     verifyDatabase(restored); restored.close(); source.close()
   })
 
+  // ROOT CAUSE:
+  //
+  // Restore previously required the backup manifest to equal the current
+  // schema exactly, so shipping schema v8 would have made every existing v7
+  // backup unrestorable — including the ones holding deletion obligations.
+  //
+  // Restore now accepts a known migration *prefix* and runs the forward-only
+  // migration runner inside the isolated candidate before verification.
+  // `verifyDatabase` itself is unchanged, so live databases and newly created
+  // backups still require the complete current history.
+  it('restores a verified v7 backup by migrating the isolated candidate to v8 and replaying obligations', async () => {
+    const directory = await root()
+    const backupPath = join(directory, 'v7-snapshot.db')
+    const restorePath = join(directory, 'v7-restored.db')
+
+    // A database exactly as an older build left it: seven migrations applied.
+    // `openSqliteDatabase` migrates to latest on open, so a version-pinned
+    // fixture must use a raw handle.
+    const legacy = new SqliteDatabase(backupPath, { enableForeignKeyConstraints: true })
+    migrate(legacy, migrations.slice(0, 7))
+    legacy.prepare('INSERT INTO logical_rooms(logical_room_id,isolation_scope_type,isolation_scope_id,room_kind,created_at) VALUES (\'logical\',\'unbound_channel\',\'logical\',\'unbound_channel\',\'2026-01-01T00:00:00Z\')').run()
+    legacy.prepare('INSERT INTO physical_room_records(physical_room_id,locator_key,platform,channel_id,channel_kind,guild_id,lifecycle,observed_at) VALUES (\'physical\',\'discord:guild:1:2\',\'discord\',\'2\',\'guild_text\',\'1\',\'active\',\'2026-01-01T00:00:00Z\')').run()
+    legacy.prepare('INSERT INTO inbound_event_records(event_id,idempotency_key,event_kind,actor_kind,actor_json,physical_room_id,logical_room_id,room_sequence,occurred_at,recorded_at,payload_json,retention_class,envelope_hash) VALUES (\'legacy-canary\',\'canary-key\',\'system\',\'anonymous\',\'{"kind":"anonymous","source":"system"}\',\'physical\',\'logical\',1,\'2026-01-01T00:00:00Z\',\'2026-01-01T00:00:00Z\',\'{"content":"pre-migration secret"}\',\'transcript\',\'hash\')').run()
+    legacy.prepare('INSERT INTO forget_requests(forget_request_id,subject_type,subject_id,scope_json,requested_at,status,version,completed_at,verification_json,idempotency_key) VALUES (\'legacy-forget\',\'fact_id\',\'legacy-canary\',\'{}\',\'2026-01-01T00:00:00.000Z\',\'completed\',1,\'2026-01-01T00:00:00.000Z\',\'{}\',\'legacy-forget\')').run()
+    legacy.prepare('INSERT INTO deletion_tombstones(tombstone_id,forget_request_id,target_table,target_id,redaction_state,created_at,verified_at,evidence_json) VALUES (\'legacy-tombstone\',\'legacy-forget\',\'inbound_event_records\',\'legacy-canary\',\'verified\',\'2026-01-01T00:00:00.000Z\',\'2026-01-01T00:00:00.000Z\',\'{}\')').run()
+    const obligations = captureDeletionObligations(legacy)
+    legacy.close()
+
+    // The manifest an older build would have written: prefix version and checksums.
+    const v7Manifest = { format: 1 as const, createdAt: '2026-01-01T00:00:01.000Z', schemaVersion: 7, migrationChecksums: migrations.slice(0, 7).map(item => item.checksum), bytes: (await stat(backupPath)).size }
+    await writeFile(`${backupPath}.manifest.json`, JSON.stringify(v7Manifest), 'utf8')
+
+    await restoreVerifiedBackup(backupPath, restorePath, database => replayDeletionObligations(database, obligations))
+
+    const restored = openSqliteDatabase(restorePath)
+    expect(restored.prepare('SELECT version FROM memory_schema_migrations ORDER BY version').all()).toEqual(migrations.map(item => ({ version: item.version })))
+    // The v8 tables exist in the restored candidate and start empty.
+    expect(restored.prepare('SELECT count(*) count FROM generation_context_manifests').get()).toMatchObject({ count: 0 })
+    // The obligation survived the version gap: the row remains as topology
+    // evidence while its content is redacted, exactly as the privacy model says.
+    expect(restored.prepare('SELECT count(*) count FROM inbound_event_records WHERE event_id=\'legacy-canary\'').get()).toMatchObject({ count: 1 })
+    expect(restored.prepare('SELECT payload_json FROM inbound_event_records WHERE event_id=\'legacy-canary\'').get()).toMatchObject({ payload_json: '{"redacted":true}' })
+    verifyDatabase(restored)
+    restored.close()
+  })
+
+  it('rejects an altered checksum, a future schema version, and a byte-count mismatch', async () => {
+    const directory = await root()
+    const source = join(directory, 'reject-source.db')
+    const database = new SqliteDatabase(source, { enableForeignKeyConstraints: true })
+    migrate(database, migrations.slice(0, 7))
+    database.close()
+    const bytes = (await stat(source)).size
+    const base = { format: 1 as const, createdAt: '2026-01-01T00:00:01.000Z', schemaVersion: 7, migrationChecksums: migrations.slice(0, 7).map(item => item.checksum), bytes }
+
+    const rejected: Record<string, unknown> = {
+      alteredChecksum: { ...base, migrationChecksums: [...base.migrationChecksums.slice(0, 6), 'f'.repeat(64)] },
+      futureSchemaVersion: { ...base, schemaVersion: migrations.length + 1, migrationChecksums: [...migrations.map(item => item.checksum), 'f'.repeat(64)] },
+      byteMismatch: { ...base, bytes: bytes + 1 },
+      // A truncated checksum list cannot describe the version it claims.
+      inconsistentPrefixLength: { ...base, migrationChecksums: base.migrationChecksums.slice(0, 5) },
+    }
+
+    for (const [name, manifest] of Object.entries(rejected)) {
+      const candidate = join(directory, `${name}.db`)
+      await copyFile(source, candidate)
+      await writeFile(`${candidate}.manifest.json`, JSON.stringify(manifest), 'utf8')
+      await expect(restoreVerifiedBackup(candidate, join(directory, `${name}-out.db`), () => {})).rejects.toThrow(/restore failed/)
+    }
+  })
+
   it('upgrades every supported exact schema version and rejects malformed manifests', async () => {
     const directory = await root()
     for (let version = 0; version <= migrations.length; version++) {
@@ -141,7 +213,7 @@ describe('imp-208 file-backed SQLite profile', () => {
       if (version > 0)
         migrate(exact, migrations.slice(0, version))
       expect(migrate(exact)).toEqual(migrations.slice(version).map(item => item.version))
-      expect(exact.prepare('SELECT version FROM memory_schema_migrations ORDER BY version').all()).toHaveLength(7)
+      expect(exact.prepare('SELECT version FROM memory_schema_migrations ORDER BY version').all()).toHaveLength(8)
       verifyDatabase(exact); exact.close()
     }
     const malformed = new (await import('node:sqlite')).DatabaseSync(':memory:')

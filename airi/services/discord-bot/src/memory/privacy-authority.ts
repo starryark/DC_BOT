@@ -9,6 +9,8 @@ export type PrivacyOperation
     | { kind: 'forget' }
 
 export interface PrivacyCommandInput {
+  /** Stable content-free identity supplied by the transport, normally the Discord interaction ID. */
+  requestId: string
   operation: PrivacyOperation
   actorEvidence: IngressActorEvidence
   discordUserId: string
@@ -19,6 +21,7 @@ export interface PrivacyCommandInput {
 }
 
 export interface PrivacyCommandResult {
+  operationId: string
   message: string
   code?: 'capability_disabled'
   attachment?: { name: string, data: string }

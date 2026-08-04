@@ -1,6 +1,6 @@
 import type { PromptCompiler } from '../character/prompt-compiler'
 import type { CharacterRuntime } from '../character/types'
-import type { DiscordTextContextProvider } from '../memory/text-observer'
+import type { MemoryContextResult } from '../memory/text-observer'
 import type { BrainProvider, BrainRequest } from '../providers/brain/types'
 import type { DiscordMentionInputEvent } from './events'
 import type { ConversationRoomId } from './room-id'
@@ -42,6 +42,7 @@ export interface DiscordReplyContext {
 export interface MentionRequest {
   event: DiscordMentionInputEvent
   context: DiscordReplyContext
+  memoryContext?: MemoryContextResult
 }
 
 export interface TextMentionResponder {
@@ -52,7 +53,6 @@ export interface MentionResponderOptions {
   brain: BrainProvider
   character?: CharacterRuntime
   promptCompiler?: PromptCompiler
-  memoryContext?: DiscordTextContextProvider
 }
 
 /** Provider-neutral direct-mode text generation for Discord messages. */
@@ -60,7 +60,6 @@ export class MentionResponder implements TextMentionResponder {
   private readonly brain: BrainProvider
   private readonly character?: CharacterRuntime
   private readonly promptCompiler?: PromptCompiler
-  private readonly memoryContext?: DiscordTextContextProvider
   private readonly rooms = new InMemoryRoomStore()
   private readonly roomQueues = new Map<ConversationRoomId, Promise<void>>()
   private readonly pendingByRoom = new Map<ConversationRoomId, number>()
@@ -69,7 +68,6 @@ export class MentionResponder implements TextMentionResponder {
     this.brain = options.brain
     this.character = options.character
     this.promptCompiler = options.promptCompiler
-    this.memoryContext = options.memoryContext
   }
 
   respond(request: MentionRequest): Promise<string> {
@@ -110,7 +108,7 @@ export class MentionResponder implements TextMentionResponder {
     const { event } = request
     const currentInputText = this.composeInput(event.text, request.context.repliedToText)
     const room = this.rooms.getOrCreate(roomId, this.character?.id ?? '')
-    const durableContext = await this.memoryContext?.contextFor(event) ?? { status: 'disabled' as const }
+    const durableContext = request.memoryContext ?? { status: 'disabled' as const }
     if (durableContext.status === 'required_unavailable')
       throw durableContext.error
     const active = durableContext.status === 'available'

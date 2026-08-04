@@ -2,7 +2,7 @@ import type { AuthorizationContext, CharacterId, DeliveryAttempt, GenerationAtte
 
 import type { DiscordMentionInputEvent } from '../orchestration/events'
 import type { MemoryRuntime } from './runtime'
-import type { DiscordTextContextProvider, DiscordTextMemoryObserver, TextIngressContext } from './text-observer'
+import type { DiscordTextMemoryObserver, TextIngressContext } from './text-observer'
 
 import { asPersonId, asRequestId, asSegmentId, timestampFromEpochMs } from '@proj-airi/memory-domain'
 
@@ -22,7 +22,7 @@ export interface TextMemoryAdapterOptions {
 }
 
 /** Creates the shared text shadow adapter; failures are observable but never reported as durable success. */
-export function createTextMemoryAdapter(options: TextMemoryAdapterOptions): DiscordTextMemoryObserver & DiscordTextContextProvider {
+export function createTextMemoryAdapter(options: TextMemoryAdapterOptions): DiscordTextMemoryObserver {
   const traces = new Map<string, TextTrace>()
   const fail = (event: DiscordMentionInputEvent, error: unknown): void => {
     traces.delete(event.turnId)
@@ -32,28 +32,28 @@ export function createTextMemoryAdapter(options: TextMemoryAdapterOptions): Disc
   }
 
   return {
-    contextFor: async (event) => {
+    prepareForModel: async (event) => {
       const trace = traces.get(event.turnId)
-      if (!options.runtime.health.promptUseEnabled)
-        return { status: 'disabled' }
-      if (!trace || !options.runtime.context)
-        return { status: 'required_unavailable', error: new Error('Required durable recent context trace is unavailable') }
+      if (!trace || !options.runtime.trace)
+        return { context: options.runtime.health.promptUseEnabled ? { status: 'required_unavailable', error: new Error('Required durable recent context trace is unavailable') } : { status: 'disabled' } }
       try {
-        const result = await boundedContext(options.runtime.context.assembleRecent({
-          authorization: trace.authorization,
-          logicalRoomId: trace.room.logicalRoomId,
-          physicalRoomId: trace.room.physicalRoomId,
-          characterId: options.characterId,
-          maxItems: 24,
-          maxCharacters: 8_000,
-          excludeEventIds: [trace.event.eventId],
-        }), 250)
-        if (result.sentinel !== 'ok')
-          return { status: 'required_unavailable', error: new Error('Required durable recent context is unavailable') }
-        return { status: 'available', text: result.text }
+        const selected = options.runtime.health.promptUseEnabled && options.runtime.context
+          ? await boundedContext(options.runtime.context.assembleRecent({ authorization: trace.authorization, logicalRoomId: trace.room.logicalRoomId, physicalRoomId: trace.room.physicalRoomId, characterId: options.characterId, maxItems: 24, maxCharacters: 8_000, excludeEventIds: [trace.event.eventId] }), 250)
+          : undefined
+        if (options.runtime.health.promptUseEnabled && (!selected || selected.sentinel !== 'ok'))
+          throw new Error('Required durable recent context is unavailable')
+        const at = timestampFromEpochMs(Date.now())
+        const manifest = selected
+          ? { formatVersion: selected.manifest.formatVersion, logicalRoomVersion: selected.manifest.logicalRoomVersion, bindingRevision: selected.manifest.bindingRevision, maxItems: selected.manifest.maxItems, maxCharacters: selected.manifest.maxCharacters, candidateReadLimit: selected.manifest.candidateReadLimit, truncated: selected.manifest.truncated, items: selected.manifest.selected }
+          : { formatVersion: 1 as const, logicalRoomVersion: trace.event.roomVersion ?? 0, bindingRevision: trace.room.bindingVersion, maxItems: 0, maxCharacters: 0, candidateReadLimit: 0, truncated: false, items: [] }
+        const begun = await options.runtime.trace.beginGeneration(trace.authorization, { idempotencyKey: asRequestId(`generation:${event.turnId}`), logicalRoomId: trace.room.logicalRoomId, characterId: options.characterId, causes: [{ inboundEventId: trace.event.eventId, role: 'trigger' }], evidence: { observedRoomVersion: manifest.logicalRoomVersion, observedEventIds: [trace.event.eventId, ...manifest.items.flatMap(item => item.sourceType === 'inbound' ? [item.eventId] : [])], contextManifestHash: '', contextManifest: manifest, observedBindingVersion: manifest.bindingRevision, capturedAt: at }, modelRef: options.modelRef, startedAt: at })
+        trace.generation = begun.generation
+        return { context: selected ? { status: 'available', text: selected.text } : { status: 'disabled' }, generation: begun.generation }
       }
       catch (error) {
-        return { status: 'required_unavailable', error: error instanceof Error ? error : new Error(String(error)) }
+        if (options.runtime.health.state === 'durableActive') throw error
+        options.onFailure?.(error)
+        return { context: { status: 'disabled' } }
       }
     },
     admit: async (event, context) => {
@@ -96,28 +96,6 @@ export function createTextMemoryAdapter(options: TextMemoryAdapterOptions): Disc
           retentionClass: 'transcript',
         })
         traces.set(event.turnId, { authorization, event: appended.envelope, room: resolved.room, deliveries: [] })
-      }
-      catch (error) { fail(event, error) }
-    },
-    beginGeneration: async (event) => {
-      const trace = traces.get(event.turnId)
-      if (!trace || !options.runtime.trace) {
-        if (options.runtime.health.state === 'durableActive')
-          throw new Error('Required durable generation causality is unavailable')
-        return
-      }
-      try {
-        const at = timestampFromEpochMs(Date.now())
-        const begun = await options.runtime.trace.beginGeneration(trace.authorization, {
-          idempotencyKey: asRequestId(`generation:${event.turnId}`),
-          logicalRoomId: trace.room.logicalRoomId,
-          characterId: options.characterId,
-          causes: [{ inboundEventId: trace.event.eventId, role: 'trigger' }],
-          evidence: { observedRoomVersion: 1, observedEventIds: [trace.event.eventId], contextManifestHash: 'shadow:no-prompt-read', observedBindingVersion: trace.room.bindingVersion, capturedAt: at },
-          modelRef: options.modelRef,
-          startedAt: at,
-        })
-        trace.generation = begun.generation
       }
       catch (error) { fail(event, error) }
     },
@@ -175,6 +153,10 @@ export function createTextMemoryAdapter(options: TextMemoryAdapterOptions): Disc
       const trace = traces.get(event.turnId)
       if (trace && options.runtime.trace) {
         const at = timestampFromEpochMs(Date.now())
+        if (trace.generation?.state === 'running') {
+          try { trace.generation = await options.runtime.trace.transitionGeneration(trace.authorization, trace.generation, 'running', 'failed', at) }
+          catch (transitionError) { options.onFailure?.(transitionError) }
+        }
         for (const [index, delivery] of trace.deliveries.entries()) {
           if (delivery.state === 'delivered' || delivery.state === 'reconciled')
             continue

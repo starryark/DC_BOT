@@ -3,7 +3,7 @@ import type { DatabaseSync } from 'node:sqlite'
 import type { DeliveryAttempt, GenerationAttempt, OutputSegment } from '@proj-airi/memory-domain'
 
 import { DatabaseSync as SQLiteDatabase } from 'node:sqlite'
-import { asCharacterId, asDeliveryId, asGenerationId, asPersonId, asRequestId, asSegmentId, asTimestamp, attributedActor, MemoryError } from '@proj-airi/memory-domain'
+import { asCharacterId, asDeliveryId, asGenerationId, asPersonId, asRequestId, asSegmentId, asTimestamp, attributedActor, digestSnapshotContextManifest, MemoryError } from '@proj-airi/memory-domain'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { migrate } from '../migration-runner.js'
@@ -25,7 +25,7 @@ function setup() {
   const rooms = new RoomRepository(db); const physicalRoomId = rooms.observe({ location, observedAt: time(0) }).physicalRoomId; const logicalRoomId = rooms.resolve(location, characterId, time(0)).logicalRoomId
   const actor = attributedActor(asPersonId('person-a'), { platform: 'discord', platformUserId: '18446744073709551615', displayNameAtEvent: 'Alice', guildId: location.guildId, observedAt: time(0), source: 'gateway' })
   let eventNo = 0; const events = new EventRepository(db, () => `event-${++eventNo}`, () => time(1)); const event = events.append({ idempotencyKey: asRequestId('event-key'), kind: 'user_text', actor, physicalRoomId, logicalRoomId, occurredAt: time(1), payload: { content: 'hello' }, retentionClass: 'transcript' }).envelope
-  const generation: GenerationAttempt = { generationId: asGenerationId('generation-a'), idempotencyKey: asRequestId('generation-key'), logicalRoomId, characterId, state: 'prepared', evidence: { observedRoomVersion: 1, observedEventIds: [event.eventId], contextManifestHash: 'manifest-exact', observedBindingVersion: 0, capturedAt: time(2) }, modelRef: 'provider/model/prompt-v1', startedAt: time(2) }
+  const generation: GenerationAttempt = { generationId: asGenerationId('generation-a'), idempotencyKey: asRequestId('generation-key'), logicalRoomId, characterId, state: 'prepared', evidence: { observedRoomVersion: 1, observedEventIds: [event.eventId], contextManifestHash: '', contextManifest: { formatVersion: 1, logicalRoomVersion: 1, bindingRevision: 0, maxItems: 0, maxCharacters: 0, candidateReadLimit: 0, truncated: false, items: [] }, observedBindingVersion: 0, capturedAt: time(2) }, modelRef: 'provider/model/prompt-v1', startedAt: time(2) }
   let idNo = 0; const generations = new GenerationRepository(db, () => `transition-${++idNo}`); const outputs = new OutputRepository(db); const deliveries = new DeliveryRepository(db, () => `delivery-transition-${++idNo}`)
   return { physicalRoomId, logicalRoomId, events, event, generation, generations, outputs, deliveries }
 }
@@ -37,7 +37,8 @@ function delivery(segmentId: OutputSegment['segmentId'], overrides: Partial<Deli
 describe('IMP-205 generation repository', () => {
   it('creates exact snapshot evidence idempotently and follows the legal lifecycle', () => {
     const { generation, generations } = setup(); const first = generations.create(generation); const retry = generations.create(generation)
-    expect(first.attempt).toEqual(generation); expect(retry).toEqual({ attempt: generation, deduplicated: true }); generations.transition(generation.generationId, 'prepared', 'running', time(3)); generations.transition(generation.generationId, 'running', 'generated', time(4)); const saved = generations.transition(generation.generationId, 'generated', 'persisted', time(5))
+    const canonical = { ...generation, evidence: { ...generation.evidence, contextManifestHash: digestSnapshotContextManifest(generation.evidence.contextManifest) } }
+    expect(first.attempt).toEqual(canonical); expect(retry).toEqual({ attempt: canonical, deduplicated: true }); generations.transition(generation.generationId, 'prepared', 'running', time(3)); generations.transition(generation.generationId, 'running', 'generated', time(4)); const saved = generations.transition(generation.generationId, 'generated', 'persisted', time(5))
     expect(saved.state).toBe('persisted'); expect(saved.completedAt).toBe(time(5)); expect(generations.lifecycle(generation.generationId).map(value => value.to)).toEqual(['prepared', 'running', 'generated', 'persisted']); expect(db.prepare('SELECT COUNT(*) count FROM generation_snapshot_events').get()).toEqual({ count: 1 })
   })
 

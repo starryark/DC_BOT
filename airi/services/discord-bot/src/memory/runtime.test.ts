@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { asCharacterId, asRequestId, asSegmentId, asTimestamp } from '@proj-airi/memory-domain'
+import { openReadOnlySqliteDatabase } from '@proj-airi/memory-sqlite'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { buildDiscordActorEvidence } from './discord-actor-snapshot'
@@ -41,13 +42,21 @@ describe('createMemoryRuntime', () => {
     const context = await runtime.context!.assembleRecent({ authorization, logicalRoomId: voice.room.logicalRoomId, physicalRoomId: voice.room.physicalRoomId, characterId, maxItems: 10, maxCharacters: 500 })
     expect(context.text).toContain('cross-room durable history')
     expect(context.manifest.bindingRevision).toBeGreaterThan(0)
-    const privacyInput = { actorEvidence: evidence, discordUserId: '20000000000000001', guildId: textLocation.guildId, channelId: textLocation.channelId, channelKind: 'guildText' as const, observedAt: Date.now() + 1_000 }
+    const privacyInput = { requestId: 'privacy-status-1', actorEvidence: evidence, discordUserId: '20000000000000001', guildId: textLocation.guildId, channelId: textLocation.channelId, channelKind: 'guildText' as const, observedAt: Date.now() + 1_000 }
     const status = await runtime.privacy!.execute({ ...privacyInput, operation: { kind: 'status' } })
     expect(status.message).toContain('1 requester event')
     expect(status.message).toContain('Explicit semantic memory is disabled')
-    const remember = await runtime.privacy!.execute({ ...privacyInput, operation: { kind: 'remember', predicate: 'favorite', value: 'Dr Pepper' } })
+    const remember = await runtime.privacy!.execute({ ...privacyInput, requestId: 'privacy-remember-1', operation: { kind: 'remember', predicate: 'favorite', value: 'Dr Pepper' } })
     expect(remember.code).toBe('capability_disabled')
-    const afterDisabledWrite = await runtime.privacy!.execute({ ...privacyInput, operation: { kind: 'status' } })
+    const rememberRetry = await runtime.privacy!.execute({ ...privacyInput, requestId: 'privacy-remember-1', operation: { kind: 'remember', predicate: 'favorite', value: 'Dr Pepper' } })
+    expect(rememberRetry.operationId).toBe(remember.operationId)
+    await expect(runtime.privacy!.execute({ ...privacyInput, requestId: 'privacy-remember-1', operation: { kind: 'remember', predicate: 'favorite', value: 'conflicting value' } })).rejects.toThrow('conflicting input')
+    const inspection = openReadOnlySqliteDatabase(runtime.health.authority!)
+    const operationBytes = JSON.stringify(inspection.prepare('SELECT * FROM privacy_operation_records WHERE operation_id=?').get(remember.operationId))
+    inspection.close()
+    expect(operationBytes).not.toContain('favorite')
+    expect(operationBytes).not.toContain('Dr Pepper')
+    const afterDisabledWrite = await runtime.privacy!.execute({ ...privacyInput, requestId: 'privacy-status-2', operation: { kind: 'status' } })
     expect(afterDisabledWrite.message).toContain('0 existing explicit fact')
     expect(afterDisabledWrite.message).toContain('1 requester event')
     await runtime.close()
@@ -185,7 +194,7 @@ describe('createMemoryRuntime', () => {
       logicalRoomId: resolved.room.logicalRoomId,
       characterId,
       causes: [{ inboundEventId: first.envelope.eventId, role: 'trigger' }],
-      evidence: { observedRoomVersion: 1, observedEventIds: [first.envelope.eventId], contextManifestHash: 'manifest', observedBindingVersion: 0, capturedAt: asTimestamp('2026-08-02T10:00:01.000Z') },
+      evidence: { observedRoomVersion: 1, observedEventIds: [first.envelope.eventId], contextManifestHash: '', contextManifest: { formatVersion: 1, logicalRoomVersion: 1, bindingRevision: 0, maxItems: 0, maxCharacters: 0, candidateReadLimit: 0, truncated: false, items: [] }, observedBindingVersion: 0, capturedAt: asTimestamp('2026-08-02T10:00:01.000Z') },
       modelRef: 'test/model',
       startedAt: asTimestamp('2026-08-02T10:00:01.000Z'),
     })
@@ -200,6 +209,7 @@ describe('createMemoryRuntime', () => {
     expect(context.text).toContain('hi')
     expect(context.text).not.toContain(String(resolved.actor.kind === 'attributed' ? resolved.actor.personId : ''))
     await runtime.privacy!.execute({
+      requestId: 'privacy-forget-1',
       operation: { kind: 'forget' },
       actorEvidence: buildDiscordActorEvidence({ userId: '20000000000000001', displayName: 'Alex', guildId: '10000000000000001', observedAtEpochMs: Date.now(), source: 'gateway' }),
       discordUserId: '20000000000000001',

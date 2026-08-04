@@ -65,6 +65,8 @@ export interface InboundEventEnvelope {
   actor: EventActor
   physicalRoomId: PhysicalRoomId
   logicalRoomId: LogicalRoomId
+  /** Logical-room append version allocated with this event. */
+  roomVersion?: number
   /** When it happened on Discord. */
   occurredAt: Timestamp
   /** When the bot durably recorded it. Never used as causal evidence. */

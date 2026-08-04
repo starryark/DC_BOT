@@ -1,4 +1,4 @@
-import type { AuthorizationContext, CharacterId, EventId, LogicalRoomId, PhysicalRoomId } from '@proj-airi/memory-domain'
+import type { AuthorizationContext, CharacterId, EventId, LogicalRoomId, PhysicalRoomId, SnapshotContextItem } from '@proj-airi/memory-domain'
 
 import type { SerializedPromptContext } from './prompt-context'
 
@@ -12,16 +12,14 @@ export interface RecentContextRequest {
   readonly excludeEventIds?: readonly EventId[]
 }
 
-export interface RecentContextManifestItem {
-  readonly id: string
-  readonly sourceType: 'inbound' | 'assistant_output'
-  readonly deliveryStatus?: string
-}
-
 export interface RecentContextResult extends SerializedPromptContext {
   readonly sentinel: 'ok' | 'noDurableContext'
   readonly manifest: {
-    readonly selected: readonly RecentContextManifestItem[]
+    readonly formatVersion: 1
+    readonly logicalRoomVersion: number
+    readonly maxItems: number
+    readonly maxCharacters: number
+    readonly selected: readonly SnapshotContextItem[]
     readonly truncated: boolean
     readonly bindingRevision: number
     readonly candidateReadLimit: number

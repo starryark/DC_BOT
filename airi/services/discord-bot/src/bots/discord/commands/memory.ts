@@ -25,7 +25,7 @@ export async function handleMemory(interaction: ChatInputCommandInteraction<Cach
     else if (subcommand === 'show')
       operation = { kind: 'show' }
     else operation = { kind: 'status' }
-    const result = await privacy.execute({ operation, actorEvidence, discordUserId: interaction.user.id, guildId: interaction.guildId ?? undefined, channelId: interaction.channelId, channelKind: interaction.channel?.isDMBased() ? 'dm' : interaction.channel?.isThread() ? 'thread' : 'guildText', observedAt: interaction.createdTimestamp })
+    const result = await privacy.execute({ requestId: interaction.id, operation, actorEvidence, discordUserId: interaction.user.id, guildId: interaction.guildId ?? undefined, channelId: interaction.channelId, channelKind: interaction.channel?.isDMBased() ? 'dm' : interaction.channel?.isThread() ? 'thread' : 'guildText', observedAt: interaction.createdTimestamp })
     await interaction.editReply({ content: result.message, ...(result.attachment ? { files: [{ attachment: Buffer.from(result.attachment.data, 'utf8'), name: result.attachment.name }] } : {}) })
   }
   catch (error) {

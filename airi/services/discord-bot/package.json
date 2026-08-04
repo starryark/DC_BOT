@@ -26,6 +26,7 @@
     "memory:reconcile-deliveries": "tsx scripts/memory/index.ts reconcile-deliveries",
     "memory:verify-deletion": "tsx scripts/memory/index.ts verify-deletion",
     "memory:smoke": "tsx scripts/memory/index.ts smoke",
+    "memory:active-soak": "tsx scripts/memory/active-soak.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

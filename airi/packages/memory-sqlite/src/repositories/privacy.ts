@@ -6,7 +6,7 @@ import { randomUUID } from 'node:crypto'
 
 import { applyDeletionTarget, verifyDeletionTarget } from '../deletion-targets.js'
 
-export interface ForgetResult { readonly obligations: number, readonly deduplicated: boolean }
+export interface ForgetResult { readonly forgetRequestId: string, readonly obligations: number, readonly deduplicated: boolean }
 
 export class PrivacyRepository {
   constructor(private readonly db: DatabaseSync) {}
@@ -33,7 +33,7 @@ export class PrivacyRepository {
           throw new Error('Existing forget request is not complete')
         const obligations = (this.db.prepare('SELECT count(*) count FROM deletion_tombstones WHERE forget_request_id=?').get(requestId) as { count: number }).count
         this.db.exec('COMMIT')
-        return { obligations, deduplicated: true }
+        return { forgetRequestId: requestId, obligations, deduplicated: true }
       }
 
       this.db.prepare(`INSERT INTO forget_requests(forget_request_id,subject_type,subject_id,scope_json,requested_at,status,version,completed_at,verification_json,idempotency_key) VALUES (?,'person',?,?,?,'processing',1,NULL,NULL,?)`).run(requestId, personId, JSON.stringify({ logicalRoomId: roomId }), at, requestId)
@@ -47,7 +47,7 @@ export class PrivacyRepository {
       this.db.prepare(`UPDATE deletion_tombstones SET redaction_state='verified',verified_at=? WHERE forget_request_id=?`).run(at, requestId)
       this.db.prepare(`UPDATE forget_requests SET status='completed',completed_at=?,verification_json=? WHERE forget_request_id=?`).run(at, JSON.stringify({ remaining: 0, obligations: plan.length }), requestId)
       this.db.exec('COMMIT')
-      return { obligations: plan.length, deduplicated: false }
+      return { forgetRequestId: requestId, obligations: plan.length, deduplicated: false }
     }
     catch (error) {
       this.db.exec('ROLLBACK')
