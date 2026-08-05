@@ -36,6 +36,9 @@ const ACTIVE_SOAK_RUNBOOK = join(REPO_ROOT, 'airi', 'docs', 'memory', 'runbooks'
  */
 const QUALIFIED_COMMIT = '86ca5cfc674997820fe4d1f235d1d16f30ce1470'
 
+/** Tracked runtime configuration; the soak qualifies a configuration, not just a commit. */
+const SERVICE_CONFIG = join(REPO_ROOT, 'airi', 'services', 'discord-bot', '.config')
+
 const DOCS = [
   join(MEMORY_DOCS, 'implementation-status.md'),
   STATUS_PAGE,
@@ -151,6 +154,19 @@ describe('active-memory soak governance', () => {
 
   it('the runbook records that the attestation carries no independence declaration', () => {
     expect(read(ACTIVE_SOAK_RUNBOOK)).toContain('The attestation carries no independence declaration')
+  })
+
+  // The soak qualifies a configuration as well as a commit, so the shipped
+  // input policy must not drift away from the promotion documents in silence.
+  // Flipping BOT_INPUT_POLICY without saying so would leave the status page
+  // implying the running voice behaviour was qualified when it was not.
+  it('the status page records the input policy that .config actually ships', () => {
+    const shipped = /^BOT_INPUT_POLICY=(\S+)$/m.exec(read(SERVICE_CONFIG))?.[1]
+    expect(shipped, 'BOT_INPUT_POLICY is not set in .config').toBeTruthy()
+    expect(
+      read(STATUS_PAGE),
+      `.config ships BOT_INPUT_POLICY=${shipped} but the status page does not mention it`,
+    ).toContain(`BOT_INPUT_POLICY=${shipped}`)
   })
 
   it('the runbook does not require a scenario the tool would reject', () => {

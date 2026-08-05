@@ -38,12 +38,35 @@ The result is **operator-qualified**. The independent-review gate was removed in
 that term only — attributing the result to a reviewer would assert something
 that did not happen.
 
-The qualification binds one commit **and one configuration**. It does not extend
-to `BOT_INPUT_POLICY=barge_in`, and it neither confirms nor refutes DM isolation
-— that scenario was removed from the matrix in `6694c5a` because a
-user-installed application never receives `MESSAGE_CREATE` for direct messages.
-Any source, test, dependency, migration, runbook or configuration-source change
-after `86ca5cfc` invalidates it and requires a new candidate and a fresh run.
+The qualification binds one commit **and one configuration**. It neither
+confirms nor refutes DM isolation — that scenario was removed from the matrix in
+`6694c5a` because a user-installed application never receives `MESSAGE_CREATE`
+for direct messages. Any source, test, dependency, migration, runbook or
+configuration-source change after `86ca5cfc` invalidates it and requires a new
+candidate and a fresh run.
+
+### Shipped configuration has diverged from the qualified one
+
+The soak ran with `BOT_INPUT_POLICY=half_duplex` and `BARGE_IN_ENABLED=false`.
+`.config` now ships **`BOT_INPUT_POLICY=barge_in` with `BARGE_IN_ENABLED=true`**
+so that talking over the character interrupts it, which was a deliberate
+product decision taken after the run.
+
+**The voice-interruption path is therefore not covered by the A8 qualification.**
+Everything the soak established about memory — room isolation, restart
+continuity, deletion, rollback, durable output completeness — still holds,
+because none of it depends on the input policy. What is no longer covered is
+scenario 8's cancellation behaviour, which the soak exercised through an
+explicit command rather than acoustically.
+
+Re-qualifying requires a fresh candidate and a new twelve-scenario run under
+the new configuration. Until then, describe active memory as operator-qualified
+at `86ca5cfc` and the barge-in configuration as **unqualified**.
+
+Two practical constraints on barge-in, both recorded in `.config`: it needs
+headphones, because an open microphone near loudspeakers feeds the character's
+own audio back into the detector and reads as a speaker; and
+`BARGE_IN_THRESHOLD` is untuned for any particular room.
 
 ## Schema and rollout
 
