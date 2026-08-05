@@ -1,5 +1,6 @@
 import type { Readable } from 'node:stream'
 
+import type { VoiceMemoryAdapter } from '../memory/voice-memory-adapter'
 import type { AsrProvider, AsrResult } from '../providers/asr/types'
 import type { BrainProvider, BrainRequest } from '../providers/brain/types'
 import type { TtsProvider, TtsRequest } from '../providers/tts/types'
@@ -130,6 +131,7 @@ interface HarnessOptions {
   /** Overrides BOT_INPUT_POLICY for this harness. */
   inputPolicy?: 'half_duplex' | 'latest_wins' | 'barge_in'
   voiceProfileCatalog?: VoiceProfileCatalog
+  memory?: VoiceMemoryAdapter
 }
 
 function buildController(opts: HarnessOptions) {
@@ -193,7 +195,7 @@ function buildController(opts: HarnessOptions) {
   }
 
   const voiceProfileCatalog = opts.voiceProfileCatalog ?? createSingleReferenceCatalog({ referenceAudio: 'neutral.wav', referenceText: 'neutral reference', promptLanguage: 'ja' })
-  const controller = new ConversationController({ voice: voice as never, asr, brain, tts, voiceProfileCatalog })
+  const controller = new ConversationController({ voice: voice as never, asr, brain, tts, voiceProfileCatalog, memory: opts.memory })
   return { controller, voice, asrCalls, brainRequests, ttsRequests, brainSignals, ttsSignals }
 }
 
@@ -556,6 +558,90 @@ describe('conversationController — history pairing', () => {
     // Only the current user turn — no orphaned message from the failed attempt.
     expect(last.contents).toHaveLength(1)
     expect(last.contents[0].role).toBe('user')
+  })
+})
+
+describe('conversationController — durable trace failure during playback', () => {
+  /** Records what the adapter was asked to do, failing `recordPlayback` on demand. */
+  function memoryFake(options: { failFromChunk?: number } = {}) {
+    const recorded: number[] = []
+    const terminals: string[] = []
+    const adapter: VoiceMemoryAdapter = {
+      async admit() {},
+      async prepareGeneration() {
+        return { context: { status: 'disabled' } }
+      },
+      async recordPlayback(_turnId, _channelId, chunkIndex) {
+        recorded.push(chunkIndex)
+        if (options.failFromChunk != null && chunkIndex >= options.failFromChunk)
+          throw new Error('output retry does not exactly match the durable generation segment set')
+      },
+      async completeGeneration() {
+        terminals.push('persisted')
+      },
+      async cancelGeneration() {
+        terminals.push('cancelled')
+      },
+      async failGeneration() {
+        terminals.push('failed')
+      },
+      async endSession() {},
+    }
+    return { adapter, recorded, terminals }
+  }
+
+  // ROOT CAUSE:
+  //
+  // `recordPlayback` threw out of `playChunk`, through `runBoundedTtsPipeline`'s
+  // `await playback`, into `generateAndSpeak`'s catch. Everything already
+  // synthesized behind the current chunk was discarded, so a three-chunk reply
+  // stopped after the second one — audible mid-sentence truncation caused by a
+  // bookkeeping failure the room has no stake in.
+  //
+  // The failure is now deferred and re-raised after the audio drains, so the
+  // turn still records `failed` but the reply is heard in full.
+  it('plays every remaining chunk when a durable write fails mid-reply', async () => {
+    const memory = memoryFake({ failFromChunk: 1 })
+    const { voice } = buildController({
+      replyChunks: ['The first sentence of this reply is long enough. ', 'The second sentence of this reply is also long enough. ', 'The third sentence of this reply ends it properly.'],
+      memory: memory.adapter,
+    })
+
+    voice.emit('utterance', makeUtterance())
+    await settle()
+
+    expect(voice.played.map(item => item.chunkIndex)).toEqual([0, 1, 2])
+    // Chunk 1's failure must not silence chunk 2's own attempt.
+    expect(memory.recorded).toEqual([0, 1, 2])
+  })
+
+  it('still fails the generation the write belonged to', async () => {
+    const memory = memoryFake({ failFromChunk: 1 })
+    const { voice } = buildController({
+      replyChunks: ['The first sentence of this reply is long enough. ', 'The second sentence of this reply is also long enough. ', 'The third sentence of this reply ends it properly.'],
+      memory: memory.adapter,
+    })
+
+    voice.emit('utterance', makeUtterance())
+    await settle()
+
+    // Incomplete evidence is still a failed turn — it just fails after the
+    // audio rather than during it.
+    expect(memory.terminals).toEqual(['failed'])
+  })
+
+  it('persists the generation when every write succeeds', async () => {
+    const memory = memoryFake()
+    const { voice } = buildController({
+      replyChunks: ['The first sentence of this reply is long enough. ', 'The second sentence of this reply is also long enough. ', 'The third sentence of this reply ends it properly.'],
+      memory: memory.adapter,
+    })
+
+    voice.emit('utterance', makeUtterance())
+    await settle()
+
+    expect(memory.recorded).toEqual([0, 1, 2])
+    expect(memory.terminals).toEqual(['persisted'])
   })
 })
 

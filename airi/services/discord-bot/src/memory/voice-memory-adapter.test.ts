@@ -130,6 +130,53 @@ describe('voice memory adapter generation preparation', () => {
     await runtime.close()
   })
 
+  it('records every chunk of a multi-chunk reply', async () => {
+    // ROOT CAUSE:
+    //
+    // `appendSegments` forwards to `OutputRepository.appendSet`, which is a
+    // whole-set declaration: after inserting it re-lists the generation and
+    // rejects the call unless the stored set matches the declared set exactly.
+    //
+    // `recordPlayback` declared only the chunk that had just played, so the
+    // second chunk of a reply declared one segment against two stored ones:
+    //
+    //   POLICY_VIOLATION: output retry does not exactly match the durable
+    //   generation segment set
+    //
+    // Because the runtime is `durableActive`, `safe` rethrows, so the error
+    // escaped `playChunk` and aborted the whole TTS pipeline — every chunk
+    // already synthesized behind the current one was discarded, cutting the
+    // reply off mid-sentence, and the generation recorded `failed`.
+    //
+    // Fixed by accumulating the segment set on the trace and re-declaring the
+    // whole set on every chunk, which is what the authority's contract asks
+    // for. The text path never hit this: it appends all of its segments in one
+    // call (`text-memory-adapter.ts`).
+    const runtime = runtimeFor('active', 'airi-voice-chunks-')
+    const failure = vi.fn()
+    const adapter = createVoiceMemoryAdapter({ runtime, characterId, modelRef: 'test/model', onFailure: failure })
+    const event = voiceEvent(10)
+    await adapter.admit(event, 'explain it properly')
+    await adapter.prepareGeneration(event.turnId, [event])
+
+    await adapter.recordPlayback(event.turnId, event.voiceChannelId, 0, 'first sentence', { status: 'played', durationMs: 1200 })
+    await adapter.recordPlayback(event.turnId, event.voiceChannelId, 1, 'second sentence', { status: 'played', durationMs: 1500 })
+    await adapter.recordPlayback(event.turnId, event.voiceChannelId, 2, 'third sentence', { status: 'played', durationMs: 900 })
+    await adapter.completeGeneration(event.turnId)
+
+    expect(failure).not.toHaveBeenCalled()
+
+    // Every spoken chunk must be durable and recallable, not just the first.
+    const next = voiceEvent(11)
+    await adapter.admit(next, 'and then?')
+    const prepared = await adapter.prepareGeneration(next.turnId, [next])
+    const text = prepared.context.status === 'available' ? prepared.context.text : ''
+    expect(text).toContain('first sentence')
+    expect(text).toContain('second sentence')
+    expect(text).toContain('third sentence')
+    await runtime.close()
+  })
+
   it('fails closed in active mode when the durable authority is gone', async () => {
     const runtime = runtimeFor('active', 'airi-voice-closed-')
     const adapter = createVoiceMemoryAdapter({ runtime, characterId, modelRef: 'test/model' })

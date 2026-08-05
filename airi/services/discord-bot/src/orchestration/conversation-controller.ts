@@ -330,6 +330,8 @@ export class ConversationController {
     const turnLang = normalizeLanguage(turn.understanding.responseLanguage)
     let fullReply = ''
     let chunkIndex = 0
+    // Boxed so a thrown `undefined` still registers as a failure.
+    let playbackTraceFailure: { error: unknown } | undefined
 
     try {
       const prepared = await this.memory?.prepareGeneration(turn.turnId, turn.inputEvents ?? [turn.inputEvent])
@@ -348,7 +350,10 @@ export class ConversationController {
 
       const pipeline = await runBoundedTtsPipeline(stream, {
         synthesize: (chunk, index) => this.synthesizeChunk(session, epoch, turn.turnId, chunk, index, turnLang, turn.understanding.responseLanguage, abort.signal),
-        play: prepared => this.playChunk(session, epoch, turn.turnId, turn.inputEvent.voiceChannelId, prepared.chunk, prepared.audio, prepared.chunkIndex, abort.signal),
+        play: prepared => this.playChunk(session, epoch, turn.turnId, turn.inputEvent.voiceChannelId, prepared.chunk, prepared.audio, prepared.chunkIndex, abort.signal, (error) => {
+          // Keep the first cause; later chunks fail for the same reason.
+          playbackTraceFailure ??= { error }
+        }),
         isCancelled: () => this.isStale(session, epoch, abort),
         onChunk: (chunk) => {
           fullReply += chunk.text
@@ -364,6 +369,12 @@ export class ConversationController {
 
       if (this.isStale(session, epoch, abort))
         return
+
+      // Deferred out of `playChunk` so a durable-trace failure cannot truncate
+      // a reply the room is still hearing. The turn fails either way — its
+      // evidence is incomplete — but it fails after the audio, not during it.
+      if (playbackTraceFailure)
+        throw playbackTraceFailure.error
 
       await this.memory?.completeGeneration(turn.turnId)
 
@@ -554,6 +565,7 @@ export class ConversationController {
     stream: Readable,
     chunkIndex: number,
     parentSignal: AbortSignal,
+    onTraceFailure: (error: unknown) => void,
   ): Promise<void> {
     if (session.responseEpoch !== epoch || parentSignal.aborted)
       return
@@ -570,12 +582,22 @@ export class ConversationController {
       responseEpoch: epoch,
       chunkIndex,
     })
-    await this.memory?.recordPlayback(turnId, voiceChannelId, chunkIndex, chunk.text, result)
+
+    // Every chunk behind this one is already synthesized and queued, so letting
+    // a durable-trace failure escape here would cut the reply off mid-sentence
+    // in the room to report a bookkeeping problem. Hand it to the caller, which
+    // re-raises once the audio has drained. Later chunks still attempt their own
+    // write: a transient failure here must not silence their evidence too.
+    try {
+      await this.memory?.recordPlayback(turnId, voiceChannelId, chunkIndex, chunk.text, result)
+    }
+    catch (error) {
+      onTraceFailure(error)
+    }
   }
 
   /** Quota failure: arm the cooldown, optionally say so once, commit nothing. */
   private async handleGenerationError(session: GuildConversationSession, epoch: number, err: unknown): Promise<void> {
-    console.error("DEBUG_ERROR:", err);
     if (err instanceof BrainRequestAbortedError) {
       this.logger.withFields({ guildId: session.guildId, responseEpoch: epoch }).log('response_cancelled')
       return

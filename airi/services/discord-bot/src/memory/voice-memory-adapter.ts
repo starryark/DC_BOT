@@ -1,4 +1,4 @@
-import type { AuthorizationContext, CharacterId, DeliveryAttempt, GenerationAttempt, InboundEventEnvelope, RoomResolution } from '@proj-airi/memory-domain'
+import type { AuthorizationContext, CharacterId, DeliveryAttempt, GenerationAttempt, InboundEventEnvelope, OutputSegment, RoomResolution } from '@proj-airi/memory-domain'
 
 import type { VoiceInputEvent } from '../orchestration/events'
 import type { PlaybackResult } from '../voice/playback'
@@ -19,6 +19,12 @@ interface GenerationTrace {
   generation: GenerationAttempt
   room: RoomResolution
   deliveries: Map<number, DeliveryAttempt>
+  /**
+   * Every output segment declared for this generation so far, keyed by chunk
+   * ordinal. Voice arrives one played chunk at a time but the durable output
+   * set is declared as a whole, so each append needs the chunks before it.
+   */
+  segments: Map<number, Omit<OutputSegment, 'generationId'>>
   sourceEventIds: readonly string[]
 }
 
@@ -118,7 +124,7 @@ export function createVoiceMemoryAdapter(options: { runtime: MemoryRuntime, char
         modelRef: options.modelRef,
         startedAt: at,
       })
-      generations.set(turnId, { authorization: first.authorization, generation: begun.generation, room: first.room, deliveries: new Map(), sourceEventIds: sourceEvents.map(event => event.eventId) })
+      generations.set(turnId, { authorization: first.authorization, generation: begun.generation, room: first.room, deliveries: new Map(), segments: new Map(), sourceEventIds: sourceEvents.map(event => event.eventId) })
       const expiry = setTimeout(() => void terminalGeneration(turnId, 'failed'), 5 * 60_000)
       expiry.unref()
       generationExpiry.set(turnId, expiry)
@@ -131,10 +137,22 @@ export function createVoiceMemoryAdapter(options: { runtime: MemoryRuntime, char
       if (!trace || !options.runtime.trace)
         return
       const at = timestampFromEpochMs(Date.now())
-      const [segment] = await options.runtime.trace.appendSegments(trace.authorization, trace.generation, [{ segmentId: asSegmentId(`voice:${turnId}:${chunkIndex}`), ordinal: chunkIndex, modality: 'voice', text }])
+
+      // The authority stores an output set, not an append log: every call must
+      // declare the generation's complete segment set, and one that omits an
+      // already-stored segment is refused as a mismatched retry. Voice can only
+      // declare a chunk once it has actually been heard, so the set grows one
+      // ordinal per playback and is re-declared in full each time.
+      trace.segments.set(chunkIndex, { segmentId: asSegmentId(`voice:${turnId}:${chunkIndex}`), ordinal: chunkIndex, modality: 'voice', text })
+      const declared = [...trace.segments.values()].sort((left, right) => left.ordinal - right.ordinal)
+      const stored = await options.runtime.trace.appendSegments(trace.authorization, trace.generation, declared)
+      const segment = stored.find(candidate => candidate.ordinal === chunkIndex)
+      if (!segment)
+        throw new Error('Durable voice output segment is missing from the generation set it was just appended to')
+
       let delivery = trace.deliveries.get(chunkIndex)
       if (!delivery) {
-        delivery = await options.runtime.trace.beginDelivery(trace.authorization, { segmentId: segment!.segmentId, transport: 'discord_voice', destinationId: channelId, idempotencyKey: asRequestId(`voice-delivery:${turnId}:${chunkIndex}`), startedAt: at })
+        delivery = await options.runtime.trace.beginDelivery(trace.authorization, { segmentId: segment.segmentId, transport: 'discord_voice', destinationId: channelId, idempotencyKey: asRequestId(`voice-delivery:${turnId}:${chunkIndex}`), startedAt: at })
         delivery = await options.runtime.trace.transitionDelivery(trace.authorization, { deliveryId: delivery.deliveryId, from: 'pending', to: 'delivering', evidence: { kind: 'none' }, at })
         trace.deliveries.set(chunkIndex, delivery)
       }
