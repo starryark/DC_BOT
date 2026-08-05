@@ -26,15 +26,32 @@ manifests, persisted privacy operations, the `pnpm memory:active-soak`
 prepare/report/verify tool, its policy module and tests, and the private-soak
 runbook.
 
-A8 remains open. No private Discord soak has been executed, no redacted report
-exists, and no independent reviewer decision exists. Active-ready is not claimed
-for any commit. Committed tooling is evidence *machinery*, not evidence.
+**A8 is closed.** The private Discord soak was executed on 2026-08-05 as run
+`t002-86ca5cfc-20260805b` and **qualified commit
+`86ca5cfc674997820fe4d1f235d1d16f30ce1470`**: twelve of twelve scenarios
+observed pass, all seven machine assertions pass, and `report` and `verify` both
+exit zero at that exact commit. The redacted report and the qualification record
+are in `docs/memory/evidence/`.
+
+The result is **operator-qualified**. The independent-review gate was removed in
+`7a3fd5e`, so no reviewer decision exists and none is required. Cite it with
+that term only — attributing the result to a reviewer would assert something
+that did not happen.
+
+The qualification binds one commit **and one configuration**. It does not extend
+to `BOT_INPUT_POLICY=barge_in`, and it neither confirms nor refutes DM isolation
+— that scenario was removed from the matrix in `6694c5a` because a
+user-installed application never receives `MESSAGE_CREATE` for direct messages.
+Any source, test, dependency, migration, runbook or configuration-source change
+after `86ca5cfc` invalidates it and requires a new candidate and a fresh run.
 
 ## Schema and rollout
 
 - Latest SQLite schema: v8.
 - Runtime rollout: off by default; production and ordinary local use remain in
-  shadow. Active is an implementation/test target pending the A8 soak gate.
+  shadow. Active has **passed the A8 soak gate** at `86ca5cfc` and is available
+  as a deliberate per-deployment opt-in; qualifying it did not change the
+  default, and nothing enables it automatically.
 - Default memory flags: all false (`ephemeral`).
 
 ## Local constraints and risks

@@ -1,0 +1,198 @@
+{
+  "format": 1,
+  "runId": "t002-86ca5cfc-20260805b",
+  "commitSha": "86ca5cfc674997820fe4d1f235d1d16f30ce1470",
+  "schemaVersion": 8,
+  "memoryMode": "active",
+  "bindingFileDigest": "67fd20fd68fa81635d04d5137b0dc4d24bb2cbc2f2e81c0fabf9adc8524ceb6e",
+  "preSoakBackupDigest": "4b3d68091791dd0c187aa3299927a3e9001e3dc3e18aa70b7b006eab7b569fd9",
+  "generatedAt": "2026-08-05T12:56:17.364Z",
+  "window": {
+    "from": "2026-08-05T12:23:30.966Z",
+    "to": "2026-08-05T12:55:46.697Z"
+  },
+  "counts": {
+    "inboundEvents": 13,
+    "generations": 13,
+    "manifests": 13,
+    "manifestItems": 150,
+    "outputSegments": 25,
+    "deliveries": 25,
+    "roomBindings": 3,
+    "semanticMemories": 0,
+    "privacyOperations": 6,
+    "forgetRequests": 1,
+    "deletionTombstones": 34
+  },
+  "assertions": [
+    {
+      "id": "every-generation-has-pre-model-manifest",
+      "passed": true,
+      "offenders": []
+    },
+    {
+      "id": "evidence-captured-before-model-start",
+      "passed": true,
+      "offenders": []
+    },
+    {
+      "id": "manifest-digest-reconstructs",
+      "passed": true,
+      "offenders": []
+    },
+    {
+      "id": "manifest-items-stay-in-room",
+      "passed": true,
+      "offenders": []
+    },
+    {
+      "id": "no-unresolved-deliveries",
+      "passed": true,
+      "offenders": []
+    },
+    {
+      "id": "zero-semantic-writes",
+      "passed": true,
+      "offenders": []
+    },
+    {
+      "id": "tombstones-verified",
+      "passed": true,
+      "offenders": []
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "startup-binding-reconciliation",
+      "observed": "pass",
+      "window": {
+        "from": "2026-08-05T12:23:30.966Z",
+        "to": "2026-08-05T12:24:18.622Z"
+      },
+      "generations": 0,
+      "deliveries": 0
+    },
+    {
+      "id": "empty-history-text",
+      "observed": "pass",
+      "window": {
+        "from": "2026-08-05T12:24:20.692Z",
+        "to": "2026-08-05T12:26:02.716Z"
+      },
+      "generations": 1,
+      "deliveries": 1
+    },
+    {
+      "id": "bound-text-voice-recall",
+      "observed": "pass",
+      "window": {
+        "from": "2026-08-05T12:26:04.823Z",
+        "to": "2026-08-05T12:29:17.312Z"
+      },
+      "generations": 3,
+      "deliveries": 7
+    },
+    {
+      "id": "bound-thread",
+      "observed": "pass",
+      "window": {
+        "from": "2026-08-05T12:29:19.271Z",
+        "to": "2026-08-05T12:31:12.356Z"
+      },
+      "generations": 1,
+      "deliveries": 1
+    },
+    {
+      "id": "unbound-guild-isolation",
+      "observed": "pass",
+      "window": {
+        "from": "2026-08-05T12:31:14.332Z",
+        "to": "2026-08-05T12:32:43.855Z"
+      },
+      "generations": 1,
+      "deliveries": 1
+    },
+    {
+      "id": "restart-continuity",
+      "observed": "pass",
+      "window": {
+        "from": "2026-08-05T12:32:58.546Z",
+        "to": "2026-08-05T12:35:27.248Z"
+      },
+      "generations": 1,
+      "deliveries": 1
+    },
+    {
+      "id": "multi-segment-text-delivery",
+      "observed": "pass",
+      "window": {
+        "from": "2026-08-05T12:35:29.436Z",
+        "to": "2026-08-05T12:37:27.098Z"
+      },
+      "generations": 1,
+      "deliveries": 3
+    },
+    {
+      "id": "voice-playback-complete-cancel",
+      "observed": "pass",
+      "window": {
+        "from": "2026-08-05T12:37:29.113Z",
+        "to": "2026-08-05T12:42:38.980Z"
+      },
+      "generations": 3,
+      "deliveries": 9
+    },
+    {
+      "id": "privacy-status-show-export",
+      "observed": "pass",
+      "window": {
+        "from": "2026-08-05T12:42:41.046Z",
+        "to": "2026-08-05T12:47:02.283Z"
+      },
+      "generations": 1,
+      "deliveries": 1
+    },
+    {
+      "id": "disabled-remember-correct",
+      "observed": "pass",
+      "window": {
+        "from": "2026-08-05T12:47:04.374Z",
+        "to": "2026-08-05T12:48:32.279Z"
+      },
+      "generations": 0,
+      "deliveries": 0
+    },
+    {
+      "id": "forget-deletion-migration-replay",
+      "observed": "pass",
+      "window": {
+        "from": "2026-08-05T12:48:34.222Z",
+        "to": "2026-08-05T12:50:56.870Z"
+      },
+      "generations": 1,
+      "deliveries": 1
+    },
+    {
+      "id": "active-to-off-rollback",
+      "observed": "pass",
+      "window": {
+        "from": "2026-08-05T12:51:09.774Z",
+        "to": "2026-08-05T12:55:46.697Z"
+      },
+      "generations": 0,
+      "deliveries": 0
+    }
+  ],
+  "unresolvedDeliveries": [],
+  "deletion": {
+    "forgetRequests": 1,
+    "tombstones": 34,
+    "verified": true
+  },
+  "restore": {
+    "oldBackupRestoreVerified": true
+  },
+  "rollback": {
+    "drillPassed": true
+  }
+}

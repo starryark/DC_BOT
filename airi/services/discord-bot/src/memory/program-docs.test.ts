@@ -29,6 +29,13 @@ const STATUS_PAGE = join(MEMORY_DOCS, 'CURRENT.md')
 const EVIDENCE_INDEX = join(MEMORY_DOCS, 'evidence', 'evidence-index.md')
 const ACTIVE_SOAK_RUNBOOK = join(REPO_ROOT, 'airi', 'docs', 'memory', 'runbooks', 'active-memory-soak-and-rollout.md')
 
+/**
+ * The commit the live private-guild soak qualified on 2026-08-05, run
+ * `t002-86ca5cfc-20260805b`. Promotion documents must name this exact SHA: the
+ * soak qualifies one commit and one configuration, never "active" in general.
+ */
+const QUALIFIED_COMMIT = '86ca5cfc674997820fe4d1f235d1d16f30ce1470'
+
 const DOCS = [
   join(MEMORY_DOCS, 'implementation-status.md'),
   STATUS_PAGE,
@@ -119,16 +126,40 @@ describe('active-memory soak governance', () => {
       expect(runbook).toContain(target)
   })
 
-  it('the status page records the current schema version and keeps A8 open until a soak is reviewed', () => {
+  it('the status page records the current schema version and the qualified commit', () => {
     const status = read(STATUS_PAGE)
     expect(status).toContain(`Latest SQLite schema: v${latestSchemaVersion}.`)
-    expect(status).toContain('A8 remains open')
-    // Promotion may only be recorded against a reviewed candidate SHA and a
-    // redacted report, neither of which exists in this repository yet.
-    expect(status).toContain('Active-ready is not claimed')
+    // A8 closed on 2026-08-05. Promotion may only ever be recorded against the
+    // exact SHA a live soak qualified, so the SHA itself is pinned here: a
+    // later edit cannot quietly generalise the claim to "active is ready".
+    expect(status).toContain(QUALIFIED_COMMIT)
   })
 
-  it('the evidence index states that no live soak has been executed', () => {
-    expect(read(EVIDENCE_INDEX)).toContain('No live soak has been executed')
+  it('the evidence index records the qualification against the same commit', () => {
+    expect(read(EVIDENCE_INDEX)).toContain(QUALIFIED_COMMIT)
+  })
+
+  // The independent-review gate was deleted in 7a3fd5e rather than defaulted to
+  // true, precisely so that no document could assert a review that never
+  // happened. The guard is stated positively: a scan for forbidden phrases
+  // cannot distinguish a document *claiming* independent review from one
+  // *prohibiting* the claim, and both promotion documents do the latter.
+  it('promotion documents qualify the result as operator-attested', () => {
+    for (const doc of [STATUS_PAGE, EVIDENCE_INDEX])
+      expect(read(doc).toLowerCase(), `${doc} does not say operator-qualified`).toContain('operator-qualified')
+  })
+
+  it('the runbook records that the attestation carries no independence declaration', () => {
+    expect(read(ACTIVE_SOAK_RUNBOOK)).toContain('The attestation carries no independence declaration')
+  })
+
+  it('the runbook does not require a scenario the tool would reject', () => {
+    const ids = new Set(SOAK_SCENARIOS.map(scenario => scenario.id))
+    // dm-isolation was removed from the matrix in 6694c5a: a user-installed app
+    // never receives MESSAGE_CREATE for DMs, so verify no longer accepts the id
+    // and a runbook still listing it would send an operator to produce evidence
+    // that cannot be reported.
+    expect(ids.has('dm-isolation' as never)).toBe(false)
+    expect(read(ACTIVE_SOAK_RUNBOOK)).not.toMatch(/^\|\s*\d+\s*\|\s*`dm-isolation`/m)
   })
 })

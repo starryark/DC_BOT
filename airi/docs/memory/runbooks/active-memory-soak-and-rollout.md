@@ -101,13 +101,15 @@ The machine assertions are:
 
 The attestation carries no independence declaration. The schema is strict, so an older attestation still containing `reviewerIndependenceDeclared` is refused outright rather than accepted and ignored — a document that still claims an independent review must not be able to produce a report.
 
-Each of the thirteen scenario ids must appear **exactly once**, with `from` strictly before `to`. No two windows may overlap or touch. Scenario presence is decided by inclusive timestamp range, so overlapping windows would let one generation satisfy several scenarios' evidence checks and collapse thirteen required executions into one; touching windows would double-count a record landing on the shared boundary. This runbook identifies no permitted overlap. In particular the `active-to-off-rollback` window must sit wholly after the active period, or active generations would be miscounted as post-rollback prompt use.
+Each of the twelve scenario ids must appear **exactly once**, with `from` strictly before `to`. No two windows may overlap or touch. Scenario presence is decided by inclusive timestamp range, so overlapping windows would let one generation satisfy several scenarios' evidence checks and collapse twelve required executions into one; touching windows would double-count a record landing on the shared boundary. This runbook identifies no permitted overlap. In particular the `active-to-off-rollback` window must sit wholly after the active period, or active generations would be miscounted as post-rollback prompt use.
 
 ### verify
 
 Exits nonzero when the report does not match its schema; the commit or schema version differs from the checkout under review; the run was not active-mode; a scenario attestation is missing, duplicated, reversed, or overlapping; a scenario was observed as failed; any machine assertion failed; an attested scenario produced no durable generation; the rollback window contains generation evidence; deliveries remain unresolved; the deletion scenario window contains no forget request or no tombstone; deletion, old-backup restore, or the rollback drill was not verified; or the report publishes an identifier that is not a run-scoped redaction.
 
-Deletion evidence is counted **inside the `forget-deletion-migration-replay` window only**. An empty database has no unverified tombstone, so absence alone cannot satisfy the deletion gate: scenario 12 must produce at least one durable forget request and at least one durable tombstone of its own, and a leftover record from an earlier run cannot stand in for it. The whole-database totals are reported separately under `counts`.
+Deletion evidence is counted **inside the `forget-deletion-migration-replay` window only**. An empty database has no unverified tombstone, so absence alone cannot satisfy the deletion gate: scenario 11 must produce at least one durable forget request and at least one durable tombstone of its own, and a leftover record from an earlier run cannot stand in for it. The whole-database totals are reported separately under `counts`.
+
+`verify` requires every attested scenario except `startup-binding-reconciliation`, `disabled-remember-correct` and `active-to-off-rollback` to have produced at least one durable generation. `privacy-status-show-export` is subject to that rule but its commands are non-generative, so the window must also contain one ordinary mention turn. Record that turn in the attestation note rather than leaving a reader to wonder why it is there.
 
 ## Scenario matrix
 
@@ -120,14 +122,26 @@ For every scenario, record the operator action, expected durable records, exact 
 | 3 | `bound-text-voice-recall` | Exercise bound text-to-voice and voice-to-text recall. Expect same-room manifests with the selected delivered segments and no unrelated locations; attest semantic recall and audible playback. |
 | 4 | `bound-thread` | Exercise the bound parent channel and thread. Expect only policy-authorized cross-location items; stop on parent/thread leakage. |
 | 5 | `unbound-guild-isolation` | Send canaries in an unbound guild channel. Expect an isolated logical room and no bound-room canary in its manifest. |
-| 6 | `dm-isolation` | Send DM canaries. Expect participant-scoped isolation and no guild identifiers or content. |
-| 7 | `restart-continuity` | Stop and restart, then recall a delivered canary. Expect the manifest and generation chain to survive restart. |
-| 8 | `multi-segment-text-delivery` | Produce a multi-segment text reply. Expect one segment and delivery attempt per chunk; only delivered attempts may enter later context. |
-| 9 | `voice-playback-complete-cancel` | Complete one voice playback and cancel another. Expect completed local playback evidence for the first and terminal cancellation/interruption for the second; attest what was audible. |
-| 10 | `privacy-status-show-export` | Run privacy status, show, and export. Expect requester-scoped results and no provider payloads in evidence. |
-| 11 | `disabled-remember-correct` | Run disabled `remember` and `correct`. Expect zero semantic writes. |
-| 12 | `forget-deletion-migration-replay` | Forget a canary, verify deletion, restore a verified v7 backup into an isolated candidate, migrate it forward, replay obligations, and verify again. Expect identifiers in manifests to remain while source content is redacted. |
-| 13 | `active-to-off-rollback` | With the process stopped, drill active-to-off rollback. Expect no durable prompt read or generation evidence after restart. |
+| 6 | `restart-continuity` | Stop and restart, then recall a delivered canary. Expect the manifest and generation chain to survive restart. |
+| 7 | `multi-segment-text-delivery` | Produce a multi-segment text reply. Expect one segment and delivery attempt per chunk; only delivered attempts may enter later context. |
+| 8 | `voice-playback-complete-cancel` | Complete one voice playback and cancel another. Expect completed local playback evidence for the first and terminal cancellation/interruption for the second; attest what was audible. |
+| 9 | `privacy-status-show-export` | Run privacy status, show, and export. Expect requester-scoped results and no provider payloads in evidence. Include one ordinary mention turn so the window carries a durable generation. |
+| 10 | `disabled-remember-correct` | Run disabled `remember` and `correct`. Expect zero semantic writes. |
+| 11 | `forget-deletion-migration-replay` | Forget a canary, verify deletion, restore a verified v7 backup into an isolated candidate, migrate it forward, replay obligations, and verify again. Expect identifiers in manifests to remain while source content is redacted. |
+| 12 | `active-to-off-rollback` | With the process stopped, drill active-to-off rollback. Expect no durable prompt read or generation evidence after restart. |
+
+`dm-isolation` was removed from the matrix in `6694c5a`. A user-installed
+application never receives `MESSAGE_CREATE` for direct messages, so the scenario
+cannot execute in this deployment and `verify` no longer accepts the id.
+DM isolation is consequently neither confirmed nor refuted by any soak; treating
+it as covered would be a false claim.
+
+The soak qualifies one commit **and one configuration**. `BOT_INPUT_POLICY`
+is part of what is qualified: under `half_duplex`, speech arriving while the
+character is thinking or speaking is dropped before ASR, so talking over the
+character does not interrupt playback and scenario 8's cancellation must be
+driven by an explicit command. A run under `barge_in` would be a separate
+qualification.
 
 For any failed scenario: stop the bot, preserve redacted evidence, record the defect and cleanup, correct it, and rerun the full affected matrix. If the candidate SHA changes, the prior soak cannot qualify the new commit.
 
