@@ -186,9 +186,9 @@ describe('active soak scenario coverage', () => {
   })
 
   it('rejects a scenario attested twice', () => {
-    const duplicated = [...attestedScenarios(), { id: 'dm-isolation' as SoakScenarioId, ...scenarioWindow('dm-isolation'), observed: 'pass' as const }]
+    const duplicated = [...attestedScenarios(), { id: 'bound-thread' as SoakScenarioId, ...scenarioWindow('bound-thread'), observed: 'pass' as const }]
 
-    expect(() => parseAttestation(rawAttestation({ scenarios: duplicated }))).toThrow(/dm-isolation is attested 2 times/)
+    expect(() => parseAttestation(rawAttestation({ scenarios: duplicated }))).toThrow(/bound-thread is attested 2 times/)
   })
 
   it('rejects a window that does not start before it ends', () => {
@@ -198,13 +198,13 @@ describe('active soak scenario coverage', () => {
   })
 
   it('rejects two scenarios that share an execution window', () => {
-    const overlapping = attestedScenarios().map(scenario => scenario.id === 'dm-isolation' ? { ...scenario, ...scenarioWindow('unbound-guild-isolation') } : scenario)
+    const overlapping = attestedScenarios().map(scenario => scenario.id === 'bound-thread' ? { ...scenario, ...scenarioWindow('unbound-guild-isolation') } : scenario)
 
     expect(() => parseAttestation(rawAttestation({ scenarios: overlapping }))).toThrow(/overlap; each scenario needs its own execution window/)
   })
 
   it('rejects windows that merely touch, because both range queries are inclusive', () => {
-    const touching = attestedScenarios().map(scenario => scenario.id === 'dm-isolation' ? { ...scenario, from: scenarioWindow('unbound-guild-isolation').to } : scenario)
+    const touching = attestedScenarios().map(scenario => scenario.id === 'bound-thread' ? { ...scenario, from: scenarioWindow('unbound-guild-isolation').to } : scenario)
 
     expect(scenarioCoverageFailures(touching)).toContainEqual(expect.stringContaining('overlap'))
   })
@@ -356,7 +356,7 @@ describe('active soak verification', () => {
   it('rejects a report whose scenario windows overlap', () => {
     const report = reportFor()
     const isolationWindow = report.scenarios.find(scenario => scenario.id === 'unbound-guild-isolation')!.window
-    const overlapped = { ...report, scenarios: report.scenarios.map(scenario => scenario.id === 'dm-isolation' ? { ...scenario, window: isolationWindow } : scenario) }
+    const overlapped = { ...report, scenarios: report.scenarios.map(scenario => scenario.id === 'bound-thread' ? { ...scenario, window: isolationWindow } : scenario) }
 
     const verdict = verifySoakReport({ report: overlapped, expectedCommitSha: commitSha, expectedSchemaVersion: 8 })
 

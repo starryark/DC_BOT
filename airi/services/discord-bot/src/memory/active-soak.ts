@@ -25,7 +25,6 @@ export const SOAK_SCENARIOS = Object.freeze([
   { id: 'bound-text-voice-recall', title: 'Bound text-to-voice and voice-to-text recall' },
   { id: 'bound-thread', title: 'Bound parent channel and thread behavior' },
   { id: 'unbound-guild-isolation', title: 'Unbound guild-channel isolation' },
-  { id: 'dm-isolation', title: 'DM isolation' },
   { id: 'restart-continuity', title: 'Restart continuity' },
   { id: 'multi-segment-text-delivery', title: 'Multi-segment text delivery' },
   { id: 'voice-playback-complete-cancel', title: 'Completed and cancelled voice playback' },

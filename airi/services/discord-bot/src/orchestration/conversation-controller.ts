@@ -575,6 +575,7 @@ export class ConversationController {
 
   /** Quota failure: arm the cooldown, optionally say so once, commit nothing. */
   private async handleGenerationError(session: GuildConversationSession, epoch: number, err: unknown): Promise<void> {
+    console.error("DEBUG_ERROR:", err);
     if (err instanceof BrainRequestAbortedError) {
       this.logger.withFields({ guildId: session.guildId, responseEpoch: epoch }).log('response_cancelled')
       return

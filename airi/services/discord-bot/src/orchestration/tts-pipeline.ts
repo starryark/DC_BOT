@@ -23,23 +23,68 @@ export async function runBoundedTtsPipeline<TChunk, TAudio>(
   chunks: AsyncIterable<TChunk>,
   options: BoundedTtsPipelineOptions<TChunk, TAudio>,
 ): Promise<{ chunksSeen: number, chunksPrepared: number }> {
-  const iterator = chunks[Symbol.asyncIterator]()
   let nextIndex = 0
   let chunksSeen = 0
   let chunksPrepared = 0
 
+  // Eagerly consume the incoming chunks stream in the background to prevent upstream HTTP connection
+  // timeouts (e.g. from Gemini) while waiting for slow TTS playback.
+  const sourceIterator = chunks[Symbol.asyncIterator]()
+  const chunkQueue: TChunk[] = []
+  let sourceDone = false
+  let sourceError: unknown = undefined
+  let waitingResolve: (() => void) | undefined = undefined
+
+  const consumeSource = async () => {
+    try {
+      while (!options.isCancelled()) {
+        const next = await sourceIterator.next()
+        if (next.done) {
+          sourceDone = true
+          break
+        }
+        chunkQueue.push(next.value)
+        if (waitingResolve) {
+          const resolve = waitingResolve
+          waitingResolve = undefined
+          resolve()
+        }
+      }
+    } catch (e) {
+      sourceError = e
+    }
+    if (waitingResolve) {
+      const resolve = waitingResolve
+      waitingResolve = undefined
+      resolve()
+    }
+  }
+
+  // Start consuming immediately (floating promise intentionally ignored).
+  void consumeSource()
+
   const prepareNext = async (): Promise<PreparedTtsChunk<TChunk, TAudio> | null> => {
     while (!options.isCancelled()) {
-      const next = await iterator.next()
-      if (next.done)
+      while (chunkQueue.length === 0 && !sourceDone && sourceError === undefined && !options.isCancelled()) {
+        await new Promise<void>(resolve => {
+          waitingResolve = resolve
+        })
+      }
+      if (sourceError !== undefined) {
+        throw sourceError
+      }
+      if (options.isCancelled() || (chunkQueue.length === 0 && sourceDone)) {
         return null
+      }
+
+      const value = chunkQueue.shift()!
       const chunkIndex = nextIndex++
       chunksSeen++
-      options.onChunk?.(next.value, chunkIndex)
-      const audio = await options.synthesize(next.value, chunkIndex)
+      options.onChunk?.(value, chunkIndex)
+      const audio = await options.synthesize(value, chunkIndex)
       if (audio != null && !options.isCancelled()) {
         chunksPrepared++
-        return { chunk: next.value, chunkIndex, audio }
+        return { chunk: value, chunkIndex, audio }
       }
     }
     return null

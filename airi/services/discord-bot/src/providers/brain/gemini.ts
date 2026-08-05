@@ -75,7 +75,12 @@ export class GeminiBrainProvider implements BrainProvider {
         },
       })
 
+      let finishReason: string | undefined
+
       for await (const chunk of stream) {
+        if (chunk.candidates?.[0]?.finishReason) {
+          finishReason = chunk.candidates[0].finishReason
+        }
         const text = chunk.text
         if (text) {
           if (!firstTokenSeen) {
@@ -91,6 +96,13 @@ export class GeminiBrainProvider implements BrainProvider {
           }
           yield text
         }
+      }
+
+      if (finishReason === 'MAX_TOKENS') {
+        this.logger.withFields({
+          guildId: request.guildId,
+          turnId: request.turnId,
+        }).warn('gemini_truncated_max_tokens')
       }
     }
     catch (err) {
