@@ -4,6 +4,7 @@ import {
   BrainRateLimitError,
   BrainRequestAbortedError,
   classifyBrainError,
+  isTransientlyUnavailable,
   parseRetryDelay,
 } from './errors'
 
@@ -119,5 +120,47 @@ describe('classifyBrainError — aborts and pass-through', () => {
   it('survives a malformed JSON-looking message', () => {
     const err = new Error('failed {not json at all')
     expect(classifyBrainError(err, { defaultCooldownMs: DEFAULT_COOLDOWN })).toBe(err)
+  })
+})
+
+describe('isTransientlyUnavailable', () => {
+  /**
+   * The exact shape observed in run `t002-08057db3-20260805a` when DEFECT-005
+   * killed the bot: `@google/genai` sets a numeric `status` on the error and
+   * embeds the server envelope as JSON in the message.
+   */
+  function geminiUnavailableError(): Error {
+    return Object.assign(new Error(JSON.stringify({
+      error: {
+        code: 503,
+        message: 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.',
+        status: 'UNAVAILABLE',
+      },
+    })), { status: 503 })
+  }
+
+  it('recognises the 503 that took the bot down mid-soak', () => {
+    expect(isTransientlyUnavailable(geminiUnavailableError())).toBe(true)
+  })
+
+  it('recognises an envelope carrying only UNAVAILABLE', () => {
+    expect(isTransientlyUnavailable(new Error(JSON.stringify({ error: { status: 'UNAVAILABLE' } })))).toBe(true)
+  })
+
+  it('does not treat a rate limit as transiently unavailable', () => {
+    expect(isTransientlyUnavailable(geminiQuotaError('37s'))).toBe(false)
+  })
+
+  it('does not treat an ordinary 500 as transiently unavailable', () => {
+    expect(isTransientlyUnavailable(new Error('500 Internal Server Error'))).toBe(false)
+  })
+
+  // A 503 must not arm the quota cooldown: the account has plenty of quota, the
+  // model is momentarily oversubscribed. Classifying it as a rate limit would
+  // block every guild for GEMINI_DEFAULT_COOLDOWN_MS over a blip.
+  it('is not classified as a rate limit', () => {
+    const err = geminiUnavailableError()
+    expect(classifyBrainError(err, { defaultCooldownMs: DEFAULT_COOLDOWN })).toBe(err)
+    expect(classifyBrainError(err, { defaultCooldownMs: DEFAULT_COOLDOWN })).not.toBeInstanceOf(BrainRateLimitError)
   })
 })

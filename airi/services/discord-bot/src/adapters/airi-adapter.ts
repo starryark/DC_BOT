@@ -225,6 +225,22 @@ export class DiscordAdapter {
       }
     })
 
+    // NOTICE:
+    // discord.js `Client` runs with rejection capture, so a rejected promise
+    // returned by ANY async listener below is re-emitted as `'error'` on the
+    // client. Node's EventEmitter rethrows an `'error'` that nobody listens
+    // for, which takes the whole process down.
+    //
+    // In DEFECT-005 a transient Gemini 503 travelled exactly that path and
+    // killed the bot mid-soak. The originating fault is fixed separately; this
+    // listener is the backstop that keeps a single bad turn — from any future
+    // source — from ending the process.
+    //
+    // Removal condition: none. A gateway client must always have an error sink.
+    this.discordClient.on(Events.Error, (error) => {
+      log.withError(error).error('discord_client_error')
+    })
+
     // Set up Discord event handlers
     this.discordClient.once(Events.ClientReady, async (readyClient) => {
       log.log(`Discord bot ready! User: ${readyClient.user.tag}`)

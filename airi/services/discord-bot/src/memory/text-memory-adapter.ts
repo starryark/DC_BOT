@@ -24,9 +24,29 @@ export interface TextMemoryAdapterOptions {
 /** Creates the shared text shadow adapter; failures are observable but never reported as durable success. */
 export function createTextMemoryAdapter(options: TextMemoryAdapterOptions): DiscordTextMemoryObserver {
   const traces = new Map<string, TextTrace>()
-  const fail = (event: DiscordMentionInputEvent, error: unknown): void => {
+  /**
+   * Forgets the turn and reports the error. Never throws.
+   *
+   * For callers that are already handling `error` and only need it recorded —
+   * re-raising there would replace their error handling with a rejection.
+   */
+  const record = (event: DiscordMentionInputEvent, error: unknown): void => {
     traces.delete(event.turnId)
     options.onFailure?.(error)
+  }
+
+  /**
+   * Fail-closed for durable *write* paths. In `durableActive` the store is the
+   * source of truth, so a write that did not land must never be reported as
+   * success — the caller has to see it.
+   *
+   * Do not call this from a catch block that is already handling the error.
+   * Use {@link record} instead: rethrowing out of an error handler turns a
+   * handled failure into an unhandled rejection, which is what killed the bot
+   * process in DEFECT-005.
+   */
+  const fail = (event: DiscordMentionInputEvent, error: unknown): void => {
+    record(event, error)
     if (options.runtime.health.state === 'durableActive')
       throw error
   }
@@ -166,7 +186,11 @@ export function createTextMemoryAdapter(options: TextMemoryAdapterOptions): Disc
           catch (transitionError) { options.onFailure?.(transitionError) }
         }
       }
-      fail(event, error)
+      // Recorded, not re-raised. `failed` is the failure-*recording* entry
+      // point: the caller already holds `error` and decides what to do with it.
+      // Every durable transition above reports its own problem through
+      // `onFailure` without escaping, so this call cannot mask a lost write.
+      record(event, error)
     },
   }
 }

@@ -185,6 +185,26 @@ export function classifyBrainError(
   )
 }
 
+/**
+ * True for a transient upstream unavailability (HTTP 503 / `UNAVAILABLE`).
+ *
+ * Deliberately *not* folded into {@link classifyBrainError}'s rate-limit branch:
+ * a 503 does not mean the account is out of quota, so it must not arm the
+ * limiter's cooldown. The model is momentarily oversubscribed and the API's own
+ * message invites a retry — *"Spikes in demand are usually temporary. Please
+ * try again later."* Callers may retry a bounded number of times.
+ */
+export function isTransientlyUnavailable(err: unknown): boolean {
+  const envelope = readErrorEnvelope(err)
+  const status = readStatusCode(err, envelope)
+  if (status === 503)
+    return true
+  if (typeof envelope?.status === 'string' && envelope.status === 'UNAVAILABLE')
+    return true
+  const message = isRecord(err) && typeof err.message === 'string' ? err.message : String(err)
+  return /\b503\b|UNAVAILABLE/.test(message)
+}
+
 function isAbortError(err: unknown): boolean {
   if (!isRecord(err))
     return false

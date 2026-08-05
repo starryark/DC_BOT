@@ -169,13 +169,44 @@ describe('shared text memory adapter', () => {
     await adapter.prepareForModel(event)
     const transitionGeneration = vi.spyOn(runtime.trace!, 'transitionGeneration')
 
-    // Active mode still surfaces the turn failure to the caller, but only after
-    // the durable generation has been driven to a terminal state.
-    await expect(adapter.failed(event, new Error('model exploded'))).rejects.toThrow('model exploded')
+    // ROOT CAUSE (DEFECT-005):
+    //
+    // This assertion used to read `.rejects.toThrow('model exploded')` — in
+    // `durableActive`, `failed()` re-raised the very error it was handed.
+    //
+    // Its only caller is the `Events.MessageCreate` catch block in
+    // airi-adapter.ts, which calls it to *record* an error it is already
+    // handling. Re-raising there rejected the catch block itself, so the async
+    // gateway listener rejected, discord.js re-emitted it as `'error'` on the
+    // Client, and with no `'error'` listener Node killed the process. A
+    // transient Gemini 503 took the whole bot down mid-soak.
+    //
+    // `failed` is the failure-*recording* path and now records without
+    // re-raising. The fail-closed rethrow is kept on the durable *write* paths,
+    // where a write that did not land must never look like success.
+    await expect(adapter.failed(event, new Error('model exploded'))).resolves.toBeUndefined()
 
     // A cancelled or failed turn must still leave terminal durable evidence,
     // otherwise a running generation would outlive the request forever.
     expect(transitionGeneration).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ state: 'running' }), 'running', 'failed', expect.any(String))
+    await runtime.close()
+  })
+
+  it('still fails closed on a durable write path while recording without re-raising', async () => {
+    // The two halves of the DEFECT-005 split, asserted together so neither can
+    // drift: a *write* that did not land must still reach the caller, while the
+    // failure-*recording* entry point must not re-raise what it is handed.
+    const root = mkdtempSync(join(tmpdir(), 'airi-text-memory-split-'))
+    roots.push(root)
+    const runtime = createMemoryRuntime({ ...memoryProfile('active', {}), repoRoot: root, characterId })
+    const adapter = createTextMemoryAdapter({ runtime, characterId, modelRef: 'test/model' })
+    const event = mention('40000000000000015', 'write will fail')
+    await adapter.admit(event, { isDirectMessage: false, isThread: false })
+    await adapter.prepareForModel(event)
+
+    vi.spyOn(runtime.trace!, 'appendSegments').mockRejectedValueOnce(new Error('authority went away'))
+    await expect(adapter.generated(event, ['a reply'])).rejects.toThrow('authority went away')
+
     await runtime.close()
   })
 
