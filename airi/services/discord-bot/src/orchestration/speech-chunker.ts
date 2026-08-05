@@ -20,8 +20,26 @@ export interface SpeechChunkerOptions {
   minCjkChars: number
   targetCjkChars: number
   maxCjkChars: number
+  /** Opening-chunk sizing. Only the first chunk of a turn uses these. */
+  openingMinLatinChars: number
+  openingTargetLatinChars: number
+  openingMaxLatinChars: number
+  openingMinCjkChars: number
+  openingTargetCjkChars: number
+  openingMaxCjkChars: number
 }
 
+/**
+ * Opening sizes are roughly half the steady-state ones because the first chunk
+ * is the only one whose synthesis the listener waits through: every later chunk
+ * is synthesized while its predecessor plays. GPT-SoVITS runs near RTF 0.5 for
+ * this voice, so halving the opening roughly halves time-to-first-audio.
+ *
+ * The CJK opening is a third of the Latin one rather than half, because a CJK
+ * character carries ~200 ms of speech against ~70 ms for a Latin one — sizing
+ * the two openings to the same *character* count would make the CJK opening
+ * three times longer to synthesize.
+ */
 export const DEFAULT_SPEECH_CHUNKER_OPTIONS: SpeechChunkerOptions = {
   minLatinChars: 40,
   targetLatinChars: 75,
@@ -29,11 +47,23 @@ export const DEFAULT_SPEECH_CHUNKER_OPTIONS: SpeechChunkerOptions = {
   minCjkChars: 14,
   targetCjkChars: 28,
   maxCjkChars: 50,
+  openingMinLatinChars: 24,
+  openingTargetLatinChars: 48,
+  openingMaxLatinChars: 72,
+  openingMinCjkChars: 8,
+  openingTargetCjkChars: 16,
+  openingMaxCjkChars: 32,
 }
 
 export class SpeechChunker {
   private buffer = ''
   private readonly options: SpeechChunkerOptions
+  /**
+   * Whether any chunk has left this chunker. Audio is already queued once one
+   * has, so the opening sizing stops applying. A chunker instance is per-turn,
+   * so this never has to be reset.
+   */
+  private opened = false
 
   constructor(options: Partial<SpeechChunkerOptions> = {}) {
     this.options = { ...DEFAULT_SPEECH_CHUNKER_OPTIONS, ...options }
@@ -54,10 +84,16 @@ export class SpeechChunker {
       const boundary = this.findBoundary()
       if (!boundary)
         break
-      out.push({ text: this.buffer.slice(0, boundary.cut).trim(), boundary: boundary.boundary })
+      const text = this.buffer.slice(0, boundary.cut).trim()
       this.buffer = this.buffer.slice(boundary.cut)
+      if (!text)
+        continue
+      out.push({ text, boundary: boundary.boundary })
+      // Sizing leaves the opening as soon as the first chunk is out, including
+      // when a later boundary in this same delta produced it.
+      this.opened = true
     }
-    return out.filter(chunk => Boolean(chunk.text))
+    return out
   }
 
   /** Flush whatever remains (e.g. when the stream ends). */
@@ -69,14 +105,20 @@ export class SpeechChunker {
   flushWithBoundary(): SpeechChunk[] {
     const rest = this.buffer.trim()
     this.buffer = ''
-    return rest ? [{ text: rest, boundary: 'stream-end' }] : []
+    if (!rest)
+      return []
+    this.opened = true
+    return [{ text: rest, boundary: 'stream-end' }]
   }
 
   /** Flush buffered text at a semantic control-token boundary. */
   flushForControlToken(): SpeechChunk[] {
     const rest = this.buffer.trim()
     this.buffer = ''
-    return rest ? [{ text: rest, boundary: 'control-token' }] : []
+    if (!rest)
+      return []
+    this.opened = true
+    return [{ text: rest, boundary: 'control-token' }]
   }
 
   /** Whether non-whitespace text remains buffered after the last emission. */
@@ -84,12 +126,29 @@ export class SpeechChunker {
     return Boolean(this.buffer.trim())
   }
 
+  /**
+   * Character bounds for the next cut, by script and by position in the turn.
+   *
+   * The opening chunk is the only one whose synthesis the listener waits
+   * through — every later chunk is synthesized while its predecessor plays — so
+   * it is sized for latency and the rest are sized for prosody.
+   */
+  private sizing(cjk: boolean): { min: number, target: number, max: number } {
+    const options = this.options
+    if (!this.opened) {
+      return cjk
+        ? { min: options.openingMinCjkChars, target: options.openingTargetCjkChars, max: options.openingMaxCjkChars }
+        : { min: options.openingMinLatinChars, target: options.openingTargetLatinChars, max: options.openingMaxLatinChars }
+    }
+    return cjk
+      ? { min: options.minCjkChars, target: options.targetCjkChars, max: options.maxCjkChars }
+      : { min: options.minLatinChars, target: options.targetLatinChars, max: options.maxLatinChars }
+  }
+
   /** Returns the index to cut at (inclusive of the boundary char), or 0. */
   private findBoundary(): { cut: number, boundary: SpeechChunkBoundary } | undefined {
     const cjk = isCjkDominant(this.buffer)
-    const min = cjk ? this.options.minCjkChars : this.options.minLatinChars
-    const target = cjk ? this.options.targetCjkChars : this.options.targetLatinChars
-    const max = cjk ? this.options.maxCjkChars : this.options.maxLatinChars
+    const { min, target, max } = this.sizing(cjk)
 
     // Hold a short opening sentence until the next clause. Tiny acknowledgements
     // are especially expensive and sound unnatural when synthesized alone.
@@ -98,9 +157,11 @@ export class SpeechChunker {
       return { cut: terminal, boundary: 'sentence' }
 
     // At the target, commas and line breaks are preferable to an arbitrary cut.
+    // `、` is the Japanese clause comma; without it a Japanese reply offers no
+    // clause boundary at all and always runs to the hard limit.
     if (this.buffer.length >= target) {
       const region = this.buffer.slice(0, Math.min(max, this.buffer.length))
-      const clause = Math.max(region.lastIndexOf(','), region.lastIndexOf('，'), region.lastIndexOf(';'), region.lastIndexOf('；'), region.lastIndexOf('\n'))
+      const clause = Math.max(region.lastIndexOf(','), region.lastIndexOf('，'), region.lastIndexOf('、'), region.lastIndexOf(';'), region.lastIndexOf('；'), region.lastIndexOf('\n'))
       if (clause + 1 >= min)
         return { cut: clause + 1, boundary: 'clause' }
     }

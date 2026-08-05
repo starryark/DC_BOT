@@ -136,6 +136,13 @@ export interface TtsChunkingConfig {
   minCjkChars: number
   targetCjkChars: number
   maxCjkChars: number
+  /** Opening-chunk sizing. Only the first chunk of a turn uses these. */
+  openingMinLatinChars: number
+  openingTargetLatinChars: number
+  openingMaxLatinChars: number
+  openingMinCjkChars: number
+  openingTargetCjkChars: number
+  openingMaxCjkChars: number
   maxWaitMs: number
   /** Wave 3 currently supports exactly one bounded synthesized lookahead. */
   prefetchChunks: 1
@@ -378,6 +385,14 @@ export function config(): AppConfig {
       minCjkChars: parseBounded(env.TTS_CHUNK_MIN_CJK_CHARS, 14, 500),
       targetCjkChars: parseBounded(env.TTS_CHUNK_TARGET_CJK_CHARS, 28, 500),
       maxCjkChars: parseBounded(env.TTS_CHUNK_MAX_CJK_CHARS, 50, 500),
+      // Time-to-first-audio is bounded by the opening chunk alone, so it is
+      // sized separately from the chunks whose synthesis playback already hides.
+      openingMinLatinChars: parseBounded(env.TTS_CHUNK_OPENING_MIN_LATIN_CHARS, 24, 1000),
+      openingTargetLatinChars: parseBounded(env.TTS_CHUNK_OPENING_TARGET_LATIN_CHARS, 48, 1000),
+      openingMaxLatinChars: parseBounded(env.TTS_CHUNK_OPENING_MAX_LATIN_CHARS, 72, 1000),
+      openingMinCjkChars: parseBounded(env.TTS_CHUNK_OPENING_MIN_CJK_CHARS, 8, 500),
+      openingTargetCjkChars: parseBounded(env.TTS_CHUNK_OPENING_TARGET_CJK_CHARS, 16, 500),
+      openingMaxCjkChars: parseBounded(env.TTS_CHUNK_OPENING_MAX_CJK_CHARS, 32, 500),
       maxWaitMs: parseBounded(env.TTS_CHUNK_MAX_WAIT_MS, 900, 10_000),
       // A larger value would violate the frozen cancellation-waste bound.
       prefetchChunks: parseBounded(env.TTS_PREFETCH_CHUNKS, 1, 1) as 1,
