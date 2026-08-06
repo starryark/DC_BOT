@@ -68,6 +68,27 @@ headphones, because an open microphone near loudspeakers feeds the character's
 own audio back into the detector and reads as a speaker; and
 `BARGE_IN_THRESHOLD` is untuned for any particular room.
 
+### G8 functional baseline (IMP-802)
+
+G8 functional baseline established for the active profile at
+`40874091d9ed39337e2db6f4de30d1b7b969b186` using dataset
+`1.0.0/c9ddd85a33208f857dd2b4516a5b0e733ef92c43c00b9c4fec169dd12204f1cc` and
+seed `20260802`. All applicable zero-tolerance assertions passed. Unsupported
+future capabilities and live transport checks remain explicit. **G8 is not passed
+and no deployment approval is implied.**
+
+The baseline is a deterministic, content-free evaluator over synthetic fixtures
+(`airi/services/discord-bot/evals/memory/`) that exercises the production memory
+runtime boundary in active mode with isolated temporary storage. It does not
+re-qualify A8; the A8 qualification remains bound to commit
+`86ca5cfc674997820fe4d1f235d1d16f30ce1470` and its configuration. It does not
+claim live Discord DM transport behavior, acoustic barge-in cancellation under
+the shipped configuration (which remains unqualified), or any production SLO,
+retrieval-quality threshold, or deployment approval. Vector, graph, remote,
+degraded, spool, summary, extraction, lexical, and semantic capabilities remain
+gated and are not advertised as operational. Evidence is recorded in
+`docs/memory/evidence/g8-functional-baseline-2026-08-06.md`.
+
 ## Schema and rollout
 
 - Latest SQLite schema: v8.

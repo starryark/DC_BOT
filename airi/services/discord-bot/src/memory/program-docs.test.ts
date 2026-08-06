@@ -36,6 +36,17 @@ const ACTIVE_SOAK_RUNBOOK = join(REPO_ROOT, 'airi', 'docs', 'memory', 'runbooks'
  */
 const QUALIFIED_COMMIT = '86ca5cfc674997820fe4d1f235d1d16f30ce1470'
 
+/**
+ * The G8-1 functional baseline (IMP-802) was established on 2026-08-06 against
+ * this exact candidate commit, dataset version, and dataset digest. Promotion
+ * documents must name these exactly so a later edit cannot quietly generalise
+ * the claim; the baseline is a deterministic harness result, never "G8 passed".
+ */
+const G8_BASELINE_COMMIT = '40874091d9ed39337e2db6f4de30d1b7b969b186'
+const G8_BASELINE_DATASET_VERSION = '1.0.0'
+const G8_BASELINE_DATASET_DIGEST = 'c9ddd85a33208f857dd2b4516a5b0e733ef92c43c00b9c4fec169dd12204f1cc'
+const G8_BASELINE_EVIDENCE = join(MEMORY_DOCS, 'evidence', 'g8-functional-baseline-2026-08-06.md')
+
 /** Tracked runtime configuration; the soak qualifies a configuration, not just a commit. */
 const SERVICE_CONFIG = join(REPO_ROOT, 'airi', 'services', 'discord-bot', '.config')
 
@@ -177,5 +188,58 @@ describe('active-memory soak governance', () => {
     // that cannot be reported.
     expect(ids.has('dm-isolation' as never)).toBe(false)
     expect(read(ACTIVE_SOAK_RUNBOOK)).not.toMatch(/^\|\s*\d+\s*\|\s*`dm-isolation`/m)
+  })
+})
+
+describe('functional baseline governance for G8 (IMP-802)', () => {
+  it('the baseline evidence file exists', () => {
+    expect(existsSync(G8_BASELINE_EVIDENCE)).toBe(true)
+  })
+
+  it('the status page links the baseline evidence file', () => {
+    expect(read(STATUS_PAGE)).toContain('g8-functional-baseline-2026-08-06.md')
+  })
+
+  it('the status page names the exact candidate commit and dataset digest', () => {
+    const status = read(STATUS_PAGE)
+    expect(status).toContain(G8_BASELINE_COMMIT)
+    expect(status).toContain(G8_BASELINE_DATASET_VERSION)
+    expect(status).toContain(G8_BASELINE_DATASET_DIGEST)
+  })
+
+  it('the evidence file names the exact candidate commit and dataset digest', () => {
+    const evidence = read(G8_BASELINE_EVIDENCE)
+    expect(evidence).toContain(G8_BASELINE_COMMIT)
+    expect(evidence).toContain(G8_BASELINE_DATASET_DIGEST)
+  })
+
+  it('the status page states the baseline is not a G8 pass and implies no deployment approval', () => {
+    const status = read(STATUS_PAGE).toLowerCase()
+    expect(status).toContain('g8 is not passed')
+    expect(status).toContain('no deployment approval is implied')
+  })
+
+  it('the status page preserves the A8 qualified commit and does not re-qualify it', () => {
+    expect(read(STATUS_PAGE)).toContain(QUALIFIED_COMMIT)
+    // The non-overclaim wording may wrap across lines, so collapse whitespace.
+    const collapsed = read(STATUS_PAGE).toLowerCase().replace(/\s+/g, ' ')
+    expect(collapsed).toContain('does not re-qualify a8')
+  })
+
+  it('the status page preserves the barge-in divergence disclosure and unqualified wording', () => {
+    const status = read(STATUS_PAGE).toLowerCase()
+    expect(status).toContain('barge-in')
+    expect(status).toContain('unqualified')
+  })
+
+  it('the status page preserves schema v8', () => {
+    expect(read(STATUS_PAGE)).toContain('Latest SQLite schema: v8.')
+  })
+
+  it('the baseline does not overclaim live transport, barge-in, or deployment approval', () => {
+    const evidence = read(G8_BASELINE_EVIDENCE).toLowerCase()
+    expect(evidence).toContain('does not claim live discord dm transport')
+    expect(evidence).toContain('acoustic barge-in')
+    expect(evidence).toContain('no deployment approval')
   })
 })

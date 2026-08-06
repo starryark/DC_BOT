@@ -27,6 +27,7 @@
     "memory:verify-deletion": "tsx scripts/memory/index.ts verify-deletion",
     "memory:smoke": "tsx scripts/memory/index.ts smoke",
     "memory:active-soak": "tsx scripts/memory/active-soak.ts",
+    "memory:evaluate": "tsx scripts/memory/evaluate.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
