@@ -1,7 +1,7 @@
 import { cpus, totalmem } from 'node:os'
 import process from 'node:process'
 
-import { EnvironmentFingerprint } from './contracts'
+import type { EnvironmentFingerprint } from './contracts'
 
 /**
  * Collect truthful environment metadata for the run manifest.

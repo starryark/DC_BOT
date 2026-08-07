@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-import { MeasurementRecord, RunManifest } from './contracts'
+import type { MeasurementRecord, RunManifest } from './contracts'
 
 /**
  * Baseline comparison data structures for the IMP-803 deterministic benchmark.

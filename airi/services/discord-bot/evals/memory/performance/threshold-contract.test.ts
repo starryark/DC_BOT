@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { MeasurementRecord, WorkloadSpec } from './contracts'
+import type { MeasurementRecord, WorkloadSpec } from './contracts'
 import {
   applyPerformanceThresholds,
   parsePerformanceThresholdDocument,

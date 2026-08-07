@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { compareAgainstBaseline } from './baseline'
-import { MeasurementRecord, RunManifest } from './contracts'
+import type { MeasurementRecord, RunManifest } from './contracts'
 
 describe('baseline comparison', () => {
   it('detects incompatible contract digests', () => {

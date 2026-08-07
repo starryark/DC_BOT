@@ -6,8 +6,8 @@ import {
   MEASUREMENT_UNITS,
   PERFORMANCE_CONTRACT_ID,
   PERFORMANCE_SCHEMA_VERSION,
-  MeasurementRecord,
-  WorkloadSpec,
+  type MeasurementRecord,
+  type WorkloadSpec,
 } from './contracts'
 
 const workloadIdPattern = v.pipe(v.string(), v.regex(/^[a-z][a-z0-9-]{2,62}$/))
