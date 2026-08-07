@@ -40,6 +40,7 @@ export interface PerformanceSummary {
   readonly metricStatusCounts: { readonly passed: number, readonly failed: number, readonly measuredNotEvaluated: number }
   readonly approvedThresholdFailures: number
   readonly activeControlDeltas: Readonly<Record<string, number>>
+  readonly baselineComparison?: { readonly status: string, readonly deltas?: ReadonlyArray<{ readonly metricId: string, readonly delta: number, readonly unit: string, readonly statistic: string }> }
   readonly environmentFingerprint: { readonly nodeVersion: string, readonly platform: string, readonly architecture: string }
   readonly importedLiveArtifactDigests: readonly string[]
   readonly costAvailability: 'available' | 'unavailable'
@@ -55,6 +56,7 @@ export interface PerformanceReportInputs {
   readonly workloadResults: ReadonlyArray<{ readonly workloadId: string, readonly correctnessFailures: number, readonly cleanupFailures: number }>
   readonly skippedWorkloadIds: readonly string[]
   readonly activeControlDeltas: Readonly<Record<string, number>>
+  readonly baselineComparison?: { readonly status: string, readonly deltas?: ReadonlyArray<{ readonly metricId: string, readonly delta: number, readonly unit: string, readonly statistic: string }> }
   readonly importedLiveArtifactDigests: readonly string[]
   readonly costAvailability: 'available' | 'unavailable'
   readonly costUnavailableReason?: string
@@ -101,9 +103,9 @@ export function buildPerformanceReport(inputs: PerformanceReportInputs): BuiltPe
   }
 
   const hasFailures = failed > 0 || correctnessFailures > 0 || cleanupFailures > 0
-  const disposition: RunDisposition = hasFailures
+  const disposition: RunDisposition = (hasFailures || metricStatusCounts.failed > 0)
     ? 'failed'
-    : metricStatusCounts.failed === 0 && metricStatusCounts.passed > 0
+    : metricStatusCounts.passed > 0
       ? 'correctness_clean_thresholds_passed'
       : 'correctness_clean_measured_not_evaluated'
 
@@ -120,6 +122,7 @@ export function buildPerformanceReport(inputs: PerformanceReportInputs): BuiltPe
     metricStatusCounts,
     approvedThresholdFailures,
     activeControlDeltas: { ...inputs.activeControlDeltas },
+    ...(inputs.baselineComparison ? { baselineComparison: { status: inputs.baselineComparison.status, ...(inputs.baselineComparison.deltas ? { deltas: [...inputs.baselineComparison.deltas] } : {}) } } : {}),
     environmentFingerprint: { nodeVersion: manifest.environment.nodeVersion, platform: manifest.environment.platform, architecture: manifest.environment.architecture },
     importedLiveArtifactDigests: [...inputs.importedLiveArtifactDigests],
     costAvailability: inputs.costAvailability,
@@ -237,6 +240,16 @@ function renderMarkdown(summary: PerformanceSummary, manifest: RunManifest): str
     lines.push('|---|---|')
     for (const [workloadId, delta] of Object.entries(summary.activeControlDeltas))
       lines.push(`| ${workloadId} | ${delta.toFixed(3)} |`)
+    lines.push('')
+  }
+  if (summary.baselineComparison && summary.baselineComparison.status === 'compatible' && summary.baselineComparison.deltas) {
+    lines.push('## Baseline comparison deltas')
+    lines.push('')
+    lines.push('| Metric | Delta |')
+    lines.push('|---|---|')
+    for (const delta of summary.baselineComparison.deltas) {
+      lines.push(`| ${delta.metricId} | ${delta.delta > 0 ? '+' : ''}${delta.delta.toFixed(3)} |`)
+    }
     lines.push('')
   }
   lines.push('## Cost')

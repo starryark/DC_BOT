@@ -72,6 +72,17 @@ describe('runtime runner measurement', () => {
     }
   })
 
+  it('applies sample capacity override and performs reservoir sampling', async () => {
+    const workload = workloadsForSuite('performance-v1').find(workload => workload.workloadId === 'text-append')!
+    const result = await runRuntimeWorkloads([workload], { repoRoot: REPO_ROOT, run: run!, characterId: CHARACTER, seed: 20260802, warmupCount: 0, sampleCount: 5, sampleCapacity: 2 })
+    const textAppend = result.results.find(result => result.workloadId === 'text-append')!
+    
+    const countRecord = textAppend.measurements.find(measurement => measurement.statistic === 'count')!
+    expect(countRecord.observationCount).toBe(5)
+    expect(countRecord.retainedSamples).toBe(2)
+    expect(countRecord.sampleCapacity).toBe(2)
+  })
+
   it('records no latency sample when a correctness postcondition fails', async () => {
     // A workload whose postconditions the runner cannot satisfy produces a
     // correctness failure and zero measured samples.

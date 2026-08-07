@@ -71,6 +71,7 @@ export interface ControllerBenchmarkOptions {
   readonly seed?: number
   readonly warmupCount?: number
   readonly sampleCount?: number
+  readonly sampleCapacity?: number
 }
 
 const BENCH_CHARACTER: CharacterId = asCharacterId('bench-character')
@@ -116,7 +117,7 @@ async function runTextControllerWorkload(workload: WorkloadSpec, options: Worklo
   const random = createSeededRandom(options.seed)
   const warmupCount = options.warmupCount ?? workload.warmupCount
   const sampleCount = options.sampleCount ?? workload.sampleCount
-  const series = new LatencySeries(workload.sampleCapacity, random)
+  const series = new LatencySeries(options.sampleCapacity ?? workload.sampleCapacity, random)
   const correctnessFailures: ControllerCorrectnessFailure[] = []
 
   // Build the active or inert memory observer for this workload role.
@@ -160,7 +161,7 @@ async function runVoiceControllerWorkload(workload: WorkloadSpec, options: Workl
   const random = createSeededRandom(options.seed)
   const warmupCount = options.warmupCount ?? workload.warmupCount
   const sampleCount = options.sampleCount ?? workload.sampleCount
-  const series = new LatencySeries(workload.sampleCapacity, random)
+  const series = new LatencySeries(options.sampleCapacity ?? workload.sampleCapacity, random)
   const correctnessFailures: ControllerCorrectnessFailure[] = []
 
   // Configure the controller's input policy and conversation floor for determinism.

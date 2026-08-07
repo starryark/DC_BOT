@@ -29,6 +29,7 @@
     "memory:active-soak": "tsx scripts/memory/active-soak.ts",
     "memory:evaluate": "tsx scripts/memory/evaluate.ts",
     "memory:benchmark": "tsx scripts/memory/benchmark.ts",
+    "memory:baseline": "tsx scripts/memory/baseline.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

@@ -65,6 +65,8 @@ export interface RuntimeBenchmarkOptions {
   readonly warmupCount?: number
   /** Override the measured sample count for every workload (tests use small values). */
   readonly sampleCount?: number
+  /** Override the reservoir sample capacity. */
+  readonly sampleCapacity?: number
 }
 
 /**
@@ -106,7 +108,7 @@ async function runOneWorkload(workload: WorkloadSpec, options: WorkloadExecution
   const random = createSeededRandom(options.seed)
   const warmupCount = options.warmupCount ?? workload.warmupCount
   const sampleCount = options.sampleCount ?? workload.sampleCount
-  const series = new LatencySeries(workload.sampleCapacity, random)
+  const series = new LatencySeries(options.sampleCapacity ?? workload.sampleCapacity, random)
   const correctnessFailures: CorrectnessFailure[] = []
   const measurements: MeasurementRecord[] = []
 

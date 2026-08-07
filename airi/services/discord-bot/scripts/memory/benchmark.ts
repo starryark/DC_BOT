@@ -35,8 +35,13 @@ import { asCharacterId } from '@proj-airi/memory-domain'
 import { runControllerWorkloads } from '../../evals/memory/performance/controller-runner'
 import { buildPerformanceReport } from '../../evals/memory/performance/report'
 import { runRuntimeSuite } from '../../evals/memory/performance/runtime-runner'
-import { workloadsForSuite } from '../../evals/memory/performance/workloads'
+import { WORKLOAD_CATALOG_DIGEST, workloadsForSuite } from '../../evals/memory/performance/workloads'
 import { disposeEvaluationRun, startEvaluationRun } from '../../evals/memory/runtime-adapter'
+import { applyPerformanceThresholds, parsePerformanceThresholdDocument, performanceThresholdDocumentDigest, validatePerformanceThresholdCompatibility } from '../../evals/memory/performance/threshold-contract'
+import { parsePriceDocument, priceDocumentDigest } from '../../evals/memory/performance/price-contract'
+import { liveArtifactDigest, parseLiveArtifact } from '../../evals/memory/performance/live-artifact'
+import { collectEnvironmentFingerprint } from '../../evals/memory/performance/environment'
+import { readFileSync } from 'node:fs'
 
 const EXIT = { COMPLETE: 0, INVALID: 2, CORRECTNESS: 3, UNSAFE: 4, UNEXPECTED: 5 } as const
 const BENCH_CHARACTER = asCharacterId('bench-character')
@@ -53,6 +58,7 @@ interface ParsedArgs {
   priceDocument?: string
   importLive: string[]
   keepRunRoot: boolean
+  baseline?: string
 }
 
 const HELP_TEXT = `Usage: memory:benchmark [options]
@@ -67,6 +73,7 @@ Options:
   --thresholds <file>            Approved threshold document (provenance validated before runtime start)
   --price-document <file>        Approved price document (provenance validated before runtime start)
   --import-live <file>           Import a live artifact (repeatable)
+  --baseline <directory>         Compare against an accepted compatible baseline
   --keep-run-root                Keep the run root for debugging
   --help                         Show this help
 
@@ -93,13 +100,22 @@ async function main(): Promise<void> {
     return
   }
 
-  const repoRoot = resolve(import.meta.dirname, '..', '..', '..', '..')
+  const workspaceRoot = resolve(import.meta.dirname, '..', '..', '..', '..')
+  let gitRoot: string
+  try {
+    gitRoot = execFileSync('git', ['-C', workspaceRoot, 'rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim()
+  } catch {
+    process.stderr.write(`${JSON.stringify({ status: 'invalid', message: 'failed to resolve Git top-level directory' })}\n`)
+    process.exitCode = EXIT.INVALID
+    return
+  }
+
   let outputDirectory: string | undefined
 
   // Output validation: smoke may use a temp dir; performance-v1 requires explicit --output.
   if (parsed.output) {
     outputDirectory = resolve(parsed.output)
-    const pathCheck = assertSafeOutputDirectory(outputDirectory, repoRoot)
+    const pathCheck = assertSafeOutputDirectory(outputDirectory, gitRoot)
     if (pathCheck.error) {
       // An output inside the checkout is an unsafe-output condition (4); a
       // nonempty or non-absolute directory is an invalid-config condition (2).
@@ -115,12 +131,12 @@ async function main(): Promise<void> {
     return
   }
   else {
-    outputDirectory = makeTempOutputDir(repoRoot)
+    outputDirectory = makeTempOutputDir(gitRoot)
   }
 
   // Full-suite guards: reject dirty worktree and unknown git head.
-  const commitSha = gitHead(repoRoot)
-  const dirtyWorktree = gitDirty(repoRoot)
+  const commitSha = gitHead(gitRoot)
+  const dirtyWorktree = gitDirty(gitRoot)
   if (parsed.suite === 'performance-v1') {
     if (commitSha.length !== 40 || commitSha === 'unknown'.repeat(10).slice(0, 40)) {
       process.stderr.write(`${JSON.stringify({ status: 'invalid', message: 'performance-v1 requires a known git HEAD' })}\n`)
@@ -138,11 +154,60 @@ async function main(): Promise<void> {
 
   const runId = `bench-${new Date().toISOString().replace(/[:.]/g, '').slice(0, 15)}-${commitSha.slice(0, 8)}`
 
+  const startedAt = new Date().toISOString()
+  
+  let thresholdDocument: any | undefined
+  let thresholdDocumentDigestValue: string | null = null
+  let priceDocumentDigestValue: string | null = null
+  const importedLiveArtifactDigests: string[] = []
+  let baselineRun: { manifest: any, measurements: any[] } | undefined
+
   try {
-    const evaluationRun = startEvaluationRun({ repoRoot, keepRunRoot: parsed.keepRunRoot })
+    if (parsed.baseline) {
+      const { loadRun } = await import('../../evals/memory/performance/baseline')
+      baselineRun = loadRun(parsed.baseline, readFileSync, existsSync, join)
+      if (baselineRun.manifest.contractDigest !== WORKLOAD_CATALOG_DIGEST) {
+        throw new Error(`Baseline contractDigest mismatch (expected ${WORKLOAD_CATALOG_DIGEST}, got ${baselineRun.manifest.contractDigest})`)
+      }
+    }
+
+    if (parsed.thresholds) {
+      const raw = readFileSync(parsed.thresholds, 'utf8')
+      const parsedDoc = JSON.parse(raw)
+      thresholdDocument = parsePerformanceThresholdDocument(parsedDoc)
+      const failures = validatePerformanceThresholdCompatibility(thresholdDocument, WORKLOAD_CATALOG_DIGEST, workloadsForSuite(parsed.suite))
+      if (failures.length > 0)
+        throw new Error(`Threshold compatibility failed: ${failures.join(', ')}`)
+      thresholdDocumentDigestValue = performanceThresholdDocumentDigest(thresholdDocument)
+    }
+
+    if (parsed.priceDocument) {
+      const raw = readFileSync(parsed.priceDocument, 'utf8')
+      const parsedDoc = JSON.parse(raw)
+      const doc = parsePriceDocument(parsedDoc)
+      priceDocumentDigestValue = priceDocumentDigest(doc)
+    }
+
+    for (const livePath of parsed.importLive) {
+      const raw = readFileSync(livePath, 'utf8')
+      const parsedDoc = JSON.parse(raw)
+      const doc = parseLiveArtifact(parsedDoc)
+      const digest = liveArtifactDigest(doc)
+      if (importedLiveArtifactDigests.includes(digest))
+        throw new Error(`Duplicate live artifact digest: ${digest}`)
+      importedLiveArtifactDigests.push(digest)
+    }
+  } catch (error) {
+    process.stderr.write(`${JSON.stringify({ status: 'invalid', message: messageOf(error) })}\n`)
+    process.exitCode = EXIT.INVALID
+    return
+  }
+
+  try {
+    const evaluationRun = startEvaluationRun({ repoRoot: workspaceRoot, keepRunRoot: parsed.keepRunRoot })
     try {
       const runtimeResult = await runRuntimeSuite(parsed.suite, {
-        repoRoot,
+        repoRoot: workspaceRoot,
         run: evaluationRun,
         characterId: BENCH_CHARACTER,
         seed: parsed.seed,
@@ -150,7 +215,7 @@ async function main(): Promise<void> {
         sampleCount: parsed.samples,
       })
       const controllerResult = await runControllerWorkloads(workloadsForSuite(parsed.suite).filter(w => w.runner !== 'runtime'), {
-        repoRoot,
+        repoRoot: workspaceRoot,
         run: evaluationRun,
         characterId: BENCH_CHARACTER,
         seed: parsed.seed,
@@ -158,10 +223,21 @@ async function main(): Promise<void> {
         sampleCount: parsed.samples,
       })
 
-      const allMeasurements = [
+      const completedAt = new Date().toISOString()
+
+      let allMeasurements = [
         ...runtimeResult.results.flatMap(result => result.measurements),
         ...controllerResult.results.flatMap(result => result.measurements),
       ]
+      
+      allMeasurements = applyPerformanceThresholds(allMeasurements, thresholdDocument)
+
+      let baselineComparison: any
+      if (baselineRun) {
+        const { compareAgainstBaseline } = await import('../../evals/memory/performance/baseline')
+        baselineComparison = compareAgainstBaseline(baselineRun.manifest, baselineRun.measurements, { contractDigest: runtimeResult.contractDigest } as any, allMeasurements)
+      }
+
       const workloadResults = [
         ...runtimeResult.results.map(result => ({ workloadId: result.workloadId, correctnessFailures: result.correctnessFailures.length, cleanupFailures: 0 })),
         ...controllerResult.results.map(result => ({ workloadId: result.workloadId, correctnessFailures: result.correctnessFailures.length, cleanupFailures: 0 })),
@@ -178,22 +254,20 @@ async function main(): Promise<void> {
         dirtyWorktree,
         suite: parsed.suite,
         seed: parsed.seed,
-        environment: {
-          nodeVersion: process.version,
-          pnpmVersion: '10.33.0',
-          platform: process.platform,
-          architecture: process.arch,
-          cpuModel: 'synthetic',
-          cpuCount: 1,
-          totalMemoryBytes: 0,
-          sqliteVersion: '3.51.2',
-        },
-        configuration: [],
+        environment: collectEnvironmentFingerprint('10.33.0'),
+        configuration: [
+          ...(parsed.warmup ? [{ key: 'warmupOverride', value: parsed.warmup.toString() }] : []),
+          ...(parsed.samples ? [{ key: 'sampleOverride', value: parsed.samples.toString() }] : []),
+          ...(parsed.sampleCapacity ? [{ key: 'sampleCapacityOverride', value: parsed.sampleCapacity.toString() }] : []),
+          { key: 'suite', value: parsed.suite },
+        ],
         timerSource: 'performance.now',
-        startedAt: new Date().toISOString(),
-        completedAt: new Date().toISOString(),
+        startedAt,
+        completedAt,
         workloadsCompleted: completedIds,
-        importedLiveArtifactDigests: [],
+        importedLiveArtifactDigests,
+        ...(thresholdDocumentDigestValue ? { thresholdDocumentDigest: thresholdDocumentDigestValue } : {}),
+        ...(priceDocumentDigestValue ? { priceDocumentDigest: priceDocumentDigestValue } : {}),
         limitations: [],
       }
 
@@ -204,9 +278,10 @@ async function main(): Promise<void> {
         workloadResults,
         skippedWorkloadIds: skippedIds,
         activeControlDeltas: controllerResult.activeControlDeltas,
-        importedLiveArtifactDigests: [],
+        importedLiveArtifactDigests,
         costAvailability: 'unavailable',
-        costUnavailableReason: parsed.priceDocument ? 'price-document-parsing-not-yet-wired' : 'no-price-document-supplied',
+        costUnavailableReason: parsed.priceDocument ? 'usage-unavailable' : 'no-price-document-supplied',
+        ...(baselineComparison ? { baselineComparison } : {}),
         limitations: [
           'Deterministic stub benchmark; does not establish live Discord transport performance.',
           'Barge-in results are controller cancellation path, not acoustic barge-in qualification.',
@@ -218,6 +293,16 @@ async function main(): Promise<void> {
         process.stderr.write(`${JSON.stringify({ status: 'unsafe', message: 'redaction scan found prohibited content', findings: report.redactionFindings })}\n`)
         process.exitCode = EXIT.UNSAFE
         return
+      }
+
+      if (parsed.suite === 'performance-v1') {
+        const currentSha = gitHead(gitRoot)
+        const currentDirty = gitDirty(gitRoot)
+        if (currentSha !== commitSha || currentDirty !== dirtyWorktree) {
+          process.stderr.write(`${JSON.stringify({ status: 'invalid', message: 'Git worktree changed during benchmark execution' })}\n`)
+          process.exitCode = EXIT.INVALID
+          return
+        }
       }
 
       writeArtifactsAtomically(outputDirectory, manifest, report)
@@ -318,6 +403,11 @@ function parseArgs(argv: string[]): ParsedArgs {
         throw new Error('--import-live requires a file argument')
       result.importLive.push(live)
     }
+    else if (value === '--baseline') {
+      result.baseline = argv[++index]
+      if (!result.baseline)
+        throw new Error('--baseline requires a directory argument')
+    }
     else if (value === '--keep-run-root') {
       result.keepRunRoot = true
     }
@@ -329,10 +419,10 @@ function parseArgs(argv: string[]): ParsedArgs {
 }
 
 /** Refuse an output directory inside the repository or one with unexpected contents. */
-function assertSafeOutputDirectory(directory: string, repoRoot: string): { error?: string, kind?: 'unsafe' | 'invalid' } {
+function assertSafeOutputDirectory(directory: string, gitRoot: string): { error?: string, kind?: 'unsafe' | 'invalid' } {
   if (!isAbsolute(directory))
     return { error: `--output must be an absolute path, got ${directory}`, kind: 'unsafe' }
-  if (insideRepository(repoRoot, directory))
+  if (insideRepository(gitRoot, directory))
     return { error: `--output ${directory} is inside the repository checkout; use a private directory outside it`, kind: 'unsafe' }
   let real
   try {
@@ -341,7 +431,7 @@ function assertSafeOutputDirectory(directory: string, repoRoot: string): { error
   catch {
     return {}
   }
-  if (real !== directory && insideRepository(repoRoot, real))
+  if (real !== directory && insideRepository(gitRoot, real))
     return { error: `--output ${directory} resolves inside the repository checkout via symlink`, kind: 'unsafe' }
   if (existsSync(directory) && statSync(directory).isDirectory()) {
     const entries = readdirSync(directory)
@@ -354,8 +444,8 @@ function assertSafeOutputDirectory(directory: string, repoRoot: string): { error
   return {}
 }
 
-function insideRepository(repoRoot: string, target: string): boolean {
-  const step = relative(resolve(repoRoot), resolve(target))
+function insideRepository(gitRoot: string, target: string): boolean {
+  const step = relative(resolve(gitRoot), resolve(target))
   return step === '' || (!step.startsWith('..') && !isAbsolute(step))
 }
 
@@ -363,25 +453,25 @@ function realpath(path: string): string {
   return execFileSync('node', ['-e', `process.stdout.write(require('fs').realpathSync(${JSON.stringify(path)}))`], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
 }
 
-function makeTempOutputDir(repoRoot: string): string {
+function makeTempOutputDir(gitRoot: string): string {
   const dir = mkdtempSync(join(tmpdir(), 'imp803-bench-out-'))
-  if (insideRepository(repoRoot, dir))
+  if (insideRepository(gitRoot, dir))
     throw new Error('temp output directory landed inside the repository checkout; pass --output explicitly')
   return dir
 }
 
-function gitHead(repoRoot: string): string {
+function gitHead(gitRoot: string): string {
   try {
-    return execFileSync('git', ['-C', repoRoot, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim()
+    return execFileSync('git', ['-C', gitRoot, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim()
   }
   catch {
     return 'unknown'.repeat(10).slice(0, 40)
   }
 }
 
-function gitDirty(repoRoot: string): boolean {
+function gitDirty(gitRoot: string): boolean {
   try {
-    const status = execFileSync('git', ['-C', repoRoot, 'status', '--porcelain'], { encoding: 'utf8' }).trim()
+    const status = execFileSync('git', ['-C', gitRoot, 'status', '--porcelain'], { encoding: 'utf8' }).trim()
     return status.length > 0
   }
   catch {

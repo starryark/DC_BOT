@@ -54,6 +54,18 @@ describe('controller runner text path', () => {
   })
 })
 
+describe('controller runner sample capacity override', () => {
+  it('applies sample capacity override and performs reservoir sampling', async () => {
+    const result = await runControllerWorkloads([workload('text-active-memory')], { repoRoot: REPO_ROOT, run: run!, characterId: CHARACTER, seed: 20260802, warmupCount: 0, sampleCount: 5, sampleCapacity: 2 })
+    const textActive = result.results.find(result => result.workloadId === 'text-active-memory')!
+    
+    const countRecord = textActive.measurements.find(measurement => measurement.statistic === 'count')!
+    expect(countRecord.observationCount).toBe(5)
+    expect(countRecord.retainedSamples).toBe(2)
+    expect(countRecord.sampleCapacity).toBe(2)
+  })
+})
+
 describe('controller runner voice path', () => {
   it('measures the voice playback lifecycle end to end', async () => {
     const result = await runControllerWorkloads([workload('voice-active-memory')], { repoRoot: REPO_ROOT, run: run!, characterId: CHARACTER, seed: 20260802, warmupCount: 0, sampleCount: 1 })
