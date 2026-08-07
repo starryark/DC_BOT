@@ -1,5 +1,7 @@
 import type { CharacterId } from '@proj-airi/memory-domain'
 
+import { resolve } from 'node:path'
+
 import { asCharacterId } from '@proj-airi/memory-domain'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
@@ -29,11 +31,6 @@ afterEach(() => {
     disposeEvaluationRun(run)
   run = undefined
 })
-
-function resolve(...segments: string[]): string {
-  // Local resolve to avoid importing node:path at the top for one call.
-  return segments.reduce((acc, segment) => `${acc}/${segment}`)
-}
 
 describe('runtime runner deterministic selection', () => {
   it('runs only the runtime-family workloads of the requested suite', async () => {
