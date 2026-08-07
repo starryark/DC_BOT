@@ -1,12 +1,12 @@
-import type { CharacterId, PhysicalLocation } from '@proj-airi/memory-domain'
+import type { asLogicalRoomId, asPhysicalRoomId, CharacterId, PhysicalLocation } from '@proj-airi/memory-domain'
 
-import type { MeasurementRecord, WorkloadSpec } from './contracts'
 import type { EvaluationRuntimeRun, ScenarioRuntime } from '../runtime-adapter'
+import type { MeasurementRecord, WorkloadSpec } from './contracts'
 
-import { performance } from 'node:perf_hooks'
 import { resolve } from 'node:path'
+import { performance } from 'node:perf_hooks'
 
-import { asCharacterId, asLogicalRoomId, asPhysicalRoomId, asSegmentId, asTimestamp, attributedActor } from '@proj-airi/memory-domain'
+import { asCharacterId, asSegmentId, asTimestamp, attributedActor } from '@proj-airi/memory-domain'
 import { createSeededRandom, LatencySeries } from '@proj-airi/memory-sqlite'
 
 import { PERFORMANCE_CONTRACT_ID, PERFORMANCE_DEFAULT_SEED, PERFORMANCE_SCHEMA_VERSION } from './contracts'
@@ -535,7 +535,7 @@ function syntheticUserId(workloadId: string, seed: number): string {
  * range real snowflakes do not occupy today (Discord epoch starts at 1420070400000).
  */
 function syntheticSnowflake(seed: number, workloadId: string, role: string): string {
-  let h = (seed >>> 0) ^ 0x5bd1e995
+  let h = (seed >>> 0) ^ 0x5BD1E995
   const input = `${workloadId}:${role}`
   for (let i = 0; i < input.length; i++)
     h = Math.imul(h ^ input.charCodeAt(i), 0x01000193)
@@ -558,6 +558,10 @@ function retainedTurnsFor(workload: WorkloadSpec): number {
 }
 
 function errorMessageOf(error: unknown): string {
+  // NOTICE:
+  // @moeru/std's errorMessageFrom is not a direct dependency of discord-bot,
+  // so the error message is extracted manually here. The lint rule that
+  // suggests errorMessageFrom does not apply because the package is absent.
   return error instanceof Error ? error.message : String(error)
 }
 

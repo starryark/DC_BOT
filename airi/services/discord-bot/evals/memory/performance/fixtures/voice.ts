@@ -1,12 +1,12 @@
 import type { Readable } from 'node:stream'
 
-import type { AsrProvider, AsrResult, AsrInput } from '../../../../src/providers/asr/types'
+import type { MemoryContextResult, PreparedModelMemory } from '../../../../src/memory/text-observer'
+import type { VoiceMemoryAdapter } from '../../../../src/memory/voice-memory-adapter'
+import type { AsrInput, AsrProvider, AsrResult } from '../../../../src/providers/asr/types'
 import type { BrainProvider, BrainRequest } from '../../../../src/providers/brain/types'
 import type { TtsProvider, TtsRequest } from '../../../../src/providers/tts/types'
 import type { PlaybackResult } from '../../../../src/voice/playback'
 import type { VoiceUtterance } from '../../../../src/voice/types'
-import type { VoiceMemoryAdapter } from '../../../../src/memory/voice-memory-adapter'
-import type { MemoryContextResult, PreparedModelMemory } from '../../../../src/memory/text-observer'
 
 import { Buffer } from 'node:buffer'
 
@@ -37,14 +37,14 @@ export interface VoiceManagerFake {
   readonly played: readonly PlayedItem[]
   readonly cancelledEpochs: readonly number[]
   readonly stops: readonly string[]
-  on(event: string, listener: (payload: unknown) => void): void
-  emit(event: string, payload: unknown): void
-  playAudioStream(guildId: string, stream: Readable, item?: Partial<PlayedItem>): Promise<PlaybackResult>
-  awaitPlaybackDrained(guildId: string, epoch: number): Promise<void>
-  cancelPlaybackEpoch(guildId: string, epoch: number): void
-  stopPlayback(guildId: string, reason?: string): void
+  on: (event: string, listener: (payload: unknown) => void) => void
+  emit: (event: string, payload: unknown) => void
+  playAudioStream: (guildId: string, stream: Readable, item?: Partial<PlayedItem>) => Promise<PlaybackResult>
+  awaitPlaybackDrained: (guildId: string, epoch: number) => Promise<void>
+  cancelPlaybackEpoch: (guildId: string, epoch: number) => void
+  stopPlayback: (guildId: string, reason?: string) => void
   /** Settle every held playback promise so a draining turn can complete. */
-  finishPlayback(): void
+  finishPlayback: () => void
 }
 
 export function createBenchmarkVoiceManagerFake(options: { manualPlayback?: boolean } = {}): VoiceManagerFake {
@@ -90,7 +90,7 @@ export function createBenchmarkVoiceManagerFake(options: { manualPlayback?: bool
 }
 
 /** Build a content-free voice utterance fixture. */
-export function createBenchmarkUtterance(workloadId: string, seed: number, ordinal: number): VoiceUtterance {
+export function createBenchmarkUtterance(workloadId: string, seed: number, _ordinal: number): VoiceUtterance {
   const endedAt = Date.now()
   const guildId = syntheticSnowflake(seed, workloadId, 'guild')
   const userId = syntheticSnowflake(seed, workloadId, 'user')
@@ -181,7 +181,7 @@ export function createBenchmarkVoiceBrainFake(options: {
     requests,
     signals,
     get callCount() { return callCount },
-    generate: async function* (request: BrainRequest, signal: AbortSignal): AsyncIterable<string> {
+    async* generate(request: BrainRequest, signal: AbortSignal): AsyncIterable<string> {
       callCount += 1
       requests.push(request)
       signals.push(signal)
@@ -201,11 +201,16 @@ export function createBenchmarkVoiceBrainFake(options: {
 /** An inert voice memory adapter; mirrors the active lifecycle but resolves disabled context. */
 export function createInertVoiceMemoryAdapter(): VoiceMemoryAdapter & { readonly callCount: number } {
   let callCount = 0
-  const bump = (): void => { callCount += 1 }
+  const bump = (): void => {
+    callCount += 1
+  }
   return {
     get callCount() { return callCount },
     async admit() { bump() },
-    async prepareGeneration() { bump(); return { context: { status: 'disabled' } satisfies MemoryContextResult } satisfies PreparedModelMemory },
+    async prepareGeneration() {
+      bump()
+      return { context: { status: 'disabled' } satisfies MemoryContextResult } satisfies PreparedModelMemory
+    },
     async recordPlayback() { bump() },
     async completeGeneration() { bump() },
     async cancelGeneration() { bump() },

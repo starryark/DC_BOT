@@ -2,8 +2,8 @@ import type { MeasurementRecord, RunManifest } from './contracts'
 
 import { describe, expect, it } from 'vitest'
 
-import { buildPerformanceReport, recomputeSummary } from './report'
 import { PERFORMANCE_CONTRACT_ID, PERFORMANCE_SCHEMA_VERSION } from './contracts'
+import { buildPerformanceReport, recomputeSummary } from './report'
 import { WORKLOAD_CATALOG_DIGEST } from './workloads'
 
 /**

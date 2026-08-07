@@ -1,9 +1,9 @@
 import { createHash } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 
-import { sha256Canonical } from '../contracts'
-
 import * as v from 'valibot'
+
+import { sha256Canonical } from '../contracts'
 
 /**
  * Live-artifact import contract for the IMP-803 deterministic benchmark.
@@ -29,7 +29,7 @@ export const liveArtifactSchema = v.strictObject({
   format: v.literal(1),
   kind: v.picklist(LIVE_ARTIFACT_KINDS),
   /** Content-free sample id; never a guild/user id or prompt/transcript. */
-  sampleId: v.pipe(v.string(), v.regex(/^[a-zA-Z0-9._-]{1,64}$/, 'sample id must be alphanumeric/dotted/kebab-case')),
+  sampleId: v.pipe(v.string(), v.regex(/^[\w.-]{1,64}$/, 'sample id must be alphanumeric/dotted/kebab-case')),
   /** SHA-256 of the raw artifact file; the file itself is never embedded. */
   fileDigest: v.pipe(v.string(), v.regex(/^[0-9a-f]{64}$/)),
   fileSizeBytes: v.pipe(v.number(), v.integer(), v.minValue(0)),
@@ -110,7 +110,7 @@ export function scanLiveArtifactForProhibitedContent(artifact: LiveArtifact): re
   // A JSON string value that is an absolute or relative path: "...":"/abs/..." ,
   // "...":"C:\\..." , "...":"./rel" . The leading quote anchors a value start
   // so a lone slash inside a phrase like "inert/active" is not a false positive.
-  if (/":\s*"(?:\/[^"]*|[A-Za-z]:\\[^"]*|\.\.?\/[^"]*)"/.test(serialized))
+  if (/":\s*"(?:\/[^"]*|[A-Z]:\\[^"]*|\.\.?\/[^"]*)"/i.test(serialized))
     failures.push('absolute-or-relative-path')
   if (/"(?:secret|apiKey|api_key|token|redactionKey)"\s*:/.test(serialized))
     failures.push('secret-bearing-field')

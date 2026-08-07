@@ -1,6 +1,6 @@
-import { canonicalJson, sha256Canonical } from '../contracts'
-
 import * as v from 'valibot'
+
+import { canonicalJson, sha256Canonical } from '../contracts'
 
 /**
  * Strict, versioned performance contracts for the IMP-803 deterministic
@@ -89,7 +89,7 @@ export type ThresholdEvaluation = typeof THRESHOLD_EVALUATIONS[number]
 const workloadIdPattern = v.pipe(v.string(), v.regex(/^[a-z][a-z0-9-]{2,62}$/, 'workload id must be kebab-case lowercase'))
 // Metric ids reuse the camelCase convention the G2 soak already uses (append.p95Ms,
 // throughput.operationsPerSecond), so both cases are allowed alongside dots and hyphens.
-const metricIdPattern = v.pipe(v.string(), v.regex(/^[a-zA-Z][a-zA-Z0-9._-]{2,127}$/, 'metric id must be dotted/kebab-case alphanumeric'))
+const metricIdPattern = v.pipe(v.string(), v.regex(/^[a-z][\w.-]{2,127}$/i, 'metric id must be dotted/kebab-case alphanumeric'))
 
 /** One strict workload specification from the frozen catalog. */
 export const workloadSpecSchema = v.strictObject({

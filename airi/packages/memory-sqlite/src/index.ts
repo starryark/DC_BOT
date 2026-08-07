@@ -1,6 +1,5 @@
 export * from './backup.js'
 export * from './benchmark-statistics.js'
-export * from './deletion-targets.js'
 export {
   classifySqliteFailure,
   openReadOnlySqliteDatabase,
@@ -8,6 +7,7 @@ export {
   verifySqliteProfile,
 } from './connection-profile.js'
 export type { SqliteProfile } from './connection-profile.js'
+export * from './deletion-targets.js'
 export * from './idempotency.js'
 export { migrate } from './migration-runner.js'
 export { latestSchemaVersion, migrations } from './migrations/index.js'

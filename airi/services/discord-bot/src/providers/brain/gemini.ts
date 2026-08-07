@@ -1,15 +1,14 @@
+import type { BrainUsageSink, UsageAccumulator } from '../../../evals/memory/performance/provider-observability'
 import type { BrainRateLimiter } from './rate-limiter'
 import type { BrainProvider, BrainRequest } from './types'
-
-import type { BrainUsageSink, UsageAccumulator } from '../../../evals/memory/performance/provider-observability'
 
 import { GoogleGenAI, ThinkingLevel } from '@google/genai'
 import { useLogg } from '@guiiai/logg'
 
+import { createUsageAccumulator, safeEmitUsage } from '../../../evals/memory/performance/provider-observability'
 import { config } from '../../config'
 import { BrainRateLimitError, BrainRequestAbortedError, classifyBrainError, isTransientlyUnavailable } from './errors'
 import { LocalBrainRateLimiter } from './rate-limiter'
-import { createUsageAccumulator, safeEmitUsage } from '../../../evals/memory/performance/provider-observability'
 
 /**
  * Backoff before re-attempting a turn that upstream refused with 503
@@ -25,14 +24,15 @@ const UNAVAILABLE_RETRY_DELAYS_MS = [500, 1500] as const
 /** Resolves after `ms`, or rejects as soon as the turn is cancelled. */
 function delay(ms: number, signal: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => {
-      signal.removeEventListener('abort', onAbort)
-      resolve()
-    }, ms)
+    let timer: NodeJS.Timeout
     const onAbort = (): void => {
       clearTimeout(timer)
       reject(new BrainRequestAbortedError())
     }
+    timer = setTimeout(() => {
+      signal.removeEventListener('abort', onAbort)
+      resolve()
+    }, ms)
     signal.addEventListener('abort', onAbort, { once: true })
   })
 }

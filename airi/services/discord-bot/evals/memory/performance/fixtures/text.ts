@@ -1,6 +1,6 @@
-import type { BrainProvider, BrainRequest } from '../../../../src/providers/brain/types'
-import type { DiscordMentionInputEvent } from '../../../../src/orchestration/events'
 import type { DiscordTextMemoryObserver, MemoryContextResult, PreparedModelMemory } from '../../../../src/memory/text-observer'
+import type { DiscordMentionInputEvent } from '../../../../src/orchestration/events'
+import type { BrainProvider, BrainRequest } from '../../../../src/providers/brain/types'
 
 import { buildDiscordActorEvidence } from '../../../../src/memory/discord-actor-snapshot'
 
@@ -30,7 +30,7 @@ export function createBenchmarkBrainFake(options: {
     signals,
     startTimes,
     get callCount() { return callCount },
-    generate: async function* (request: BrainRequest, signal: AbortSignal): AsyncIterable<string> {
+    async* generate(request: BrainRequest, signal: AbortSignal): AsyncIterable<string> {
       callCount += 1
       requests.push(request)
       signals.push(signal)
@@ -58,7 +58,10 @@ export interface BrainFake extends BrainProvider {
 /** Build a content-free Discord mention event with a deterministic synthetic id. */
 export function createBenchmarkMentionEvent(workloadId: string, seed: number, ordinal: number): DiscordMentionInputEvent {
   const now = Date.now()
-  const turnId = `bench-turn-${ordinal}`
+  // Include a per-call random suffix so repeated samples against the same
+  // active runtime do not collide on the event idempotency key.
+  const nonce = Math.random().toString(36).slice(2, 10)
+  const turnId = `bench-turn-${ordinal}-${nonce}`
   return {
     type: 'discord-mention',
     eventId: `${turnId}:in`,
@@ -89,11 +92,16 @@ export function createBenchmarkMentionEvent(workloadId: string, seed: number, or
  */
 export function createInertTextMemoryObserver(): DiscordTextMemoryObserver & { readonly callCount: number } {
   let callCount = 0
-  const bump = (): void => { callCount += 1 }
+  const bump = (): void => {
+    callCount += 1
+  }
   return {
     get callCount() { return callCount },
     async admit() { bump() },
-    async prepareForModel() { bump(); return { context: { status: 'disabled' } satisfies MemoryContextResult } satisfies PreparedModelMemory },
+    async prepareForModel() {
+      bump()
+      return { context: { status: 'disabled' } satisfies MemoryContextResult } satisfies PreparedModelMemory
+    },
     async generated() { bump() },
     async delivering() { bump() },
     async deliveredSegment() { bump() },
@@ -104,7 +112,7 @@ export function createInertTextMemoryObserver(): DiscordTextMemoryObserver & { r
 
 /** Deterministic synthetic snowflake; never a real Discord entity and never published. */
 export function syntheticSnowflake(seed: number, workloadId: string, role: string): string {
-  let h = (seed >>> 0) ^ 0x5bd1e995
+  let h = (seed >>> 0) ^ 0x5BD1E995
   const input = `${workloadId}:${role}`
   for (let i = 0; i < input.length; i++)
     h = Math.imul(h ^ input.charCodeAt(i), 0x01000193)

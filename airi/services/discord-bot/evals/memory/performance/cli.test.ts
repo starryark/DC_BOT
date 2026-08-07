@@ -18,11 +18,17 @@ const BENCH_ENTRY = resolve(import.meta.dirname, '..', '..', '..', 'scripts', 'm
 
 const scratchDirs: string[] = []
 
-beforeEach(() => { scratchDirs.length = 0 })
+beforeEach(() => {
+  scratchDirs.length = 0
+})
 afterEach(() => {
   for (const dir of scratchDirs) {
-    try { rmSync(dir, { recursive: true, force: true }) }
-    catch { /* Windows transient file-handle locks */ }
+    try {
+      rmSync(dir, { recursive: true, force: true })
+    }
+    catch {
+      // Windows transient file-handle locks
+    }
   }
 })
 

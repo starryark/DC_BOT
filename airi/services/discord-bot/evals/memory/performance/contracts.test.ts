@@ -10,13 +10,13 @@ import {
   PERFORMANCE_CONTRACT_ID,
   PERFORMANCE_DEFAULT_SEED,
   PERFORMANCE_SCHEMA_VERSION,
-  RUNNER_FAMILIES,
   runManifestSchema,
+  RUNNER_FAMILIES,
   validateMeasurementRecords,
   validateWorkloadCatalog,
+  WORKLOAD_ROLES,
   workloadCatalogDigest,
   workloadSpecSchema,
-  WORKLOAD_ROLES,
 } from './contracts'
 import { WORKLOAD_CATALOG, WORKLOAD_CATALOG_DIGEST } from './workloads'
 

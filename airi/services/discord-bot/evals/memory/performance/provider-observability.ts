@@ -1,6 +1,6 @@
-import { sha256Canonical } from '../contracts'
-
 import * as v from 'valibot'
+
+import { sha256Canonical } from '../contracts'
 
 /**
  * Provider usage observability for the IMP-803 deterministic benchmark.

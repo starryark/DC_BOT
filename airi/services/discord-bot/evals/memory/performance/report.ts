@@ -1,9 +1,7 @@
 import type { MeasurementRecord, RunManifest } from './contracts'
 
 import { sha256Canonical } from '../contracts'
-
 import { prohibitedContentFindings } from '../redaction'
-
 import { PERFORMANCE_CONTRACT_ID, PERFORMANCE_SCHEMA_VERSION } from './contracts'
 import { WORKLOAD_CATALOG_DIGEST } from './workloads'
 
@@ -90,14 +88,16 @@ export function buildPerformanceReport(inputs: PerformanceReportInputs): BuiltPe
   const metricStatusCounts = { passed: 0, failed: 0, measuredNotEvaluated: 0 }
   let approvedThresholdFailures = 0
   for (const record of measurements) {
-    if (record.thresholdEvaluation === 'passed')
+    if (record.thresholdEvaluation === 'passed') {
       metricStatusCounts.passed += 1
+    }
     else if (record.thresholdEvaluation === 'failed') {
       metricStatusCounts.failed += 1
       approvedThresholdFailures += 1
     }
-    else
+    else {
       metricStatusCounts.measuredNotEvaluated += 1
+    }
   }
 
   const hasFailures = failed > 0 || correctnessFailures > 0 || cleanupFailures > 0
@@ -141,7 +141,7 @@ export function buildPerformanceReport(inputs: PerformanceReportInputs): BuiltPe
  * alone (plus the manifest for environment/disposition context). This is the
  * recomputation test target.
  */
-export function recomputeSummary(measurementsJsonl: string, manifest: RunManifest, runId: string, limitations: readonly string[]): { metricStatusCounts: { passed: number, failed: number, measuredNotEvaluated: number }, contractDigest: string, recomputeDigest: string } {
+export function recomputeSummary(measurementsJsonl: string, _manifest: RunManifest, _runId: string, _limitations: readonly string[]): { metricStatusCounts: { passed: number, failed: number, measuredNotEvaluated: number }, contractDigest: string, recomputeDigest: string } {
   const records: MeasurementRecord[] = []
   for (const line of measurementsJsonl.split('\n').filter(line => line.length > 0))
     records.push(JSON.parse(line) as MeasurementRecord)
@@ -193,10 +193,10 @@ function scanAllArtifacts(summary: PerformanceSummary, measurementsJsonl: string
       }
     }
     // Performance-specific: absolute or relative path in a JSON string value or markdown line.
-    if (/(?:[[,:]\s*)"(?:\/[^"]*|[A-Za-z]:\\[^"]*|\.\.?\/[^"]*)"/.test(artifact))
+    if (/[[,:]\s*"(?:\/[^"]*|[A-Z]:\\[^"]*|\.\.?\/[^"]*)"/i.test(artifact))
       findings.add('absolute-or-relative-path')
   }
-  if (/(?:^|\n)[-: ]\s*(?:\/\S+|[A-Za-z]:\\\S+)/.test(markdown))
+  if (/(?:^|\n)[-: ]\s*(?:\/\S+|[A-Z]:\\\S+)/i.test(markdown))
     findings.add('absolute-or-relative-path')
   return Object.freeze([...findings])
 }

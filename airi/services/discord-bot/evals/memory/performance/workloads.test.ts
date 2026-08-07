@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import * as v from 'valibot'
 
 import { workloadSpecSchema } from './contracts'
-import { WORKLOAD_CATALOG, workloadsForSuite, workloadById } from './workloads'
+import { WORKLOAD_CATALOG, workloadById, workloadsForSuite } from './workloads'
 
 /**
  * Workload catalog tests for the IMP-803 deterministic performance benchmark.

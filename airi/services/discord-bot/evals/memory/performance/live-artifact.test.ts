@@ -1,3 +1,6 @@
+import type { LiveArtifact } from './live-artifact'
+
+import { Buffer } from 'node:buffer'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -6,7 +9,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 
 import * as v from 'valibot'
 
-import { type LiveArtifact, liveArtifactDigest, liveArtifactSchema, parseLiveArtifact, scanLiveArtifactForProhibitedContent, summarizeLiveArtifactFile } from './live-artifact'
+import { liveArtifactDigest, liveArtifactSchema, parseLiveArtifact, scanLiveArtifactForProhibitedContent, summarizeLiveArtifactFile } from './live-artifact'
 
 /**
  * Live-artifact import tests for the IMP-803 benchmark.

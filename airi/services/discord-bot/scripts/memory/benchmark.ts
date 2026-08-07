@@ -23,6 +23,8 @@
  *       -> {@link writeArtifactsAtomically}
  */
 
+import process from 'node:process'
+
 import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, renameSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -30,11 +32,11 @@ import { isAbsolute, join, relative, resolve } from 'node:path'
 
 import { asCharacterId } from '@proj-airi/memory-domain'
 
-import { disposeEvaluationRun, startEvaluationRun } from '../../evals/memory/runtime-adapter'
 import { runControllerWorkloads } from '../../evals/memory/performance/controller-runner'
 import { buildPerformanceReport } from '../../evals/memory/performance/report'
 import { runRuntimeSuite } from '../../evals/memory/performance/runtime-runner'
 import { workloadsForSuite } from '../../evals/memory/performance/workloads'
+import { disposeEvaluationRun, startEvaluationRun } from '../../evals/memory/runtime-adapter'
 
 const EXIT = { COMPLETE: 0, INVALID: 2, CORRECTNESS: 3, UNSAFE: 4, UNEXPECTED: 5 } as const
 const BENCH_CHARACTER = asCharacterId('bench-character')
@@ -52,6 +54,29 @@ interface ParsedArgs {
   importLive: string[]
   keepRunRoot: boolean
 }
+
+const HELP_TEXT = `Usage: memory:benchmark [options]
+
+Options:
+  --suite smoke|performance-v1   Suite to run (default: smoke)
+  --seed <non-negative integer>  Deterministic seed (default: 20260802)
+  --warmup <positive integer>    Override warmup count for every workload
+  --samples <positive integer>   Override measured sample count for every workload
+  --sample-capacity <integer>    Override reservoir sample capacity
+  --output <directory>           Absolute external output directory (required for performance-v1)
+  --thresholds <file>            Approved threshold document (provenance validated before runtime start)
+  --price-document <file>        Approved price document (provenance validated before runtime start)
+  --import-live <file>           Import a live artifact (repeatable)
+  --keep-run-root                Keep the run root for debugging
+  --help                         Show this help
+
+Exit codes:
+  0  complete, correctness-clean, no approved threshold failure
+  2  invalid CLI argument, contract, threshold, price, or provenance
+  3  correctness failure or approved threshold failure
+  4  unsafe output, cleanup failure, redaction failure, or artifact-write failure
+  5  unexpected runtime exception
+`
 
 async function main(): Promise<void> {
   let parsed: ParsedArgs
@@ -232,10 +257,12 @@ function parseArgs(argv: string[]): ParsedArgs {
   const result: ParsedArgs = { help: false, suite: 'smoke', seed: 20260802, importLive: [], keepRunRoot: false }
   for (let index = 0; index < argv.length; index++) {
     const value = argv[index]!
-    if (value === '--')
+    if (value === '--') {
       continue
-    else if (value === '--help' || value === '-h')
+    }
+    else if (value === '--help' || value === '-h') {
       result.help = true
+    }
     else if (value === '--suite') {
       const next = argv[++index]
       if (next !== 'smoke' && next !== 'performance-v1')
@@ -367,28 +394,5 @@ function messageOf(error: unknown): string {
     return (error as { message: string }).message
   return String(error)
 }
-
-const HELP_TEXT = `Usage: memory:benchmark [options]
-
-Options:
-  --suite smoke|performance-v1   Suite to run (default: smoke)
-  --seed <non-negative integer>  Deterministic seed (default: 20260802)
-  --warmup <positive integer>    Override warmup count for every workload
-  --samples <positive integer>   Override measured sample count for every workload
-  --sample-capacity <integer>    Override reservoir sample capacity
-  --output <directory>           Absolute external output directory (required for performance-v1)
-  --thresholds <file>            Approved threshold document (provenance validated before runtime start)
-  --price-document <file>        Approved price document (provenance validated before runtime start)
-  --import-live <file>           Import a live artifact (repeatable)
-  --keep-run-root                Keep the run root for debugging
-  --help                         Show this help
-
-Exit codes:
-  0  complete, correctness-clean, no approved threshold failure
-  2  invalid CLI argument, contract, threshold, price, or provenance
-  3  correctness failure or approved threshold failure
-  4  unsafe output, cleanup failure, redaction failure, or artifact-write failure
-  5  unexpected runtime exception
-`
 
 await main()

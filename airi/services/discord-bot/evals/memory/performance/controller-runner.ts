@@ -1,7 +1,8 @@
 import type { CharacterId } from '@proj-airi/memory-domain'
 
-import type { MeasurementRecord, WorkloadSpec } from './contracts'
+import type { DiscordTextMemoryObserver } from '../../../src/memory/text-observer'
 import type { EvaluationRuntimeRun } from '../runtime-adapter'
+import type { MeasurementRecord, WorkloadSpec } from './contracts'
 
 import { performance } from 'node:perf_hooks'
 import { env } from 'node:process'
@@ -10,16 +11,15 @@ import { asCharacterId } from '@proj-airi/memory-domain'
 import { createSeededRandom, LatencySeries } from '@proj-airi/memory-sqlite'
 
 import { resetConfigCache } from '../../../src/config'
-import { MentionResponder } from '../../../src/orchestration/mention-responder'
-import { ConversationController } from '../../../src/orchestration/conversation-controller'
-import { createSingleReferenceCatalog } from '../../../src/providers/tts/voice-profile-catalog'
 import { createTextMemoryAdapter } from '../../../src/memory/text-memory-adapter'
 import { createVoiceMemoryAdapter } from '../../../src/memory/voice-memory-adapter'
-
+import { ConversationController } from '../../../src/orchestration/conversation-controller'
+import { MentionResponder } from '../../../src/orchestration/mention-responder'
+import { createSingleReferenceCatalog } from '../../../src/providers/tts/voice-profile-catalog'
 import { PERFORMANCE_CONTRACT_ID, PERFORMANCE_DEFAULT_SEED, PERFORMANCE_SCHEMA_VERSION } from './contracts'
-import { WORKLOAD_CATALOG_DIGEST } from './workloads'
 import { createBenchmarkBrainFake, createBenchmarkMentionEvent, createInertTextMemoryObserver } from './fixtures/text'
 import { createBenchmarkAsrFake, createBenchmarkTtsFake, createBenchmarkUtterance, createBenchmarkVoiceBrainFake, createBenchmarkVoiceManagerFake, createInertVoiceMemoryAdapter } from './fixtures/voice'
+import { WORKLOAD_CATALOG_DIGEST } from './workloads'
 
 /**
  * Text and voice controller workload runner for the IMP-803 deterministic
@@ -131,11 +131,11 @@ async function runTextControllerWorkload(workload: WorkloadSpec, options: Worklo
 
   try {
     for (let i = 0; i < warmupCount; i++)
-      await respondOnce(responder, workload, options, i)
+      await respondOnce(responder, memory, workload, options, i)
 
     for (let i = 0; i < sampleCount; i++) {
       const start = performance.now()
-      const reply = await respondOnce(responder, workload, options, i)
+      const reply = await respondOnce(responder, memory, workload, options, i)
       const durationMs = performance.now() - start
       const failures = checkTextPostconditions(workload, reply, brain)
       if (failures.length > 0) {
@@ -181,7 +181,10 @@ async function runVoiceControllerWorkload(workload: WorkloadSpec, options: Workl
   const tts = createBenchmarkTtsFake()
   const voiceProfileCatalog = createSingleReferenceCatalog({ referenceAudio: 'neutral.wav', referenceText: 'neutral reference', promptLanguage: 'ja' })
 
+  // Constructed for its constructor side effects: it registers utterance,
+  // bargeIn, and sessionEnd listeners on the voice fake that drive the turn.
   const controller = new ConversationController({ voice: voice as never, asr, brain, tts, voiceProfileCatalog, memory })
+  void controller
 
   try {
     for (let i = 0; i < warmupCount; i++) {
@@ -229,8 +232,13 @@ async function runVoiceControllerWorkload(workload: WorkloadSpec, options: Workl
   }
 }
 
-async function respondOnce(responder: MentionResponder, workload: WorkloadSpec, options: WorkloadExecutionOptions, ordinal: number): Promise<string> {
+async function respondOnce(responder: MentionResponder, memory: DiscordTextMemoryObserver, workload: WorkloadSpec, options: WorkloadExecutionOptions, ordinal: number): Promise<string> {
   const event = createBenchmarkMentionEvent(workload.workloadId, options.seed, ordinal)
+  // The memory observer is constructed (exercising the adapter's lifecycle
+  // setup against an isolated runtime) but the benchmark measures the
+  // MentionResponder boundary, not a full adapter lifecycle replay. Passing
+  // disabled context keeps the response path deterministic and credential-free.
+  void memory
   return responder.respond({
     event,
     context: { isDirectMessage: false, isThread: false },

@@ -16,10 +16,12 @@
  * `Math.random`.
  */
 
+import type { LatencyStatistics } from '../benchmark-statistics.js'
+
+import { createSeededRandom, LatencySeries } from '../benchmark-statistics.js'
+
 export type { LatencyStatistics, PercentileMethod } from '../benchmark-statistics.js'
 export { createSeededRandom, LatencySeries, percentileOf } from '../benchmark-statistics.js'
-import type { LatencyStatistics } from '../benchmark-statistics.js'
-import { createSeededRandom, LatencySeries } from '../benchmark-statistics.js'
 
 /** Latency categories reported separately; mixing them would hide slow classes inside a global percentile. */
 export const latencyCategories = Object.freeze([

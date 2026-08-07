@@ -1,6 +1,6 @@
-import { sha256Canonical } from '../contracts'
-
 import * as v from 'valibot'
+
+import { sha256Canonical } from '../contracts'
 
 /**
  * Strict price document contract for the IMP-803 deterministic benchmark.
@@ -66,9 +66,9 @@ export const COST_ABSENT_REASONS = Object.freeze([
 export type CostAbsentReason = typeof COST_ABSENT_REASONS[number]
 
 /** A calculated cost result; present only when every rule is satisfied. */
-export type CostResult =
-  | { readonly status: 'present', readonly currency: string, readonly amount: number, readonly dimensions: ReadonlyArray<{ readonly dimension: string, readonly tokens: number, readonly pricePerUnit: number, readonly subtotal: number }> }
-  | { readonly status: 'absent', readonly reason: CostAbsentReason }
+export type CostResult
+  = | { readonly status: 'present', readonly currency: string, readonly amount: number, readonly dimensions: ReadonlyArray<{ readonly dimension: string, readonly tokens: number, readonly pricePerUnit: number, readonly subtotal: number }> }
+    | { readonly status: 'absent', readonly reason: CostAbsentReason }
 
 /**
  * Parse a price document, rejecting any whose structure or provenance is invalid.

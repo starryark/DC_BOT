@@ -1,8 +1,10 @@
+import type { PriceDocument } from './price-contract'
+
 import { describe, expect, it } from 'vitest'
 
 import * as v from 'valibot'
 
-import { calculateCost, COST_ABSENT_REASONS, type PriceDocument, parsePriceDocument, priceDocumentDigest, priceDocumentSchema, priceEffectiveFailure } from './price-contract'
+import { calculateCost, COST_ABSENT_REASONS, parsePriceDocument, priceDocumentDigest, priceDocumentSchema, priceEffectiveFailure } from './price-contract'
 
 /**
  * Price document and cost calculation tests for the IMP-803 benchmark.
@@ -116,7 +118,7 @@ describe('cost calculation', () => {
     expect(result).toMatchObject({ status: 'absent', reason: 'price-expired' })
   })
 
-  it('COST_ABSENT_REASONS lists the six documented reasons', () => {
+  it('cOST_ABSENT_REASONS lists the six documented reasons', () => {
     expect(COST_ABSENT_REASONS).toEqual(['usage-unavailable', 'model-mismatch', 'price-not-approved', 'price-expired', 'price-effective-window-not-reached', 'missing-price-dimension'])
   })
 

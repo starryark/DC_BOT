@@ -1,8 +1,10 @@
+import type { BrainUsageSink, UsageMetadataInput } from './provider-observability'
+
 import { describe, expect, it } from 'vitest'
 
 import * as v from 'valibot'
 
-import { createUsageAccumulator, type BrainUsageSink, type UsageMetadataInput, safeEmitUsage, USAGE_DISPOSITIONS, usageRecordDigest, usageRecordSchema } from './provider-observability'
+import { createUsageAccumulator, safeEmitUsage, USAGE_DISPOSITIONS, usageRecordDigest, usageRecordSchema } from './provider-observability'
 
 /**
  * Provider usage observability tests for the IMP-803 benchmark.
@@ -49,7 +51,7 @@ describe('usage record schema', () => {
     expect(() => v.parse(usageRecordSchema, validRecord({ promptText: 'leak' }))).toThrow()
   })
 
-  it('USAGE_DISPOSITIONS lists the four documented dispositions', () => {
+  it('uSAGE_DISPOSITIONS lists the four documented dispositions', () => {
     expect(USAGE_DISPOSITIONS).toEqual(['complete', 'aborted', 'failed', 'unavailable'])
   })
 })
@@ -91,7 +93,9 @@ describe('usage accumulator', () => {
 describe('safeEmitUsage', () => {
   it('invokes the sink when present', () => {
     const received: number[] = []
-    const sink: BrainUsageSink = (record) => { received.push(record.totalTokens ?? -1) }
+    const sink: BrainUsageSink = (record) => {
+      received.push(record.totalTokens ?? -1)
+    }
     const accumulator = createUsageAccumulator()
     accumulator.observe({ totalTokenCount: 42 })
     safeEmitUsage(sink, accumulator.finalize({ provider: 'gemini', model: 'm', correlationId: 'c1', disposition: 'complete', retryCount: 0, observedAt: '2026-08-06T00:00:00Z' }))
@@ -99,11 +103,16 @@ describe('safeEmitUsage', () => {
   })
 
   it('swallows a sink error so generation is never broken', () => {
-    const throwingSink: BrainUsageSink = () => { throw new Error('sink fault') }
+    const throwingSink: BrainUsageSink = () => {
+      throw new Error('sink fault')
+    }
     const accumulator = createUsageAccumulator()
     accumulator.observe({ totalTokenCount: 1 })
     let onErrorCalled = false
-    expect(() => safeEmitUsage(throwingSink, accumulator.finalize({ provider: 'gemini', model: 'm', correlationId: 'c1', disposition: 'complete', retryCount: 0, observedAt: '2026-08-06T00:00:00Z' }), () => { onErrorCalled = true })).not.toThrow()
+    const onError = (): void => {
+      onErrorCalled = true
+    }
+    expect(() => safeEmitUsage(throwingSink, accumulator.finalize({ provider: 'gemini', model: 'm', correlationId: 'c1', disposition: 'complete', retryCount: 0, observedAt: '2026-08-06T00:00:00Z' }), onError)).not.toThrow()
     expect(onErrorCalled).toBe(true)
   })
 
