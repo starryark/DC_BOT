@@ -51,6 +51,22 @@ export interface EvaluationSummary {
   readonly approval: { readonly thresholdsApproved: boolean, readonly signedDecision: boolean }
   readonly normalizedResultDigest: string
   readonly measurementStatus: 'measured_not_evaluated' | 'evaluated'
+  /**
+   * Content-free roll-up of how each approved measurement limit was met.
+   *
+   * `failedMetricIds` holds the stable measurement names whose approved limit
+   * was not satisfied, sorted and frozen. It never carries values, units,
+   * elapsed times, or any identifier a threshold document did not already name.
+   * Missing approval is recorded as `measuredNotEvaluated`, not as a failure:
+   * software evidence is separate from approval (T004).
+   */
+  readonly measurementEvaluations: {
+    readonly total: number
+    readonly passed: number
+    readonly failed: number
+    readonly measuredNotEvaluated: number
+    readonly failedMetricIds: readonly string[]
+  }
 }
 
 /** Whole-run inputs to the report builder. */
@@ -136,6 +152,9 @@ export function buildReport(inputs: ReportInputs): BuiltReport {
   const allMeasurements = results.flatMap(result => result.measurements ?? []).filter((m): m is NonNullable<typeof m> => m != null)
   const evaluations: readonly MeasurementEvaluation[] = evaluateMeasurements(allMeasurements, thresholds)
   const evaluated = evaluations.some(e => e.status !== 'measured_not_evaluated')
+  // Count each status and collect failed names so a gate can block on an
+  // approved-limit miss without treating missing approval as a software fault.
+  const measurementEvaluations = summarizeMeasurementEvaluations(evaluations)
 
   const normalized = normalizeForDigest(dataset, results, { datasetDigest, seed })
   const normalizedResultDigest = sha256Canonical(normalized)
@@ -163,6 +182,7 @@ export function buildReport(inputs: ReportInputs): BuiltReport {
     approval: { thresholdsApproved: evaluated, signedDecision: false },
     normalizedResultDigest,
     measurementStatus: evaluated ? 'evaluated' : 'measured_not_evaluated',
+    measurementEvaluations,
   }
 
   const scenarioJsonl = results.map(result => JSON.stringify(redactResult(result))).join('\n').concat('\n')
@@ -267,6 +287,7 @@ function renderMarkdown(summary: EvaluationSummary, results: readonly (ScenarioR
   lines.push(`- Cleanup failures: \`${summary.cleanupFailures}\``)
   lines.push(`- Thresholds approved: \`${summary.approval.thresholdsApproved}\``)
   lines.push(`- Signed decision: \`${summary.approval.signedDecision}\``)
+  lines.push(`- Measurement evaluations: \`${summary.measurementEvaluations.passed}/${summary.measurementEvaluations.total} passed, ${summary.measurementEvaluations.failed} failed, ${summary.measurementEvaluations.measuredNotEvaluated} measured-not-evaluated\``)
   lines.push('')
   lines.push('## Counts by outcome')
   lines.push('')
@@ -292,9 +313,45 @@ function renderMarkdown(summary: EvaluationSummary, results: readonly (ScenarioR
   return lines.join('\n')
 }
 
+/**
+ * Roll up per-measurement evaluation statuses into a content-free summary.
+ *
+ * Failed measurement names are sorted before freezing so equal-seed runs report
+ * the same `failedMetricIds` regardless of map or result order. The names are
+ * the stable measurement identifiers a threshold document already names; no
+ * value, unit, or timing is carried.
+ */
+function summarizeMeasurementEvaluations(evaluations: readonly MeasurementEvaluation[]): EvaluationSummary['measurementEvaluations'] {
+  let passed = 0
+  let failed = 0
+  let measuredNotEvaluated = 0
+  const failedMetricIds: string[] = []
+  for (const evaluation of evaluations) {
+    if (evaluation.status === 'passed') {
+      passed += 1
+    }
+    else if (evaluation.status === 'failed') {
+      failed += 1
+      failedMetricIds.push(evaluation.name)
+    }
+    else {
+      measuredNotEvaluated += 1
+    }
+  }
+  failedMetricIds.sort()
+  return Object.freeze({
+    total: evaluations.length,
+    passed,
+    failed,
+    measuredNotEvaluated,
+    failedMetricIds: Object.freeze(failedMetricIds),
+  })
+}
+
 /** True when the whole run is valid for gate review (no blocking condition). */
 export function runIsValidForGate(summary: EvaluationSummary): boolean {
   return summary.zeroToleranceFailures.length === 0
     && summary.cleanupFailures === 0
+    && summary.measurementEvaluations.failed === 0
     && summary.counts.total > 0
 }
