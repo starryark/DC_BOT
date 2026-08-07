@@ -1,4 +1,5 @@
 export * from './backup.js'
+export * from './benchmark-statistics.js'
 export * from './deletion-targets.js'
 export {
   classifySqliteFailure,
