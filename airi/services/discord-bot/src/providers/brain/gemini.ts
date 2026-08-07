@@ -1,12 +1,15 @@
 import type { BrainRateLimiter } from './rate-limiter'
 import type { BrainProvider, BrainRequest } from './types'
 
+import type { BrainUsageSink, UsageAccumulator } from '../../../evals/memory/performance/provider-observability'
+
 import { GoogleGenAI, ThinkingLevel } from '@google/genai'
 import { useLogg } from '@guiiai/logg'
 
 import { config } from '../../config'
 import { BrainRateLimitError, BrainRequestAbortedError, classifyBrainError, isTransientlyUnavailable } from './errors'
 import { LocalBrainRateLimiter } from './rate-limiter'
+import { createUsageAccumulator, safeEmitUsage } from '../../../evals/memory/performance/provider-observability'
 
 /**
  * Backoff before re-attempting a turn that upstream refused with 503
@@ -57,14 +60,23 @@ export class GeminiBrainProvider implements BrainProvider {
   private client: GoogleGenAI
   private model: string
   private limiter: BrainRateLimiter
+  /**
+   * Optional observer for numeric usage metadata; absent in production.
+   *
+   * When supplied (IMP-803 benchmark only), the provider captures the final
+   * streamed `usageMetadata` and emits at most one numeric, content-free
+   * record per call. The sink never breaks generation — its errors are caught.
+   */
+  private readonly usageSink?: BrainUsageSink
 
-  constructor(options: { limiter?: BrainRateLimiter } = {}) {
+  constructor(options: { limiter?: BrainRateLimiter, usageSink?: BrainUsageSink } = {}) {
     const cfg = config().brain
     if (!cfg.apiKey)
       this.logger.warn('GEMINI_API_KEY is not set — generation will fail until it is provided.')
     this.client = new GoogleGenAI({ apiKey: cfg.apiKey })
     this.model = cfg.model
     this.limiter = options.limiter ?? new LocalBrainRateLimiter()
+    this.usageSink = options.usageSink
   }
 
   async* generate(request: BrainRequest, signal: AbortSignal): AsyncIterable<string> {
@@ -77,6 +89,9 @@ export class GeminiBrainProvider implements BrainProvider {
     // Throws BrainRequestAbortedError if the turn is cancelled while queued,
     // so a barge-in during a rate-limit wait costs nothing upstream.
     await this.limiter.acquire(signal)
+
+    // Created only when a benchmark observer is installed; absent in production.
+    const usageAccumulator: UsageAccumulator | undefined = this.usageSink ? createUsageAccumulator() : undefined
 
     const requestStartedAt = Date.now()
     let firstTokenSeen = false
@@ -113,6 +128,10 @@ export class GeminiBrainProvider implements BrainProvider {
             if (chunk.candidates?.[0]?.finishReason) {
               finishReason = chunk.candidates[0].finishReason
             }
+            // The SDK accumulates usage metadata across chunks; the final chunk
+            // carries the complete counts. Observe each non-empty metadata so
+            // the accumulator keeps the latest; emitted at most once per call.
+            usageAccumulator?.observe(chunk.usageMetadata)
             const text = chunk.text
             if (text) {
               if (!firstTokenSeen) {
@@ -136,6 +155,9 @@ export class GeminiBrainProvider implements BrainProvider {
               turnId: request.turnId,
             }).warn('gemini_truncated_max_tokens')
           }
+          // Emit the accumulated usage record for this completed call, at most once.
+          if (usageAccumulator)
+            safeEmitUsage(this.usageSink, usageAccumulator.finalize({ provider: 'gemini', model: this.model, correlationId: request.turnId ?? `${request.guildId}:${request.userId}`, disposition: 'complete', retryCount: attempt, observedAt: new Date().toISOString() }), (error) => { this.logger.withFields({ error: String(error) }).error('gemini_usage_sink_error') })
           break
         }
         catch (err) {
@@ -172,6 +194,11 @@ export class GeminiBrainProvider implements BrainProvider {
         signal,
         defaultCooldownMs: cfg.defaultCooldownMs,
       })
+
+      // Emit usage for a failed or aborted call so the benchmark can
+      // distinguish a complete call from one that did not finish; at most once.
+      if (usageAccumulator)
+        safeEmitUsage(this.usageSink, usageAccumulator.finalize({ provider: 'gemini', model: this.model, correlationId: request.turnId ?? `${request.guildId}:${request.userId}`, disposition: classified instanceof BrainRequestAbortedError ? 'aborted' : 'failed', retryCount: 0, observedAt: new Date().toISOString() }), (error) => { this.logger.withFields({ error: String(error) }).error('gemini_usage_sink_error') })
 
       // Arm the cooldown at the provider boundary so *every* caller is blocked,
       // not just the guild that happened to hit the limit.
