@@ -11,7 +11,7 @@ import { createHash, randomUUID } from 'node:crypto'
 import { mkdirSync } from 'node:fs'
 
 import { asCharacterId, asDeliveryId, asGenerationId, assertAuthorized, asTimestamp, attributedActor, buildCausalEdges, isValidId, MemoryError, projectPresentation } from '@proj-airi/memory-domain'
-import { BindingRepository, CausalEdgeRepository, DeliveryRepository, EventRepository, GenerationRepository, IdentityRepository, openAuthoritativeSqliteDatabase, OutputRepository, PolicyDataRepository, PrivacyOperationRepository, PrivacyRepository, RoomRepository } from '@proj-airi/memory-sqlite'
+import { BindingRepository, CausalEdgeRepository, DeliveryRepository, EventRepository, GenerationRepository, IdentityRepository, openAuthoritativeSqliteDatabase, OutputRepository, PolicyDataRepository, PrivacyOperationRepository, PrivacyRepository, RoomRepository, SearchRepository } from '@proj-airi/memory-sqlite'
 
 import { memoryPosture } from './feature-flags'
 import { serializePromptContext } from './prompt-context'
@@ -121,6 +121,7 @@ export function createMemoryRuntime(options: CreateMemoryRuntimeOptions): Memory
   const privacyRepository = new PrivacyRepository(handle.database)
   const privacyOperations = new PrivacyOperationRepository(handle.database)
   const policyData = new PolicyDataRepository(handle.database)
+  const search = new SearchRepository(handle.database)
   let bindingManifest
   try {
     bindingManifest = bindings.reconcileConfigured({ owner: 'config:discord-bot', members: configuredMembers, at: asTimestamp(new Date().toISOString()) })
@@ -238,6 +239,10 @@ export function createMemoryRuntime(options: CreateMemoryRuntimeOptions): Memory
         const serialized = serializePromptContext(selected, request.maxCharacters)
         const truncated = serialized.truncated || inbound.length + assistant.length > ordered.length || inbound.length === candidateReadLimit || assistant.length === candidateReadLimit
         return { sentinel: 'ok' as const, ...serialized, manifest: { formatVersion: 1 as const, logicalRoomVersion: rooms.currentVersion(request.logicalRoomId), maxItems: request.maxItems, maxCharacters: request.maxCharacters, selected: ordered.slice(0, serialized.includedItems).map(item => item.sourceType === 'inbound' ? { sourceType: 'inbound' as const, eventId: item.id } : { sourceType: 'assistant_output' as const, segmentId: item.segmentId, deliveryId: item.deliveryId, deliveryState: item.deliveryState, deliveryStateAt: item.deliveryStateAt }), truncated, bindingRevision: scope.bindingRevision, candidateReadLimit } }
+      },
+      searchMemory: async (auth, input) => {
+        assertAuthorized(auth, { operation: 'context:read', targetScope: input.scope })
+        return search.searchMemory(input)
       },
     },
     privacy: {

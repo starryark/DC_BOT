@@ -63,10 +63,6 @@ export interface CapabilityAdvertisement {
 
 /**
  * The milestone-1 SQLite capability set (`09-…` §10.3).
- *
- * `fulltext_cjk` is deliberately absent: no CJK tokenizer has been chosen
- * (OQ-B3), so a CJK query must fail with `UNSUPPORTED_CAPABILITY` rather than
- * return a confidently empty result.
  */
 export const M1_SQLITE_CAPABILITIES: readonly Capability[] = Object.freeze([
   'durable_events',
@@ -74,6 +70,7 @@ export const M1_SQLITE_CAPABILITIES: readonly Capability[] = Object.freeze([
   'summaries',
   'structured_memory',
   'fulltext_latin',
+  'fulltext_cjk',
   'export',
   'deletion',
 ])

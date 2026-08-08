@@ -1,4 +1,4 @@
-import type { AuthorizationContext, CharacterId, EventId, LogicalRoomId, PhysicalRoomId, SnapshotContextItem } from '@proj-airi/memory-domain'
+import type { AuthorizationContext, CharacterId, EventId, LogicalRoomId, PhysicalRoomId, SnapshotContextItem, SearchMemoryInput, SearchMemoryOutput } from '@proj-airi/memory-domain'
 
 import type { SerializedPromptContext } from './prompt-context'
 
@@ -29,4 +29,5 @@ export interface RecentContextResult extends SerializedPromptContext {
 /** Selects bounded logical-room history after validating the requesting physical room's current authority. */
 export interface ContextMemoryAuthority {
   assembleRecent: (request: RecentContextRequest) => Promise<RecentContextResult>
+  searchMemory: (auth: AuthorizationContext, input: SearchMemoryInput) => Promise<SearchMemoryOutput>
 }

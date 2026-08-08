@@ -6,6 +6,7 @@ import { schemaV5 } from '../schema/v5.js'
 import { schemaV6 } from '../schema/v6.js'
 import { schemaV7 } from '../schema/v7.js'
 import { schemaV8 } from '../schema/v8.js'
+import { schemaV9 } from '../schema/v9.js'
 
 /** A deterministic, forward-only SQLite schema change. */
 export interface Migration {
@@ -63,6 +64,12 @@ export const migrations: readonly Migration[] = Object.freeze([
     name: 'generation_context_manifests',
     checksum: 'd658560fc10af70621cd81c06c28399b92ea88e00b973354f7f528fa509c1507',
     sql: schemaV8,
+  },
+  {
+    version: 9,
+    name: 'fts5_lexical_indexes',
+    checksum: '06694f43f94b59285741a9878e1a6448c20bf4e8948111710ec4877c6df72277',
+    sql: schemaV9,
   },
 ])
 
