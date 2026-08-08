@@ -1416,7 +1416,7 @@ export const useProvidersStore = defineStore('providers', () => {
             // Provider instances are cached until disposal, while the settings shell
             // replaces the whole credentials object on every edit. Letting per-call
             // options win is what keeps a request in sync with the visible settings.
-            const merged = { ...config, ...(extraOptions ?? {}) } as Record<string, unknown>
+            const merged = { ...config, ...extraOptions } as Record<string, unknown>
 
             return {
               baseURL: (merged.baseUrl as string).trim(),

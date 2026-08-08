@@ -233,7 +233,7 @@ describe('functional baseline governance for G8 (IMP-802)', () => {
   })
 
   it('the status page preserves schema v8', () => {
-    expect(read(STATUS_PAGE)).toContain('Latest SQLite schema: v8.')
+    expect(read(STATUS_PAGE)).toContain('Latest SQLite schema: v9.')
   })
 
   it('the baseline does not overclaim live transport, barge-in, or deployment approval', () => {

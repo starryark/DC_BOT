@@ -1,10 +1,10 @@
 #!/usr/env tsx
 import process from 'node:process'
-import { readFileSync, existsSync } from 'node:fs'
+
+import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { compareAgainstBaseline, loadRun } from '../../evals/memory/performance/baseline'
-import { RunManifest, MeasurementRecord } from '../../evals/memory/performance/contracts'
 
 const EXIT = { COMPLETE: 0, INVALID: 2, INCOMPATIBLE: 3, UNEXPECTED: 5 } as const
 
@@ -21,11 +21,15 @@ async function main() {
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--baseline') {
       baselineDir = args[++i]
-    } else if (args[i] === '--candidate') {
+    }
+    else if (args[i] === '--candidate') {
       candidateDir = args[++i]
-    } else if (!args[i].startsWith('--')) {
-      if (!baselineDir) baselineDir = args[i]
-      else if (!candidateDir) candidateDir = args[i]
+    }
+    else if (!args[i].startsWith('--')) {
+      if (!baselineDir)
+        baselineDir = args[i]
+      else if (!candidateDir)
+        candidateDir = args[i]
     }
   }
 
@@ -43,7 +47,7 @@ async function main() {
       baseline.manifest,
       baseline.measurements,
       candidate.manifest,
-      candidate.measurements
+      candidate.measurements,
     )
 
     if (result.status !== 'compatible') {
@@ -52,8 +56,9 @@ async function main() {
       return
     }
 
-    process.stdout.write(JSON.stringify(result, null, 2) + '\n')
-  } catch (error: any) {
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`)
+  }
+  catch (error: any) {
     process.stderr.write(`${JSON.stringify({ status: 'invalid', message: error.message || String(error) })}\n`)
     process.exitCode = EXIT.INVALID
   }

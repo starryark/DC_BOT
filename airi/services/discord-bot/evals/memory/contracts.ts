@@ -69,6 +69,7 @@ export const SCENARIO_CATEGORIES = Object.freeze([
   'privacy',
   'capability',
   'live',
+  'retrieval',
 ] as const)
 export type ScenarioCategory = typeof SCENARIO_CATEGORIES[number]
 
@@ -90,6 +91,7 @@ export const ZERO_TOLERANCE_CAPABLE_CATEGORIES = Object.freeze(new Set<ScenarioC
   'restart',
   'promptSafety',
   'privacy',
+  'retrieval',
 ]))
 
 /** True when a category may lawfully carry a zero-tolerance assertion. */
@@ -139,7 +141,7 @@ export const scenarioSchema = v.strictObject({
   category: v.picklist(SCENARIO_CATEGORIES),
   title: v.pipe(v.string(), v.minLength(1), v.maxLength(280)),
   /** Which suite the scenario belongs to. */
-  suites: v.pipe(v.array(v.picklist(['smoke', 'active-v1'])), v.minLength(1)),
+  suites: v.pipe(v.array(v.picklist(['smoke', 'active-v1', 'multilingual-v1'])), v.minLength(1)),
   assertions: v.pipe(v.array(assertionSpecSchema), v.minLength(1)),
   expectation: expectationSchema,
   /** Plain-language limitation that travels into the report; content-free. */

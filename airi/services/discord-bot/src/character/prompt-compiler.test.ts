@@ -6,8 +6,8 @@ import { Buffer } from 'node:buffer'
 
 import { describe, expect, it } from 'vitest'
 
-import { DefaultPromptCompiler, estimateTokens } from './prompt-compiler'
 import { buildDiscordActorEvidence } from '../memory/discord-actor-snapshot'
+import { DefaultPromptCompiler, estimateTokens } from './prompt-compiler'
 
 /** A minimal character for deterministic ordering assertions. */
 function makeCharacter(overrides: Partial<CharacterRuntime> = {}): CharacterRuntime {

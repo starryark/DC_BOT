@@ -1,4 +1,4 @@
-import type { AuthorizationContext, CharacterId, EventId, LogicalRoomId, PhysicalRoomId, SnapshotContextItem, SearchMemoryInput, SearchMemoryOutput } from '@proj-airi/memory-domain'
+import type { AuthorizationContext, CharacterId, EventId, LogicalRoomId, PhysicalRoomId, SearchMemoryInput, SearchMemoryOutput, SnapshotContextItem } from '@proj-airi/memory-domain'
 
 import type { SerializedPromptContext } from './prompt-context'
 

@@ -387,7 +387,7 @@ function readJsonNumber(s: string, start: number): { value: number, next: number
   if (s[i] === '-')
     i++
   let digits = ''
-  while (i < s.length && /[0-9.e+\-]/i.test(s[i]!)) {
+  while (i < s.length && /[0-9.e+-]/i.test(s[i]!)) {
     digits += s[i]
     i++
   }

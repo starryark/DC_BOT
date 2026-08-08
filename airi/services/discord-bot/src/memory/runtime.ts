@@ -242,6 +242,8 @@ export function createMemoryRuntime(options: CreateMemoryRuntimeOptions): Memory
       },
       searchMemory: async (auth, input) => {
         assertAuthorized(auth, { operation: 'context:read', targetScope: input.scope })
+        if (!options.flags.fulltextRetrieval)
+          return { hits: [], appliedModes: [], abstained: 'noAuthorizedEvidence' }
         return search.searchMemory(input)
       },
     },

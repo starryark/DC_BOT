@@ -42,7 +42,7 @@ Your trained GPT and SoVITS files should come from the same training project and
 
 ---
 
-# Part 1: Install GPT-SoVITS for RTX 5060 Ti
+## Part 1: Install GPT-SoVITS for RTX 5060 Ti
 
 These steps assume Windows 11 and PowerShell.
 
@@ -118,7 +118,7 @@ There should be no warning that `sm_120` is unsupported.
 
 ---
 
-# Part 2: Arrange the trained model files
+## Part 2: Arrange the trained model files
 
 Create a dedicated voice directory:
 
@@ -168,7 +168,7 @@ Current upstream documentation describes v3/v4 as more faithful to the reference
 
 ---
 
-# Part 3: Prepare the reference audio
+## Part 3: Prepare the reference audio
 
 ## Hard requirements
 
@@ -247,7 +247,7 @@ This influence is particularly strong in v3/v4, which upstream describes as bein
 
 ---
 
-# Part 4: Test the model in the WebUI first
+## Part 4: Test the model in the WebUI first
 
 Before involving AIRI or an API bridge, confirm that the model pair itself works.
 
@@ -281,7 +281,7 @@ Do not proceed until WebUI inference works. This separates checkpoint/reference 
 
 ---
 
-# Part 5: Configure the native GPT-SoVITS API
+## Part 5: Configure the native GPT-SoVITS API
 
 GPT-SoVITS provides an official `api_v2.py` server. It binds to `127.0.0.1:9880` by default and accepts a TTS configuration file with `-c`. ([GitHub][7])
 
@@ -386,7 +386,7 @@ The supplied AIRI bridge performs this dynamic loading order automatically at st
 
 ---
 
-# Part 6: Test the native API
+## Part 6: Test the native API
 
 The native `/tts` endpoint requires:
 
@@ -445,7 +445,7 @@ The official endpoint directly supports `wav`, raw PCM, OGG, and AAC. It does no
 
 ---
 
-# Part 7: Install the AIRI bridge
+## Part 7: Install the AIRI bridge
 
 Download and extract:
 
@@ -581,7 +581,7 @@ The `tts` substring is intentional: AIRI’s current OpenAI-compatible speech pr
 
 ---
 
-# Part 8: Configure AIRI
+## Part 8: Configure AIRI
 
 Open AIRI’s provider settings and select:
 
@@ -606,7 +606,7 @@ Use non-streaming generation initially. GPT-SoVITS supports multiple streaming m
 
 ---
 
-# Recommended inference settings
+## Recommended inference settings
 
 ## Stable conversational baseline
 
@@ -670,7 +670,7 @@ Try `ja` first when most dialogue is Japanese. Automatic segmentation is more fl
 
 ---
 
-# Troubleshooting
+## Troubleshooting
 
 ## `sm_120 is not compatible with the current PyTorch installation`
 
@@ -806,7 +806,7 @@ Only load checkpoints from sources you trust. The GPT checkpoint loader currentl
 
 ---
 
-# Final startup checklist
+## Final startup checklist
 
 ```text
 1. NVIDIA driver current

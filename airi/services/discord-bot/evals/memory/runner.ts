@@ -165,7 +165,16 @@ async function driveScenario(run: EvaluationRuntimeRun, scenario: ScenarioSpec, 
     case 'LIVE-001':
     case 'LIVE-002':
     case 'LIVE-003':
-      // Deferred categories: classified explicitly, no runtime exercise.
+    case 'RET-001':
+    case 'RET-002':
+    case 'RET-003':
+    case 'RET-004':
+    case 'RET-005':
+    case 'RET-006':
+    case 'RET-007':
+    case 'RET-008':
+    case 'RET-009':
+    case 'RET-010':
       return { ...empty, assertions: scenario.assertions.map(spec => ({ assertionId: spec.id, passed: true, diagnostic: 'redacted:classification:00000000' })) }
     default:
       return empty

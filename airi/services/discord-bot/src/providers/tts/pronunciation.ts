@@ -16,7 +16,7 @@ export function prepareSpeechText(input: { text: string, language: SupportedLang
     if (!replacement)
       continue
     const escaped = alias.normalize('NFKC').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    const latin = /^[a-z\d '\-]+$/i.test(escaped)
+    const latin = /^[a-z\d '-]+$/i.test(escaped)
     const regex = new RegExp(latin ? `(?<![A-Za-z0-9])${escaped}(?![A-Za-z0-9])` : escaped, 'giu')
     speechText = speechText.replace(regex, (from, offset: number) => {
       if (substitutions.length >= 16 || protectedRanges.some(([start, end]) => offset >= start && offset < end))

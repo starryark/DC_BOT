@@ -35,7 +35,7 @@ export function normalizeSupportedLanguage(raw: unknown): SupportedLanguage | un
 
 function aliasPattern(alias: string): RegExp {
   const escaped = alias.normalize('NFKC').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const latin = /^[a-z\d '\-]+$/i.test(escaped)
+  const latin = /^[a-z\d '-]+$/i.test(escaped)
   return new RegExp(latin ? `(?<![A-Za-z0-9])${escaped}(?![A-Za-z0-9])` : escaped, 'giu')
 }
 

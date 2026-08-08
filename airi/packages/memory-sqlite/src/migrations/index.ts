@@ -68,7 +68,7 @@ export const migrations: readonly Migration[] = Object.freeze([
   {
     version: 9,
     name: 'fts5_lexical_indexes',
-    checksum: '06694f43f94b59285741a9878e1a6448c20bf4e8948111710ec4877c6df72277',
+    checksum: '7df0dd6e344fd1ea5a006177ca343e7ae8a528ae0886b97585341b1acbf3ce33',
     sql: schemaV9,
   },
 ])

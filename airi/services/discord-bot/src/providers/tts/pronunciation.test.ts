@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+
 import { prepareSpeechText } from './pronunciation'
 
 const entities = [{ id: 'makise', canonicalName: 'Makise Kurisu', kind: 'character-name' as const, aliases: ['Makise Kurisu', 'Makise'], pronunciations: { ja: { speechText: '牧瀬紅莉栖' } } }]

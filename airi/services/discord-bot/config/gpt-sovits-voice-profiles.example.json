@@ -14,6 +14,14 @@
     "awkward": { "label": "Awkward, shy, or embarrassed", "referenceAudio": "", "referenceText": "", "promptLanguage": "ja", "topK": 14, "topP": 0.93, "temperature": 0.84, "repetitionPenalty": 1.36, "speedFactor": 0.99, "fragmentInterval": 0.17, "textSplitMethod": "cut0", "variationSeeds": [19001, 19002, 19003], "warmup": false }
   },
   "emotionMap": {
-    "neutral": "neutral", "think": "analytical", "question": "questioning", "curious": "curious", "happy": "amused", "sad": "concerned", "angry": "irritated", "surprised": "surprised", "awkward": "awkward"
+    "neutral": "neutral",
+    "think": "analytical",
+    "question": "questioning",
+    "curious": "curious",
+    "happy": "amused",
+    "sad": "concerned",
+    "angry": "irritated",
+    "surprised": "surprised",
+    "awkward": "awkward"
   }
 }

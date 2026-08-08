@@ -9,7 +9,7 @@ import { dirname, isAbsolute, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { parseThresholdDocument } from '../../evals/memory/contracts'
-import { ACTIVE_V1_VERSION, activeV1Digest, datasetForSuite, DEFAULT_SEED } from '../../evals/memory/dataset'
+import { ACTIVE_V1_VERSION, activeV1Digest, datasetForSuite, DEFAULT_SEED, multilingualV1Digest } from '../../evals/memory/dataset'
 import { buildReport, runIsValidForGate } from '../../evals/memory/report'
 import { runScenario } from '../../evals/memory/runner'
 import { disposeEvaluationRun, startEvaluationRun } from '../../evals/memory/runtime-adapter'
@@ -44,7 +44,7 @@ Options:
   --help                    Show this help
 `
 
-type CliSuite = 'smoke' | 'active-v1'
+type CliSuite = 'smoke' | 'active-v1' | 'multilingual-v1'
 
 interface ParsedArgs {
   suite: CliSuite
@@ -104,7 +104,7 @@ async function run(args: ParsedArgs, repoRoot: string): Promise<number> {
     return EXIT.INVALID_CONFIG
   }
   const { dataset, scenarios } = suiteData
-  const datasetDigest = activeV1Digest()
+  const datasetDigest = args.suite === 'multilingual-v1' ? multilingualV1Digest() : activeV1Digest()
 
   // Output directory: smoke may default to a temp dir; active-v1 requires an explicit --output.
   let outputDirectory: string | undefined
@@ -116,8 +116,8 @@ async function run(args: ParsedArgs, repoRoot: string): Promise<number> {
       return EXIT.UNSAFE
     }
   }
-  else if (args.suite === 'active-v1') {
-    process.stderr.write(`${JSON.stringify({ status: 'invalid', message: 'active-v1 requires an explicit --output directory' })}\n`)
+  else if (args.suite === 'active-v1' || args.suite === 'multilingual-v1') {
+    process.stderr.write(`${JSON.stringify({ status: 'invalid', message: `${args.suite} requires an explicit --output directory` })}\n`)
     return EXIT.INVALID_CONFIG
   }
 
@@ -202,8 +202,8 @@ function parseArgs(values: readonly string[]): ParsedArgs {
     }
     else if (value === '--suite') {
       const next = values[++index]
-      if (next !== 'smoke' && next !== 'active-v1')
-        throw new Error(`--suite must be smoke or active-v1, got ${next ?? '(missing)'}`)
+      if (next !== 'smoke' && next !== 'active-v1' && next !== 'multilingual-v1')
+        throw new Error(`--suite must be smoke, active-v1, or multilingual-v1, got ${next ?? '(missing)'}`)
       result.suite = next
     }
     else if (value === '--seed') {

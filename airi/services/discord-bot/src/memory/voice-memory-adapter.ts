@@ -3,7 +3,7 @@ import type { AuthorizationContext, CharacterId, DeliveryAttempt, GenerationAtte
 import type { VoiceInputEvent } from '../orchestration/events'
 import type { PlaybackResult } from '../voice/playback'
 import type { MemoryRuntime } from './runtime'
-import type { MemoryContextResult, PreparedModelMemory } from './text-observer'
+import type { PreparedModelMemory } from './text-observer'
 
 import { asRequestId, asSegmentId, timestampFromEpochMs } from '@proj-airi/memory-domain'
 
@@ -94,41 +94,44 @@ export function createVoiceMemoryAdapter(options: { runtime: MemoryRuntime, char
     prepareGeneration: async (turnId, sourceEvents) => {
       let prepared: PreparedModelMemory = { context: { status: 'disabled' } }
       await safe(async () => {
-      if (!options.runtime.trace) {
-        if (options.runtime.health.state === 'durableActive')
-          throw new Error('Required durable voice generation authority is unavailable')
-        return
-      }
-      const traces = sourceEvents.map(event => events.get(event.eventId))
-      if (traces.some(trace => trace == null)) throw new Error('Every grouped voice source must have a durable trace')
-      const resolved = traces as VoiceTrace[]
-      const first = resolved[0]
-      if (!first) {
-        if (options.runtime.health.state === 'durableActive')
-          throw new Error('Required durable voice generation causality is unavailable')
-        return
-      }
-      if (resolved.some(trace => trace.room.logicalRoomId !== first.room.logicalRoomId)) throw new Error('Grouped voice sources resolved to mixed logical rooms')
-      const selected = options.runtime.health.promptUseEnabled && options.runtime.context
-        ? await boundedVoiceContext(options.runtime.context.assembleRecent({ authorization: first.authorization, logicalRoomId: first.room.logicalRoomId, physicalRoomId: first.room.physicalRoomId, characterId: options.characterId, maxItems: 24, maxCharacters: 8_000, excludeEventIds: resolved.map(trace => trace.event.eventId) }), 250)
-        : undefined
-      if (options.runtime.health.promptUseEnabled && (!selected || selected.sentinel !== 'ok')) throw new Error('Required durable voice context is unavailable')
-      const at = timestampFromEpochMs(Date.now())
-      const manifest = selected ? { formatVersion: selected.manifest.formatVersion, logicalRoomVersion: selected.manifest.logicalRoomVersion, bindingRevision: selected.manifest.bindingRevision, maxItems: selected.manifest.maxItems, maxCharacters: selected.manifest.maxCharacters, candidateReadLimit: selected.manifest.candidateReadLimit, truncated: selected.manifest.truncated, items: selected.manifest.selected } : { formatVersion: 1 as const, logicalRoomVersion: Math.max(...resolved.map(trace => trace.event.roomVersion ?? 0)), bindingRevision: first.room.bindingVersion, maxItems: 0, maxCharacters: 0, candidateReadLimit: 0, truncated: false, items: [] }
-      const begun = await options.runtime.trace.beginGeneration(first.authorization, {
-        idempotencyKey: asRequestId(`voice-generation:${turnId}`),
-        logicalRoomId: first.room.logicalRoomId,
-        characterId: options.characterId,
-        causes: resolved.map((trace, index) => ({ inboundEventId: trace.event.eventId, role: index === 0 ? 'trigger' as const : 'context' as const })),
-        evidence: { observedRoomVersion: manifest.logicalRoomVersion, observedEventIds: [...resolved.map(trace => trace.event.eventId), ...manifest.items.flatMap(item => item.sourceType === 'inbound' ? [item.eventId] : [])], contextManifestHash: '', contextManifest: manifest, observedBindingVersion: manifest.bindingRevision, capturedAt: at },
-        modelRef: options.modelRef,
-        startedAt: at,
-      })
-      generations.set(turnId, { authorization: first.authorization, generation: begun.generation, room: first.room, deliveries: new Map(), segments: new Map(), sourceEventIds: sourceEvents.map(event => event.eventId) })
-      const expiry = setTimeout(() => void terminalGeneration(turnId, 'failed'), 5 * 60_000)
-      expiry.unref()
-      generationExpiry.set(turnId, expiry)
-      prepared = { context: selected ? { status: 'available', text: selected.text } : { status: 'disabled' }, generation: begun.generation }
+        if (!options.runtime.trace) {
+          if (options.runtime.health.state === 'durableActive')
+            throw new Error('Required durable voice generation authority is unavailable')
+          return
+        }
+        const traces = sourceEvents.map(event => events.get(event.eventId))
+        if (traces.some(trace => trace == null))
+          throw new Error('Every grouped voice source must have a durable trace')
+        const resolved = traces as VoiceTrace[]
+        const first = resolved[0]
+        if (!first) {
+          if (options.runtime.health.state === 'durableActive')
+            throw new Error('Required durable voice generation causality is unavailable')
+          return
+        }
+        if (resolved.some(trace => trace.room.logicalRoomId !== first.room.logicalRoomId))
+          throw new Error('Grouped voice sources resolved to mixed logical rooms')
+        const selected = options.runtime.health.promptUseEnabled && options.runtime.context
+          ? await boundedVoiceContext(options.runtime.context.assembleRecent({ authorization: first.authorization, logicalRoomId: first.room.logicalRoomId, physicalRoomId: first.room.physicalRoomId, characterId: options.characterId, maxItems: 24, maxCharacters: 8_000, excludeEventIds: resolved.map(trace => trace.event.eventId) }), 250)
+          : undefined
+        if (options.runtime.health.promptUseEnabled && (!selected || selected.sentinel !== 'ok'))
+          throw new Error('Required durable voice context is unavailable')
+        const at = timestampFromEpochMs(Date.now())
+        const manifest = selected ? { formatVersion: selected.manifest.formatVersion, logicalRoomVersion: selected.manifest.logicalRoomVersion, bindingRevision: selected.manifest.bindingRevision, maxItems: selected.manifest.maxItems, maxCharacters: selected.manifest.maxCharacters, candidateReadLimit: selected.manifest.candidateReadLimit, truncated: selected.manifest.truncated, items: selected.manifest.selected } : { formatVersion: 1 as const, logicalRoomVersion: Math.max(...resolved.map(trace => trace.event.roomVersion ?? 0)), bindingRevision: first.room.bindingVersion, maxItems: 0, maxCharacters: 0, candidateReadLimit: 0, truncated: false, items: [] }
+        const begun = await options.runtime.trace.beginGeneration(first.authorization, {
+          idempotencyKey: asRequestId(`voice-generation:${turnId}`),
+          logicalRoomId: first.room.logicalRoomId,
+          characterId: options.characterId,
+          causes: resolved.map((trace, index) => ({ inboundEventId: trace.event.eventId, role: index === 0 ? 'trigger' as const : 'context' as const })),
+          evidence: { observedRoomVersion: manifest.logicalRoomVersion, observedEventIds: [...resolved.map(trace => trace.event.eventId), ...manifest.items.flatMap(item => item.sourceType === 'inbound' ? [item.eventId] : [])], contextManifestHash: '', contextManifest: manifest, observedBindingVersion: manifest.bindingRevision, capturedAt: at },
+          modelRef: options.modelRef,
+          startedAt: at,
+        })
+        generations.set(turnId, { authorization: first.authorization, generation: begun.generation, room: first.room, deliveries: new Map(), segments: new Map(), sourceEventIds: sourceEvents.map(event => event.eventId) })
+        const expiry = setTimeout(() => void terminalGeneration(turnId, 'failed'), 5 * 60_000)
+        expiry.unref()
+        generationExpiry.set(turnId, expiry)
+        prepared = { context: selected ? { status: 'available', text: selected.text } : { status: 'disabled' }, generation: begun.generation }
       })
       return prepared
     },

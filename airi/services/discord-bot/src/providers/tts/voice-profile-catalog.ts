@@ -1,8 +1,9 @@
-import { readFile } from 'node:fs/promises'
-import * as v from 'valibot'
-
-import type { GptSoVitsLang } from './types'
 import type { VoiceProfileCatalog, VoiceReferenceProfile } from './speech-style-types'
+import type { GptSoVitsLang } from './types'
+
+import { readFile } from 'node:fs/promises'
+
+import * as v from 'valibot'
 
 const profileIdPattern = /^[a-z0-9][a-z0-9_-]*$/
 const profileId = v.pipe(v.string(), v.regex(profileIdPattern))
@@ -36,9 +37,9 @@ const catalogSchema = v.object({
 type CatalogInput = v.InferOutput<typeof catalogSchema>
 type ProfileInput = v.InferOutput<typeof profileSchema>
 
-export type VoiceProfileWarning =
-  | { kind: 'profile-disabled'; profileId: string; reason: 'missing_reference_audio' | 'missing_reference_text' | 'empty_variation_seeds' }
-  | { kind: 'emotion-map-fallback'; emotion: string; profileId: string; reason: 'unknown_or_unavailable_profile' }
+export type VoiceProfileWarning
+  = | { kind: 'profile-disabled', profileId: string, reason: 'missing_reference_audio' | 'missing_reference_text' | 'empty_variation_seeds' }
+    | { kind: 'emotion-map-fallback', emotion: string, profileId: string, reason: 'unknown_or_unavailable_profile' }
 
 export interface SingleReferenceProfileInput {
   referenceAudio: string
@@ -132,10 +133,10 @@ function buildCatalog(input: CatalogInput, onWarning?: (warning: VoiceProfileWar
     const reason = !profile.referenceAudio.trim()
       ? 'missing_reference_audio'
       : !profile.referenceText.trim()
-        ? 'missing_reference_text'
-        : profile.variationSeeds.length === 0
-          ? 'empty_variation_seeds'
-          : undefined
+          ? 'missing_reference_text'
+          : profile.variationSeeds.length === 0
+            ? 'empty_variation_seeds'
+            : undefined
     if (reason) {
       if (id !== input.defaultProfile)
         onWarning?.({ kind: 'profile-disabled', profileId: id, reason })

@@ -71,7 +71,8 @@ export function createTextMemoryAdapter(options: TextMemoryAdapterOptions): Disc
         return { context: selected ? { status: 'available', text: selected.text } : { status: 'disabled' }, generation: begun.generation }
       }
       catch (error) {
-        if (options.runtime.health.state === 'durableActive') throw error
+        if (options.runtime.health.state === 'durableActive')
+          throw error
         options.onFailure?.(error)
         return { context: { status: 'disabled' } }
       }
@@ -174,7 +175,9 @@ export function createTextMemoryAdapter(options: TextMemoryAdapterOptions): Disc
       if (trace && options.runtime.trace) {
         const at = timestampFromEpochMs(Date.now())
         if (trace.generation?.state === 'running') {
-          try { trace.generation = await options.runtime.trace.transitionGeneration(trace.authorization, trace.generation, 'running', 'failed', at) }
+          try {
+            trace.generation = await options.runtime.trace.transitionGeneration(trace.authorization, trace.generation, 'running', 'failed', at)
+          }
           catch (transitionError) { options.onFailure?.(transitionError) }
         }
         for (const [index, delivery] of trace.deliveries.entries()) {

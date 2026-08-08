@@ -74,7 +74,7 @@ format and `docs/memory/CURRENT.md` for the current status claim.
 
 ---
 
-# IMP-803 deterministic performance benchmark
+## IMP-803 deterministic performance benchmark
 
 A credential-free, deterministic performance benchmark that measures
 production-shaped memory operations and controller boundaries. It is separate

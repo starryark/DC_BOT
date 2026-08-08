@@ -1,4 +1,5 @@
 import { join } from 'node:path'
+
 import { describe, expect, it, vi } from 'vitest'
 
 import { createSingleReferenceCatalog, loadVoiceProfileCatalog, parseVoiceProfileCatalog } from './voice-profile-catalog'
@@ -10,14 +11,34 @@ function validCatalog() {
     defaultProfile: 'neutral',
     profiles: {
       neutral: {
-        label: 'Neutral', referenceAudio: 'neutral.wav', referenceText: 'exact words', promptLanguage: 'ja',
-        topK: 15, topP: 0.95, temperature: 0.85, repetitionPenalty: 1.35,
-        speedFactor: 1, fragmentInterval: 0.12, textSplitMethod: 'cut0', variationSeeds: [11], warmup: true,
+        label: 'Neutral',
+        referenceAudio: 'neutral.wav',
+        referenceText: 'exact words',
+        promptLanguage: 'ja',
+        topK: 15,
+        topP: 0.95,
+        temperature: 0.85,
+        repetitionPenalty: 1.35,
+        speedFactor: 1,
+        fragmentInterval: 0.12,
+        textSplitMethod: 'cut0',
+        variationSeeds: [11],
+        warmup: true,
       },
       surprised: {
-        label: 'Surprised', referenceAudio: 'surprised.wav', referenceText: '本当なの？', promptLanguage: 'ja',
-        topK: 20, topP: 0.98, temperature: 1, repetitionPenalty: 1.3,
-        speedFactor: 1.03, fragmentInterval: 0.08, textSplitMethod: 'cut0', variationSeeds: [21, 22], warmup: false,
+        label: 'Surprised',
+        referenceAudio: 'surprised.wav',
+        referenceText: '本当なの？',
+        promptLanguage: 'ja',
+        topK: 20,
+        topP: 0.98,
+        temperature: 1,
+        repetitionPenalty: 1.3,
+        speedFactor: 1.03,
+        fragmentInterval: 0.08,
+        textSplitMethod: 'cut0',
+        variationSeeds: [21, 22],
+        warmup: false,
       },
     },
     emotionMap: { neutral: 'neutral', surprised: 'surprised' },
@@ -53,7 +74,7 @@ describe('voice profile catalog', () => {
   it('rejects a missing or incomplete default profile', () => {
     const missing = validCatalog()
     missing.defaultProfile = 'absent'
-    expect(() => parseVoiceProfileCatalog(missing)).toThrow("default profile 'absent' does not exist")
+    expect(() => parseVoiceProfileCatalog(missing)).toThrow('default profile \'absent\' does not exist')
 
     const incomplete = validCatalog()
     incomplete.profiles.neutral.referenceText = ''

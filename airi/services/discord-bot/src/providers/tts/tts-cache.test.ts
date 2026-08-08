@@ -103,9 +103,20 @@ describe('cachedTtsProvider', () => {
     const conditioned = {
       ...request,
       conditioning: {
-        profileId: 'analytical', catalogVersion: 'v2', referenceAudio: 'think.wav', referenceText: 'exact words', promptLanguage: 'ja' as const,
-        topK: 12, topP: 0.9, temperature: 0.74, repetitionPenalty: 1.38, speedFactor: 0.99, fragmentInterval: 0.16,
-        textSplitMethod: 'cut0', seed: 12002, variationIndex: 1,
+        profileId: 'analytical',
+        catalogVersion: 'v2',
+        referenceAudio: 'think.wav',
+        referenceText: 'exact words',
+        promptLanguage: 'ja' as const,
+        topK: 12,
+        topP: 0.9,
+        temperature: 0.74,
+        repetitionPenalty: 1.38,
+        speedFactor: 0.99,
+        fragmentInterval: 0.16,
+        textSplitMethod: 'cut0',
+        seed: 12002,
+        variationIndex: 1,
       },
     }
     const base = options.identity(conditioned)!

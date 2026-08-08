@@ -1,13 +1,15 @@
+import type { MeasurementRecord, WorkloadSpec } from './contracts'
+
 import * as v from 'valibot'
 
 import { sha256Canonical } from '../contracts'
 import {
   MEASUREMENT_STATISTICS,
   MEASUREMENT_UNITS,
+
   PERFORMANCE_CONTRACT_ID,
   PERFORMANCE_SCHEMA_VERSION,
-  type MeasurementRecord,
-  type WorkloadSpec,
+
 } from './contracts'
 
 const workloadIdPattern = v.pipe(v.string(), v.regex(/^[a-z][a-z0-9-]{2,62}$/))
@@ -50,7 +52,7 @@ export function performanceThresholdDocumentDigest(document: PerformanceThreshol
 
 export function validatePerformanceThresholdCompatibility(document: PerformanceThresholdDocument, contractDigest: string, workloads: readonly WorkloadSpec[]): readonly string[] {
   const failures: string[] = []
-  
+
   if (document.contractDigest !== contractDigest) {
     failures.push(`document contract digest ${document.contractDigest} does not match current contract digest ${contractDigest}`)
   }
@@ -84,7 +86,7 @@ export function applyPerformanceThresholds(measurements: readonly MeasurementRec
     thresholdMap.set(identity, entry)
   }
 
-  return measurements.map(m => {
+  return measurements.map((m) => {
     const identity = `${m.workloadId}:${m.metricId}:${m.statistic}:${m.unit}`
     const threshold = thresholdMap.get(identity)
 
@@ -100,7 +102,8 @@ export function applyPerformanceThresholds(measurements: readonly MeasurementRec
     let passed = false
     if (threshold.comparator === 'lte') {
       passed = value <= threshold.bound
-    } else if (threshold.comparator === 'gte') {
+    }
+    else if (threshold.comparator === 'gte') {
       passed = value >= threshold.bound
     }
 

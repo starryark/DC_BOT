@@ -30,7 +30,7 @@ describe('percentileOf', () => {
   })
 })
 
-describe('LatencySeries', () => {
+describe('latencySeries', () => {
   it('reports an empty snapshot before any observation is recorded', () => {
     const series = new LatencySeries(1000, createSeededRandom(1))
     const snapshot = series.snapshot()

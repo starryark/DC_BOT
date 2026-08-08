@@ -1,5 +1,5 @@
-import type { BrainGenerationProfile, ResponseLengthClass } from '../providers/brain/types'
 import type { BrainConfig } from '../config'
+import type { BrainGenerationProfile, ResponseLengthClass } from '../providers/brain/types'
 
 export interface ClassifiedTurn {
   intent: 'casual' | 'science' | 'emotional-support' | 'relationship' | 'canon' | 'identity' | 'command' | 'other'
@@ -11,12 +11,12 @@ export interface ClassifiedTurn {
 
 export function classifyTurn(text: string): ClassifiedTurn {
   const normalized = text.normalize('NFKC').toLowerCase()
-  const science = /(科学|実験|理論|論文|神経|物理|脳|science|experiment|theory)/u.test(normalized)
-  const relationship = /(好き|愛|恋|関係|デート|love|relationship)/u.test(normalized)
-  const canon = /(世界線|タイムリープ|2010|記憶|過去|未来|worldline|timeline|memory)/u.test(normalized)
-  const support = /(つらい|悲しい|不安|怖い|助けて|depressed|sad|anxious)/u.test(normalized)
-  const greeting = /^(hi|hello|hey|おはよう|こんにちは|こんばんは|やあ)[!！。 ]*$/u.test(normalized)
-  const complex = normalized.length > 180 || (science && canon) || (canon && /(詳しく|比較|矛盾|reconcile|explain in detail)/u.test(normalized))
+  const science = /科学|実験|理論|論文|神経|物理|脳|science|experiment|theory/u.test(normalized)
+  const relationship = /好き|愛|恋|関係|デート|love|relationship/u.test(normalized)
+  const canon = /世界線|タイムリープ|2010|記憶|過去|未来|worldline|timeline|memory/u.test(normalized)
+  const support = /つらい|悲しい|不安|怖い|助けて|depressed|sad|anxious/u.test(normalized)
+  const greeting = /^(?:hi|hello|hey|おはよう|こんにちは|こんばんは|やあ)[!！。 ]*$/u.test(normalized)
+  const complex = normalized.length > 180 || (science && canon) || (canon && /詳しく|比較|矛盾|reconcile|explain in detail/u.test(normalized))
   const intent = science ? 'science' : relationship ? 'relationship' : canon ? 'canon' : support ? 'emotional-support' : greeting ? 'casual' : 'other'
   return {
     intent,

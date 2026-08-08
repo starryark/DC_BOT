@@ -1,6 +1,7 @@
+import type { MeasurementRecord, WorkloadSpec } from './contracts'
+
 import { describe, expect, it } from 'vitest'
 
-import type { MeasurementRecord, WorkloadSpec } from './contracts'
 import {
   applyPerformanceThresholds,
   parsePerformanceThresholdDocument,
@@ -130,7 +131,7 @@ describe('threshold-contract', () => {
   it('applies thresholds (gte pass/fail)', () => {
     const parsed = parsePerformanceThresholdDocument(validDocument)
     const gteMeasurement = { ...baseMeasurement, metricId: 'test-metric-gte' }
-    
+
     const passed = applyPerformanceThresholds([{ ...gteMeasurement, outcome: { disposition: 'observed', value: 50 } }], parsed)
     expect(passed[0].thresholdEvaluation).toBe('passed')
 

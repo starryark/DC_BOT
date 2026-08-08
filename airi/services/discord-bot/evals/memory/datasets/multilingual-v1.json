@@ -1,0 +1,112 @@
+{
+  "format": 1,
+  "datasetVersion": "1.0.0",
+  "description": "IMP-606 multilingual retrieval baseline scenario matrix",
+  "characterId": "eval-character",
+  "activeProfile": "active",
+  "enabledCapabilities": [
+    "lexical"
+  ],
+  "scenarios": [
+    {
+      "scenarioId": "RET-001",
+      "category": "retrieval",
+      "title": "English retrieval",
+      "suites": ["multilingual-v1"],
+      "assertions": [
+        { "id": "RET-001-A", "severity": "standard", "description": "English phrases match" }
+      ],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "supported" }
+    },
+    {
+      "scenarioId": "RET-002",
+      "category": "retrieval",
+      "title": "Japanese retrieval",
+      "suites": ["multilingual-v1"],
+      "assertions": [
+        { "id": "RET-002-A", "severity": "standard", "description": "Japanese phrases match" }
+      ],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "supported" }
+    },
+    {
+      "scenarioId": "RET-003",
+      "category": "retrieval",
+      "title": "Simplified Chinese retrieval",
+      "suites": ["multilingual-v1"],
+      "assertions": [
+        { "id": "RET-003-A", "severity": "standard", "description": "Simplified Chinese phrases match" }
+      ],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "supported" }
+    },
+    {
+      "scenarioId": "RET-004",
+      "category": "retrieval",
+      "title": "Traditional Chinese retrieval",
+      "suites": ["multilingual-v1"],
+      "assertions": [
+        { "id": "RET-004-A", "severity": "standard", "description": "Traditional Chinese phrases match" }
+      ],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "supported" }
+    },
+    {
+      "scenarioId": "RET-005",
+      "category": "retrieval",
+      "title": "mixed-script/code-switched queries",
+      "suites": ["multilingual-v1"],
+      "assertions": [
+        { "id": "RET-005-A", "severity": "standard", "description": "mixed-script queries match" }
+      ],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "supported" }
+    },
+    {
+      "scenarioId": "RET-006",
+      "category": "retrieval",
+      "title": "names and aliases",
+      "suites": ["multilingual-v1"],
+      "assertions": [
+        { "id": "RET-006-A", "severity": "standard", "description": "names and aliases match" }
+      ],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "supported" }
+    },
+    {
+      "scenarioId": "RET-007",
+      "category": "retrieval",
+      "title": "no-space text",
+      "suites": ["multilingual-v1"],
+      "assertions": [
+        { "id": "RET-007-A", "severity": "standard", "description": "no-space text matches" }
+      ],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "supported" }
+    },
+    {
+      "scenarioId": "RET-008",
+      "category": "retrieval",
+      "title": "temporal constraints",
+      "suites": ["multilingual-v1"],
+      "assertions": [
+        { "id": "RET-008-A", "severity": "standard", "description": "temporal constraints applied" }
+      ],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "supported" }
+    },
+    {
+      "scenarioId": "RET-009",
+      "category": "retrieval",
+      "title": "authorization-negative cases",
+      "suites": ["multilingual-v1"],
+      "assertions": [
+        { "id": "RET-009-A", "severity": "zero_tolerance", "description": "unauthorized scopes do not match" }
+      ],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "supported" }
+    },
+    {
+      "scenarioId": "RET-010",
+      "category": "retrieval",
+      "title": "deletion/correction cases",
+      "suites": ["multilingual-v1"],
+      "assertions": [
+        { "id": "RET-010-A", "severity": "zero_tolerance", "description": "deleted items do not match" }
+      ],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "supported" }
+    }
+  ]
+}

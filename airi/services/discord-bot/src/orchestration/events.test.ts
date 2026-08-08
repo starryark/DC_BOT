@@ -10,6 +10,7 @@ import type {
 import { Buffer } from 'node:buffer'
 
 import { describe, expect, it } from 'vitest'
+
 import { buildDiscordActorEvidence } from '../memory/discord-actor-snapshot'
 
 /**

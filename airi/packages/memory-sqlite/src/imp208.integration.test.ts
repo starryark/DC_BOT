@@ -213,7 +213,7 @@ describe('imp-208 file-backed SQLite profile', () => {
       if (version > 0)
         migrate(exact, migrations.slice(0, version))
       expect(migrate(exact)).toEqual(migrations.slice(version).map(item => item.version))
-      expect(exact.prepare('SELECT version FROM memory_schema_migrations ORDER BY version').all()).toHaveLength(8)
+      expect(exact.prepare('SELECT version FROM memory_schema_migrations ORDER BY version').all()).toHaveLength(9)
       verifyDatabase(exact); exact.close()
     }
     const malformed = new (await import('node:sqlite')).DatabaseSync(':memory:')

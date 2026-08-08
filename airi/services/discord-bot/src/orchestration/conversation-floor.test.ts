@@ -4,8 +4,8 @@ import { Buffer } from 'node:buffer'
 
 import { describe, expect, it } from 'vitest'
 
-import { ConversationFloor, ConversationFloorRegistry } from './conversation-floor'
 import { buildDiscordActorEvidence } from '../memory/discord-actor-snapshot'
+import { ConversationFloor, ConversationFloorRegistry } from './conversation-floor'
 
 const BASE = 1_700_000_000_000
 

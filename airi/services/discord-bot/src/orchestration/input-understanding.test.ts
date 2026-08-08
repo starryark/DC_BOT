@@ -1,5 +1,7 @@
 import type { CharacterInteractionProfile, SupportedLanguage } from '../character/types'
+
 import { describe, expect, it } from 'vitest'
+
 import { normalizeSupportedLanguage, resolveInputUnderstanding } from './input-understanding'
 
 const profile: CharacterInteractionProfile = {

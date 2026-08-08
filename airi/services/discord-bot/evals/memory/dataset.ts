@@ -4,6 +4,8 @@ import { createHash } from 'node:crypto'
 
 import { MemoryError } from '@proj-airi/memory-domain'
 
+import multilingualV1Json from './datasets/multilingual-v1.json'
+
 import { parseDataset, sha256Canonical } from './contracts'
 
 /**
@@ -317,7 +319,7 @@ export const SMOKE_SUITE_REQUIRED_IDS = Object.freeze([
 ])
 
 /** Scenarios belonging to a named suite, in matrix order. */
-export function scenariosForSuite(dataset: Dataset, suite: 'smoke' | 'active-v1'): readonly ScenarioSpec[] {
+export function scenariosForSuite(dataset: Dataset, suite: 'smoke' | 'active-v1' | 'multilingual-v1'): readonly ScenarioSpec[] {
   return dataset.scenarios.filter(scenario => scenario.suites.includes(suite))
 }
 
@@ -351,8 +353,8 @@ export function activeV1Digest(): string {
 }
 
 /** The parsed dataset for a suite name; `active-v1` is the whole matrix. */
-export function datasetForSuite(suite: 'smoke' | 'active-v1'): { dataset: Dataset, scenarios: readonly ScenarioSpec[] } {
-  const dataset = activeV1Dataset()
+export function datasetForSuite(suite: 'smoke' | 'active-v1' | 'multilingual-v1'): { dataset: Dataset, scenarios: readonly ScenarioSpec[] } {
+  const dataset = suite === 'multilingual-v1' ? multilingualV1Dataset() : activeV1Dataset()
   const scenarios = scenariosForSuite(dataset, suite)
   if (suite === 'smoke') {
     const present = new Set(scenarios.map(scenario => scenario.scenarioId))
@@ -362,4 +364,18 @@ export function datasetForSuite(suite: 'smoke' | 'active-v1'): { dataset: Datase
     }
   }
   return { dataset, scenarios }
+}
+
+export const MULTILINGUAL_V1_VERSION = '1.0.0'
+
+export function multilingualV1DatasetObject(): unknown {
+  return multilingualV1Json
+}
+
+export function multilingualV1Dataset(): Dataset {
+  return parseDataset(multilingualV1DatasetObject())
+}
+
+export function multilingualV1Digest(): string {
+  return sha256Canonical(multilingualV1DatasetObject())
 }

@@ -99,7 +99,7 @@ The disposition was `correctness_clean_measured_not_evaluated`. **This result do
 
 ## Schema and rollout
 
-- Latest SQLite schema: v8.
+- Latest SQLite schema: v9.
 - Runtime rollout: off by default; production and ordinary local use remain in
   shadow. Active has **passed the A8 soak gate** at `86ca5cfc` and is available
   as a deliberate per-deployment opt-in; qualifying it did not change the

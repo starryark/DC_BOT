@@ -1,12 +1,14 @@
 import type { DatabaseSync } from 'node:sqlite'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+
 import { DatabaseSync as NativeDatabaseSync } from 'node:sqlite'
+
+import { asTimestamp } from '@proj-airi/memory-domain'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+
 import { migrate } from '../migration-runner'
 import { SearchRepository } from './search'
-import type { SearchMemoryInput } from '@proj-airi/memory-domain'
-import { asLogicalRoomId, asTimestamp } from '@proj-airi/memory-domain'
 
-describe('SearchRepository', () => {
+describe('searchRepository', () => {
   let db: DatabaseSync
   let repo: SearchRepository
 
@@ -26,7 +28,7 @@ describe('SearchRepository', () => {
       modes: ['structured'],
       layers: ['semantic'],
       scope: { kind: 'guild', id: 'guild-1' },
-      limit: 10
+      limit: 10,
     })
     expect(output.abstained).toBe('noAuthorizedEvidence')
     expect(output.hits).toEqual([])
@@ -48,12 +50,11 @@ describe('SearchRepository', () => {
       modes: ['lexical'],
       layers: ['raw'],
       scope: { kind: 'logical_room', id: 'room-1' },
-      limit: 10
+      limit: 10,
     })
 
     expect(output.hits).toHaveLength(1)
-    // In our mock loadRecord, the text field contains the id.
-    expect((output.hits[0]!.record as any).text).toBe('event-1')
+    expect((output.hits[0]!.record as any).eventId).toBe('event-1')
   })
 
   it('filters by temporal boundaries', () => {
@@ -72,10 +73,10 @@ describe('SearchRepository', () => {
       layers: ['raw'],
       scope: { kind: 'logical_room', id: 'room-1' },
       since: asTimestamp('2026-01-01T12:00:00.000Z'),
-      limit: 10
+      limit: 10,
     })
 
     expect(output.hits).toHaveLength(1)
-    expect((output.hits[0]!.record as any).text).toBe('event-new')
+    expect((output.hits[0]!.record as any).eventId).toBe('event-new')
   })
 })

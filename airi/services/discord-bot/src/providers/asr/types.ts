@@ -1,3 +1,5 @@
+import type { Buffer } from 'node:buffer'
+
 /**
  * ASR provider interface (plan.md §11). Discord classes know only this
  * interface — never "Qwen" by name.

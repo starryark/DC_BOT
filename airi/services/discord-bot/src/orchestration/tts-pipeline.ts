@@ -32,8 +32,8 @@ export async function runBoundedTtsPipeline<TChunk, TAudio>(
   const sourceIterator = chunks[Symbol.asyncIterator]()
   const chunkQueue: TChunk[] = []
   let sourceDone = false
-  let sourceError: unknown = undefined
-  let waitingResolve: (() => void) | undefined = undefined
+  let sourceError: unknown
+  let waitingResolve: (() => void) | undefined
 
   const consumeSource = async () => {
     try {
@@ -50,7 +50,8 @@ export async function runBoundedTtsPipeline<TChunk, TAudio>(
           resolve()
         }
       }
-    } catch (e) {
+    }
+    catch (e) {
       sourceError = e
     }
     if (waitingResolve) {
@@ -65,8 +66,9 @@ export async function runBoundedTtsPipeline<TChunk, TAudio>(
 
   const prepareNext = async (): Promise<PreparedTtsChunk<TChunk, TAudio> | null> => {
     while (!options.isCancelled()) {
+      // eslint-disable-next-line no-unmodified-loop-condition -- sourceDone and sourceError are mutated by the consumeSource closure above
       while (chunkQueue.length === 0 && !sourceDone && sourceError === undefined && !options.isCancelled()) {
-        await new Promise<void>(resolve => {
+        await new Promise<void>((resolve) => {
           waitingResolve = resolve
         })
       }

@@ -131,9 +131,10 @@ describe('multilingual capability split', () => {
   })
 
   it('makes a CJK query fail loudly on a Latin-only backend instead of returning nothing', () => {
-    expect(() => requireCapability(SQLITE, capabilityForLexicalQuery('東京に住んでいます'), 'searchMemory'))
+    const LATIN_ONLY: CapabilityAdvertisement = { schemaVersion: 1, capabilities: ['fulltext_latin'], backend: 'sqlite' }
+    expect(() => requireCapability(LATIN_ONLY, capabilityForLexicalQuery('東京に住んでいます'), 'searchMemory'))
       .toThrowError(/fulltext_cjk/)
-    expect(() => requireCapability(SQLITE, capabilityForLexicalQuery('Tokyo'), 'searchMemory')).not.toThrow()
+    expect(() => requireCapability(LATIN_ONLY, capabilityForLexicalQuery('Tokyo'), 'searchMemory')).not.toThrow()
   })
 
   it('handles a mixed-script query as CJK', () => {
