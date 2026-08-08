@@ -31,16 +31,30 @@ describe('smoke suite', () => {
 
   it('dedicated smoke workloads use a single sample to stay fast and credential-free', () => {
     // Workloads prefixed `smoke-` are the fast smoke-only paths; shared
-    // workloads that also belong to performance-v1 carry their full sample count.
+    // workloads that also belong to performance-v2 carry their full sample count.
     const dedicated = smoke.filter(workload => workload.workloadId.startsWith('smoke-'))
     expect(dedicated.length).toBeGreaterThan(0)
     for (const workload of dedicated)
       expect(workload.sampleCount).toBe(1)
   })
+
+  it('the smoke cancellation workload uses the same real barge-in driver as the full suite', () => {
+    // ROOT CAUSE:
+    //
+    // v1 selected the cancellation driver with `workloadId.startsWith('barge-in')`.
+    // `smoke-voice-controller-cancellation` fails that test, so smoke ran the
+    // nominal turn while still asserting cancellation postconditions — which
+    // passed only because four of them were hardcoded `ok = true`.
+    const workload = workloadById('smoke-voice-controller-cancellation')
+    expect(workload.driverCase).toBe('voice-barge-in')
+    expect(workload.triggerStage).not.toBeNull()
+    expect(workload.postconditions).toContain('no-cancelled-segment-delivered')
+    expect(workload.postconditions).toContain('controller-accepts-next-turn')
+  })
 })
 
-describe('full performance-v1 runtime workloads', () => {
-  const full = workloadsForSuite('performance-v1')
+describe('full performance-v2 runtime workloads', () => {
+  const full = workloadsForSuite('performance-v2')
   const runtimeIds = full.filter(workload => workload.runner === 'runtime').map(workload => workload.workloadId)
 
   it('covers the runtime operation families from the frozen catalog', () => {
@@ -60,10 +74,19 @@ describe('full performance-v1 runtime workloads', () => {
       'voice-segment-delivery-lifecycle',
       'same-room-serialized-load',
       'eight-room-concurrent-load',
-      'active-writer-contention',
       'acknowledged-state-close-reopen-recovery',
       'interrupted-delivery-recovery',
     ]))
+  })
+
+  it('drops the writer-contention workload rather than keeping a claim it cannot prove', () => {
+    // In v1 its measured body was byte-identical to `same-room-serialized-load`
+    // and its postcondition was "an event id came back". Proving real writer
+    // contention needs a second runtime on one root, which the adapter does not
+    // expose and which the plan forbids adding for the benchmark alone.
+    expect(runtimeIds).not.toContain('active-writer-contention')
+    for (const spec of WORKLOAD_CATALOG)
+      expect(spec.postconditions).not.toContain('writer-contention-observed')
   })
 
   it('the eight-room workload runs eight rooms and the same-room workload runs one', () => {
@@ -79,7 +102,7 @@ describe('full performance-v1 runtime workloads', () => {
 })
 
 describe('controller workloads', () => {
-  const full = workloadsForSuite('performance-v1')
+  const full = workloadsForSuite('performance-v2')
 
   it('covers the text controller families', () => {
     const textIds = full.filter(workload => workload.runner === 'text-controller').map(workload => workload.workloadId)
@@ -127,6 +150,15 @@ describe('barge-in cancellation predicate', () => {
     'barge-in-during-tts',
     'barge-in-during-playback',
   ]
+
+  it('each barge-in workload names the distinct stage its driver fires at', () => {
+    expect(bargeInPoints.map(id => workloadById(id).triggerStage)).toEqual([
+      'before-provider-response',
+      'streamed-generation',
+      'tts',
+      'playback',
+    ])
+  })
 
   it('every barge-in workload requires the full cancellation postcondition set', () => {
     const required = [

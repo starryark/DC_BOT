@@ -4,7 +4,7 @@
  *
  * Produces a complete, recomputable, content-free artifact set with
  * deterministic contract identity and environment-bound measurements. Smoke
- * is credential-free and fast; the full `performance-v1` suite requires an
+ * is credential-free and fast; the full `performance-v2` suite requires an
  * explicit external output directory and a clean worktree.
  *
  * Exit codes align with the functional evaluator:
@@ -23,32 +23,35 @@
  *       -> {@link writeArtifactsAtomically}
  */
 
+import type { BaselineComparisonResult, LoadedRun } from '../../evals/memory/performance/baseline'
+import type { PerformanceThresholdDocument } from '../../evals/memory/performance/threshold-contract'
+
 import process from 'node:process'
 
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, renameSync, statSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { isAbsolute, join, relative, resolve } from 'node:path'
 
 import { asCharacterId } from '@proj-airi/memory-domain'
 
+import { PERFORMANCE_CONTRACT_ID, PERFORMANCE_SCHEMA_VERSION } from '../../evals/memory/performance/contracts'
 import { runControllerWorkloads } from '../../evals/memory/performance/controller-runner'
+import { collectEnvironmentFingerprint } from '../../evals/memory/performance/environment'
+import { liveArtifactDigest, parseLiveArtifact } from '../../evals/memory/performance/live-artifact'
+import { parsePriceDocument, priceDocumentDigest } from '../../evals/memory/performance/price-contract'
 import { buildPerformanceReport } from '../../evals/memory/performance/report'
 import { runRuntimeSuite } from '../../evals/memory/performance/runtime-runner'
+import { applyPerformanceThresholds, parsePerformanceThresholdDocument, performanceThresholdDocumentDigest, validatePerformanceThresholdCompatibility } from '../../evals/memory/performance/threshold-contract'
 import { WORKLOAD_CATALOG_DIGEST, workloadsForSuite } from '../../evals/memory/performance/workloads'
 import { disposeEvaluationRun, startEvaluationRun } from '../../evals/memory/runtime-adapter'
-import { applyPerformanceThresholds, parsePerformanceThresholdDocument, performanceThresholdDocumentDigest, validatePerformanceThresholdCompatibility } from '../../evals/memory/performance/threshold-contract'
-import { parsePriceDocument, priceDocumentDigest } from '../../evals/memory/performance/price-contract'
-import { liveArtifactDigest, parseLiveArtifact } from '../../evals/memory/performance/live-artifact'
-import { collectEnvironmentFingerprint } from '../../evals/memory/performance/environment'
-import { readFileSync } from 'node:fs'
 
 const EXIT = { COMPLETE: 0, INVALID: 2, CORRECTNESS: 3, UNSAFE: 4, UNEXPECTED: 5 } as const
 const BENCH_CHARACTER = asCharacterId('bench-character')
 
 interface ParsedArgs {
   help: boolean
-  suite: 'smoke' | 'performance-v1'
+  suite: 'smoke' | 'performance-v2'
   seed: number
   warmup?: number
   samples?: number
@@ -64,12 +67,12 @@ interface ParsedArgs {
 const HELP_TEXT = `Usage: memory:benchmark [options]
 
 Options:
-  --suite smoke|performance-v1   Suite to run (default: smoke)
+  --suite smoke|performance-v2   Suite to run (default: smoke)
   --seed <non-negative integer>  Deterministic seed (default: 20260802)
   --warmup <positive integer>    Override warmup count for every workload
   --samples <positive integer>   Override measured sample count for every workload
   --sample-capacity <integer>    Override reservoir sample capacity
-  --output <directory>           Absolute external output directory (required for performance-v1)
+  --output <directory>           Absolute external output directory (required for performance-v2)
   --thresholds <file>            Approved threshold document (provenance validated before runtime start)
   --price-document <file>        Approved price document (provenance validated before runtime start)
   --import-live <file>           Import a live artifact (repeatable)
@@ -104,7 +107,8 @@ async function main(): Promise<void> {
   let gitRoot: string
   try {
     gitRoot = execFileSync('git', ['-C', workspaceRoot, 'rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim()
-  } catch {
+  }
+  catch {
     process.stderr.write(`${JSON.stringify({ status: 'invalid', message: 'failed to resolve Git top-level directory' })}\n`)
     process.exitCode = EXIT.INVALID
     return
@@ -112,7 +116,7 @@ async function main(): Promise<void> {
 
   let outputDirectory: string | undefined
 
-  // Output validation: smoke may use a temp dir; performance-v1 requires explicit --output.
+  // Output validation: smoke may use a temp dir; performance-v2 requires explicit --output.
   if (parsed.output) {
     outputDirectory = resolve(parsed.output)
     const pathCheck = assertSafeOutputDirectory(outputDirectory, gitRoot)
@@ -125,8 +129,8 @@ async function main(): Promise<void> {
       return
     }
   }
-  else if (parsed.suite === 'performance-v1') {
-    process.stderr.write(`${JSON.stringify({ status: 'invalid', message: 'performance-v1 requires an explicit --output directory' })}\n`)
+  else if (parsed.suite === 'performance-v2') {
+    process.stderr.write(`${JSON.stringify({ status: 'invalid', message: 'performance-v2 requires an explicit --output directory' })}\n`)
     process.exitCode = EXIT.INVALID
     return
   }
@@ -137,14 +141,14 @@ async function main(): Promise<void> {
   // Full-suite guards: reject dirty worktree and unknown git head.
   const commitSha = gitHead(gitRoot)
   const dirtyWorktree = gitDirty(gitRoot)
-  if (parsed.suite === 'performance-v1') {
+  if (parsed.suite === 'performance-v2') {
     if (commitSha.length !== 40 || commitSha === 'unknown'.repeat(10).slice(0, 40)) {
-      process.stderr.write(`${JSON.stringify({ status: 'invalid', message: 'performance-v1 requires a known git HEAD' })}\n`)
+      process.stderr.write(`${JSON.stringify({ status: 'invalid', message: 'performance-v2 requires a known git HEAD' })}\n`)
       process.exitCode = EXIT.INVALID
       return
     }
     if (dirtyWorktree) {
-      process.stderr.write(`${JSON.stringify({ status: 'invalid', message: 'performance-v1 requires a clean worktree' })}\n`)
+      process.stderr.write(`${JSON.stringify({ status: 'invalid', message: 'performance-v2 requires a clean worktree' })}\n`)
       process.exitCode = EXIT.INVALID
       return
     }
@@ -155,16 +159,20 @@ async function main(): Promise<void> {
   const runId = `bench-${new Date().toISOString().replace(/[:.]/g, '').slice(0, 15)}-${commitSha.slice(0, 8)}`
 
   const startedAt = new Date().toISOString()
-  
-  let thresholdDocument: any | undefined
+
+  let thresholdDocument: PerformanceThresholdDocument | undefined
   let thresholdDocumentDigestValue: string | null = null
   let priceDocumentDigestValue: string | null = null
   const importedLiveArtifactDigests: string[] = []
-  let baselineRun: { manifest: any, measurements: any[] } | undefined
+  let baselineRun: LoadedRun | undefined
 
   try {
     if (parsed.baseline) {
       const { loadRun } = await import('../../evals/memory/performance/baseline')
+      // `loadRun` parses the whole v2 set through the strict schemas and
+      // recomputes the summary from the raw rows; a directory whose summary
+      // disagrees with its own evidence is rejected here rather than being
+      // silently accepted as a reference.
       baselineRun = loadRun(parsed.baseline, readFileSync, existsSync, join)
       if (baselineRun.manifest.contractDigest !== WORKLOAD_CATALOG_DIGEST) {
         throw new Error(`Baseline contractDigest mismatch (expected ${WORKLOAD_CATALOG_DIGEST}, got ${baselineRun.manifest.contractDigest})`)
@@ -197,7 +205,8 @@ async function main(): Promise<void> {
         throw new Error(`Duplicate live artifact digest: ${digest}`)
       importedLiveArtifactDigests.push(digest)
     }
-  } catch (error) {
+  }
+  catch (error) {
     process.stderr.write(`${JSON.stringify({ status: 'invalid', message: messageOf(error) })}\n`)
     process.exitCode = EXIT.INVALID
     return
@@ -206,22 +215,29 @@ async function main(): Promise<void> {
   try {
     const evaluationRun = startEvaluationRun({ repoRoot: workspaceRoot, keepRunRoot: parsed.keepRunRoot })
     try {
-      const runtimeResult = await runRuntimeSuite(parsed.suite, {
+      // The effective plan is resolved once, before any runner starts, and the
+      // same values are handed to both runner families and written to the
+      // manifest. Without it a verifier cannot tell whether `attempted` equals
+      // the configured sample count, because the counts lived only in argv.
+      const selectedWorkloads = workloadsForSuite(parsed.suite)
+      const workloadPlan = selectedWorkloads.map(workload => ({
+        workloadId: workload.workloadId,
+        warmupCount: parsed.warmup ?? workload.warmupCount,
+        sampleCount: parsed.samples ?? workload.sampleCount,
+        sampleCapacity: parsed.sampleCapacity ?? workload.sampleCapacity,
+      }))
+
+      const runnerOptions = {
         repoRoot: workspaceRoot,
         run: evaluationRun,
         characterId: BENCH_CHARACTER,
         seed: parsed.seed,
         warmupCount: parsed.warmup,
         sampleCount: parsed.samples,
-      })
-      const controllerResult = await runControllerWorkloads(workloadsForSuite(parsed.suite).filter(w => w.runner !== 'runtime'), {
-        repoRoot: workspaceRoot,
-        run: evaluationRun,
-        characterId: BENCH_CHARACTER,
-        seed: parsed.seed,
-        warmupCount: parsed.warmup,
-        sampleCount: parsed.samples,
-      })
+        sampleCapacity: parsed.sampleCapacity,
+      }
+      const runtimeResult = await runRuntimeSuite(parsed.suite, runnerOptions)
+      const controllerResult = await runControllerWorkloads(selectedWorkloads.filter(w => w.runner !== 'runtime'), runnerOptions)
 
       const completedAt = new Date().toISOString()
 
@@ -229,26 +245,21 @@ async function main(): Promise<void> {
         ...runtimeResult.results.flatMap(result => result.measurements),
         ...controllerResult.results.flatMap(result => result.measurements),
       ]
-      
+
       allMeasurements = applyPerformanceThresholds(allMeasurements, thresholdDocument)
 
-      let baselineComparison: any
-      if (baselineRun) {
-        const { compareAgainstBaseline } = await import('../../evals/memory/performance/baseline')
-        baselineComparison = compareAgainstBaseline(baselineRun.manifest, baselineRun.measurements, { contractDigest: runtimeResult.contractDigest } as any, allMeasurements)
-      }
-
-      const workloadResults = [
-        ...runtimeResult.results.map(result => ({ workloadId: result.workloadId, correctnessFailures: result.correctnessFailures.length, cleanupFailures: 0 })),
-        ...controllerResult.results.map(result => ({ workloadId: result.workloadId, correctnessFailures: result.correctnessFailures.length, cleanupFailures: 0 })),
+      const attempts = [
+        ...runtimeResult.results.flatMap(result => result.attempts),
+        ...controllerResult.results.flatMap(result => result.attempts),
       ]
+      const runFindings = [...runtimeResult.runFindings, ...controllerResult.runFindings]
+
       const completedIds = [...runtimeResult.results, ...controllerResult.results].map(r => r.workloadId)
-      const expectedIds = workloadsForSuite(parsed.suite).map(w => w.workloadId)
-      const skippedIds = expectedIds.filter(id => !completedIds.includes(id))
+      const skippedIds = selectedWorkloads.map(w => w.workloadId).filter(id => !completedIds.includes(id))
 
       const manifest = {
-        schemaVersion: 1 as const,
-        contractId: 'performance-v1' as const,
+        schemaVersion: PERFORMANCE_SCHEMA_VERSION,
+        contractId: PERFORMANCE_CONTRACT_ID,
         contractDigest: runtimeResult.contractDigest,
         commitSha,
         dirtyWorktree,
@@ -264,6 +275,7 @@ async function main(): Promise<void> {
         timerSource: 'performance.now',
         startedAt,
         completedAt,
+        workloadPlan,
         workloadsCompleted: completedIds,
         importedLiveArtifactDigests,
         ...(thresholdDocumentDigestValue ? { thresholdDocumentDigest: thresholdDocumentDigestValue } : {}),
@@ -271,11 +283,23 @@ async function main(): Promise<void> {
         limitations: [],
       }
 
+      let baselineComparison: BaselineComparisonResult | undefined
+      if (baselineRun) {
+        const { compareAgainstBaseline } = await import('../../evals/memory/performance/baseline')
+        baselineComparison = compareAgainstBaseline(baselineRun, {
+          manifest,
+          attempts,
+          runFindings,
+          measurements: allMeasurements,
+        })
+      }
+
       const report = buildPerformanceReport({
         runId,
         manifest,
+        attempts,
+        runFindings,
         measurements: allMeasurements,
-        workloadResults,
         skippedWorkloadIds: skippedIds,
         activeControlDeltas: controllerResult.activeControlDeltas,
         importedLiveArtifactDigests,
@@ -295,7 +319,7 @@ async function main(): Promise<void> {
         return
       }
 
-      if (parsed.suite === 'performance-v1') {
+      if (parsed.suite === 'performance-v2') {
         const currentSha = gitHead(gitRoot)
         const currentDirty = gitDirty(gitRoot)
         if (currentSha !== commitSha || currentDirty !== dirtyWorktree) {
@@ -322,10 +346,19 @@ async function main(): Promise<void> {
   }
 }
 
-/** Write every artifact atomically: temp sibling files renamed only after successful serialization and scan. */
+/**
+ * Write every artifact atomically: temp sibling files renamed only after
+ * successful serialization and scan.
+ *
+ * The v2 set is six files. `attempts.jsonl` and `run-findings.jsonl` are what
+ * make the summary independently recomputable, so a set missing them is not a
+ * v2 artifact set even if the other four parse.
+ */
 function writeArtifactsAtomically(outputDirectory: string, manifest: object, report: ReturnType<typeof buildPerformanceReport>): void {
   const targets = [
     { name: 'run-manifest.json', content: `${JSON.stringify(manifest, null, 2)}\n` },
+    { name: 'attempts.jsonl', content: report.attemptsJsonl },
+    { name: 'run-findings.jsonl', content: report.runFindingsJsonl },
     { name: 'measurements.jsonl', content: report.measurementsJsonl },
     { name: 'summary.json', content: `${JSON.stringify(report.summary, null, 2)}\n` },
     { name: 'report.md', content: report.markdown },
@@ -350,8 +383,8 @@ function parseArgs(argv: string[]): ParsedArgs {
     }
     else if (value === '--suite') {
       const next = argv[++index]
-      if (next !== 'smoke' && next !== 'performance-v1')
-        throw new Error(`--suite must be smoke or performance-v1, got ${next ?? '(missing)'}`)
+      if (next !== 'smoke' && next !== 'performance-v2')
+        throw new Error(`--suite must be smoke or performance-v2, got ${next ?? '(missing)'}`)
       result.suite = next
     }
     else if (value === '--seed') {

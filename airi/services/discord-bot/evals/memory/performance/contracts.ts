@@ -19,10 +19,10 @@ import { canonicalJson, sha256Canonical } from '../contracts'
  */
 
 /** Bumped when a performance contract, workload spec, or report field changes in a way that invalidates earlier artifacts. */
-export const PERFORMANCE_SCHEMA_VERSION = 1 as const
+export const PERFORMANCE_SCHEMA_VERSION = 2 as const
 
 /** The contract family this benchmark emits; names the workload catalog and digest namespace. */
-export const PERFORMANCE_CONTRACT_ID = 'performance-v1' as const
+export const PERFORMANCE_CONTRACT_ID = 'performance-v2' as const
 
 /** Default seed for deterministic workload selection and reservoir sampling. */
 export const PERFORMANCE_DEFAULT_SEED = 20260802
@@ -30,6 +30,58 @@ export const PERFORMANCE_DEFAULT_SEED = 20260802
 /** Runner families that execute workloads; each owns its own driver. */
 export const RUNNER_FAMILIES = Object.freeze(['runtime', 'text-controller', 'voice-controller'] as const)
 export type RunnerFamily = typeof RUNNER_FAMILIES[number]
+
+/**
+ * How a workload is driven, as a finite contract value rather than an inference.
+ *
+ * v1 selected drivers by testing `workloadId.startsWith('barge-in')`, which made
+ * the scenario a workload *naming* accident: `smoke-voice-controller-cancellation`
+ * silently took the nominal path while claiming cancellation postconditions.
+ * Encoding the driver in the spec puts it inside the contract digest, so a
+ * driver change invalidates earlier artifacts instead of quietly rewriting what
+ * a workload id means.
+ */
+export const PERFORMANCE_DRIVER_CASES = Object.freeze([
+  'runtime-operation',
+  'timer-control',
+  'text-memory-lifecycle',
+  'text-same-room-queue',
+  'text-multi-room',
+  'voice-nominal',
+  'voice-barge-in',
+  'voice-provider-failure',
+  'voice-tts-failure',
+] as const)
+export type PerformanceDriverCase = typeof PERFORMANCE_DRIVER_CASES[number]
+
+/**
+ * The turn stage at which a barge-in driver fires cancellation.
+ *
+ * Only `voice-barge-in` workloads carry a stage; every other driver declares
+ * `null`. The four stages are the distinct points at which the controller's
+ * cancellation sequence has different work in flight, so a suite that does not
+ * cover all four has not exercised the cancellation path.
+ */
+export const VOICE_TRIGGER_STAGES = Object.freeze([
+  'before-provider-response',
+  'streamed-generation',
+  'tts',
+  'playback',
+] as const)
+export type VoiceTriggerStage = typeof VOICE_TRIGGER_STAGES[number]
+
+/** The runner family each driver case must be executed by. */
+const DRIVER_CASE_RUNNERS: Readonly<Record<PerformanceDriverCase, RunnerFamily>> = Object.freeze({
+  'runtime-operation': 'runtime',
+  'timer-control': 'runtime',
+  'text-memory-lifecycle': 'text-controller',
+  'text-same-room-queue': 'text-controller',
+  'text-multi-room': 'text-controller',
+  'voice-nominal': 'voice-controller',
+  'voice-barge-in': 'voice-controller',
+  'voice-provider-failure': 'voice-controller',
+  'voice-tts-failure': 'voice-controller',
+})
 
 /**
  * The role a workload plays in an active/control comparison.
@@ -43,7 +95,7 @@ export const WORKLOAD_ROLES = Object.freeze(['active', 'inert-control', 'timer-c
 export type WorkloadRole = typeof WORKLOAD_ROLES[number]
 
 /** Suites a workload may belong to; smoke is fast and credential-free. */
-export const PERFORMANCE_SUITES = Object.freeze(['smoke', 'performance-v1'] as const)
+export const PERFORMANCE_SUITES = Object.freeze(['smoke', 'performance-v2'] as const)
 export type PerformanceSuite = typeof PERFORMANCE_SUITES[number]
 
 /**
@@ -97,6 +149,10 @@ export const workloadSpecSchema = v.strictObject({
   runner: v.picklist(RUNNER_FAMILIES),
   operation: v.pipe(v.string(), v.minLength(1), v.maxLength(120)),
   role: v.picklist(WORKLOAD_ROLES),
+  /** Which driver executes this workload; never inferred from the workload id. */
+  driverCase: v.picklist(PERFORMANCE_DRIVER_CASES),
+  /** The cancellation stage for `voice-barge-in` drivers; `null` for every other driver. */
+  triggerStage: v.union([v.picklist(VOICE_TRIGGER_STAGES), v.null()]),
   suites: v.pipe(v.array(v.picklist(PERFORMANCE_SUITES)), v.minLength(1)),
   warmupCount: v.pipe(v.number(), v.integer(), v.minValue(0)),
   sampleCount: v.pipe(v.number(), v.integer(), v.minValue(1)),
@@ -160,6 +216,25 @@ export const environmentFingerprintSchema = v.strictObject({
 
 export type EnvironmentFingerprint = v.InferOutput<typeof environmentFingerprintSchema>
 
+/**
+ * The effective per-workload execution plan, resolved once before the runners start.
+ *
+ * The catalog declares default counts, but `--warmup`, `--samples`, and
+ * `--sample-capacity` override them. Without the resolved values in the
+ * manifest, a verifier cannot tell whether `attempted` equals the configured
+ * sample count or whether two runs sampled comparably — the effective plan
+ * lived only in CLI argv. Publishing it makes sample completeness and baseline
+ * config compatibility checkable from artifacts alone.
+ */
+export const workloadPlanEntrySchema = v.strictObject({
+  workloadId: workloadIdPattern,
+  warmupCount: v.pipe(v.number(), v.integer(), v.minValue(0)),
+  sampleCount: v.pipe(v.number(), v.integer(), v.minValue(1)),
+  sampleCapacity: v.pipe(v.number(), v.integer(), v.minValue(1)),
+})
+
+export type WorkloadPlanEntry = v.InferOutput<typeof workloadPlanEntrySchema>
+
 /** The strict run manifest written to `run-manifest.json`. */
 export const runManifestSchema = v.strictObject({
   schemaVersion: v.literal(PERFORMANCE_SCHEMA_VERSION),
@@ -175,6 +250,8 @@ export const runManifestSchema = v.strictObject({
   timerSource: v.pipe(v.string(), v.minLength(1)),
   startedAt: v.pipe(v.string(), v.minLength(1)),
   completedAt: v.pipe(v.string(), v.minLength(1)),
+  /** The effective counts every runner was given, for every selected workload. */
+  workloadPlan: v.pipe(v.array(workloadPlanEntrySchema), v.maxLength(512)),
   workloadsCompleted: v.pipe(v.array(workloadIdPattern), v.maxLength(512)),
   /** Digests of imported live artifacts; the values are never merged into the deterministic contract digest. */
   importedLiveArtifactDigests: v.pipe(v.array(v.pipe(v.string(), v.regex(/^[0-9a-f]{64}$/))), v.maxLength(64)),
@@ -201,9 +278,9 @@ export function workloadCatalogDigest(workloads: readonly WorkloadSpec[]): strin
  * Validate the cross-record invariants a schema alone cannot express.
  *
  * Returns a list of content-free failure reasons; an empty list means the
- * catalog is internally consistent. Workload id uniqueness and metric id
- * uniqueness within a run are checked here because they are multi-record
- * constraints, not single-record shape constraints.
+ * catalog is internally consistent. Workload id uniqueness, driver/runner
+ * agreement, and barge-in stage coverage are checked here because they are
+ * multi-record constraints, not single-record shape constraints.
  */
 export function validateWorkloadCatalog(workloads: readonly WorkloadSpec[]): readonly string[] {
   const failures: string[] = []
@@ -212,7 +289,34 @@ export function validateWorkloadCatalog(workloads: readonly WorkloadSpec[]): rea
     if (workloadIds.has(workload.workloadId))
       failures.push(`duplicate workload id ${workload.workloadId}`)
     workloadIds.add(workload.workloadId)
+
+    // A driver that disagrees with its runner family would be dispatched by one
+    // runner while claiming another's semantics, so reject it at the catalog.
+    const expectedRunner = DRIVER_CASE_RUNNERS[workload.driverCase]
+    if (workload.runner !== expectedRunner)
+      failures.push(`workload ${workload.workloadId} declares driver ${workload.driverCase} but runner ${workload.runner}`)
+
+    if (workload.driverCase === 'voice-barge-in') {
+      if (workload.triggerStage == null)
+        failures.push(`barge-in workload ${workload.workloadId} must declare a trigger stage`)
+    }
+    else if (workload.triggerStage != null) {
+      failures.push(`workload ${workload.workloadId} declares trigger stage ${workload.triggerStage} for non-barge-in driver ${workload.driverCase}`)
+    }
   }
+
+  // The full suite must cover each cancellation stage exactly once. Smoke carries
+  // its own single cancellation workload and is deliberately excluded: it reuses
+  // one of the four stages rather than adding a fifth.
+  const fullSuiteStages = workloads
+    .filter(workload => workload.driverCase === 'voice-barge-in' && workload.suites.includes('performance-v2'))
+    .map(workload => workload.triggerStage)
+  for (const stage of VOICE_TRIGGER_STAGES) {
+    const count = fullSuiteStages.filter(candidate => candidate === stage).length
+    if (count !== 1)
+      failures.push(`performance-v2 must cover barge-in stage ${stage} exactly once, found ${count}`)
+  }
+
   return Object.freeze(failures)
 }
 

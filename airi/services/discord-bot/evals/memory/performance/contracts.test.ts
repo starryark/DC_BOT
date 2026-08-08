@@ -10,10 +10,12 @@ import {
   PERFORMANCE_CONTRACT_ID,
   PERFORMANCE_DEFAULT_SEED,
   PERFORMANCE_SCHEMA_VERSION,
+  PERFORMANCE_SUITES,
   runManifestSchema,
   RUNNER_FAMILIES,
   validateMeasurementRecords,
   validateWorkloadCatalog,
+  VOICE_TRIGGER_STAGES,
   WORKLOAD_ROLES,
   workloadCatalogDigest,
   workloadSpecSchema,
@@ -30,9 +32,13 @@ import { WORKLOAD_CATALOG, WORKLOAD_CATALOG_DIGEST } from './workloads'
 
 describe('performance contract constants', () => {
   it('pins the schema version, contract id, and default seed', () => {
-    expect(PERFORMANCE_SCHEMA_VERSION).toBe(1)
-    expect(PERFORMANCE_CONTRACT_ID).toBe('performance-v1')
+    expect(PERFORMANCE_SCHEMA_VERSION).toBe(2)
+    expect(PERFORMANCE_CONTRACT_ID).toBe('performance-v2')
     expect(PERFORMANCE_DEFAULT_SEED).toBe(20260802)
+  })
+
+  it('names the full suite performance-v2 so v2 artifacts cannot present as v1', () => {
+    expect(PERFORMANCE_SUITES).toEqual(['smoke', 'performance-v2'])
   })
 
   it('lists runner families, roles, units, and statistics as frozen explicit sets', () => {
@@ -77,6 +83,55 @@ describe('workload catalog invariants', () => {
   it('detects a duplicate workload id', () => {
     const duplicated = [WORKLOAD_CATALOG[0], WORKLOAD_CATALOG[0]]
     expect(validateWorkloadCatalog(duplicated)).toContainEqual(expect.stringContaining('duplicate workload id'))
+  })
+})
+
+describe('driver semantics', () => {
+  it('every workload declares a driver case so nothing is inferred from the workload id', () => {
+    for (const workload of WORKLOAD_CATALOG)
+      expect(workload.driverCase, workload.workloadId).toBeDefined()
+  })
+
+  it('only barge-in workloads carry a trigger stage', () => {
+    for (const workload of WORKLOAD_CATALOG) {
+      if (workload.driverCase === 'voice-barge-in')
+        expect(workload.triggerStage, workload.workloadId).not.toBeNull()
+      else
+        expect(workload.triggerStage, workload.workloadId).toBeNull()
+    }
+  })
+
+  it('the full suite covers each cancellation stage exactly once', () => {
+    const stages = WORKLOAD_CATALOG
+      .filter(workload => workload.driverCase === 'voice-barge-in' && workload.suites.includes('performance-v2'))
+      .map(workload => workload.triggerStage)
+    expect([...stages].sort()).toEqual([...VOICE_TRIGGER_STAGES].sort())
+  })
+
+  it('rejects a barge-in workload with no trigger stage', () => {
+    const broken = WORKLOAD_CATALOG.map(workload =>
+      workload.driverCase === 'voice-barge-in' ? { ...workload, triggerStage: null } : workload,
+    )
+    expect(validateWorkloadCatalog(broken)).toContainEqual(expect.stringContaining('must declare a trigger stage'))
+  })
+
+  it('rejects a trigger stage on a non-barge-in driver', () => {
+    const broken = WORKLOAD_CATALOG.map((workload, index) =>
+      index === 0 ? { ...workload, triggerStage: 'tts' as const } : workload,
+    )
+    expect(validateWorkloadCatalog(broken)).toContainEqual(expect.stringContaining('for non-barge-in driver'))
+  })
+
+  it('rejects a driver case its runner family cannot execute', () => {
+    const broken = WORKLOAD_CATALOG.map((workload, index) =>
+      index === 0 ? { ...workload, driverCase: 'voice-nominal' as const } : workload,
+    )
+    expect(validateWorkloadCatalog(broken)).toContainEqual(expect.stringContaining('but runner'))
+  })
+
+  it('rejects a full suite that drops a cancellation stage', () => {
+    const broken = WORKLOAD_CATALOG.filter(workload => workload.workloadId !== 'barge-in-during-tts')
+    expect(validateWorkloadCatalog(broken)).toContainEqual(expect.stringContaining('barge-in stage tts exactly once'))
   })
 })
 
@@ -125,7 +180,7 @@ describe('measurement record schema', () => {
   })
 
   it('rejects a contract id from a different family', () => {
-    expect(() => v.parse(measurementRecordSchema, validRecord({ contractId: 'performance-v2' }))).toThrow()
+    expect(() => v.parse(measurementRecordSchema, validRecord({ contractId: 'performance-v1' }))).toThrow()
   })
 })
 
@@ -180,7 +235,7 @@ describe('run manifest schema', () => {
       contractDigest: WORKLOAD_CATALOG_DIGEST,
       commitSha: 'a'.repeat(40),
       dirtyWorktree: false,
-      suite: 'performance-v1',
+      suite: 'performance-v2',
       seed: PERFORMANCE_DEFAULT_SEED,
       environment: {
         nodeVersion: 'v24.0.0',
@@ -196,6 +251,7 @@ describe('run manifest schema', () => {
       timerSource: 'performance.now',
       startedAt: '2026-08-06T00:00:00Z',
       completedAt: '2026-08-06T00:01:00Z',
+      workloadPlan: [{ workloadId: 'text-append', warmupCount: 2, sampleCount: 64, sampleCapacity: 256 }],
       workloadsCompleted: ['text-append'],
       importedLiveArtifactDigests: [],
       limitations: [],
@@ -205,6 +261,12 @@ describe('run manifest schema', () => {
 
   it('accepts a well-formed manifest without optional provenance digests', () => {
     expect(() => v.parse(runManifestSchema, validManifest())).not.toThrow()
+  })
+
+  it('requires the effective workload plan so sample completeness is checkable from artifacts', () => {
+    const withoutPlan = validManifest()
+    delete withoutPlan.workloadPlan
+    expect(() => v.parse(runManifestSchema, withoutPlan)).toThrow()
   })
 
   it('accepts optional threshold and price provenance digests', () => {

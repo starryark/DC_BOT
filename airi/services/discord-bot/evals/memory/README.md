@@ -93,9 +93,9 @@ approval.
 # smoke suite (credential-free; uses a temp output directory)
 pnpm -F @proj-airi/discord-bot memory:benchmark -- --suite smoke --seed 20260802
 
-# full performance-v1 suite (requires an explicit output directory outside the checkout)
+# full performance-v2 suite (requires an explicit output directory outside the checkout)
 pnpm -F @proj-airi/discord-bot memory:benchmark -- \
-  --suite performance-v1 \
+  --suite performance-v2 \
   --seed 20260802 \
   --output <safe-external-output-directory>
 ```
@@ -104,16 +104,24 @@ Options:
 
 | Flag | Description |
 |---|---|
-| `--suite smoke\|performance-v1` | Workload suite (default: `smoke`) |
+| `--suite smoke\|performance-v2` | Workload suite (default: `smoke`) |
 | `--seed <integer>` | Deterministic seed (default: `20260802`) |
 | `--warmup <integer>` | Override warmup count for every workload |
 | `--samples <integer>` | Override measured sample count for every workload |
 | `--sample-capacity <integer>` | Override reservoir sample capacity |
-| `--output <directory>` | Output directory (required for `performance-v1`) |
+| `--output <directory>` | Output directory (required for `performance-v2`) |
 | `--thresholds <file>` | Approved threshold document (provenance validated before runtime start) |
 | `--price-document <file>` | Approved price document (provenance validated before runtime start) |
 | `--import-live <file>` | Import a live artifact (repeatable) |
+| `--baseline <directory>` | Compare against a complete, correctness-clean `performance-v2` run |
 | `--keep-run-root` | Retain run roots for debugging |
+
+A run publishes six artifacts: `run-manifest.json`, `attempts.jsonl`,
+`run-findings.jsonl`, `measurements.jsonl`, `summary.json`, and `report.md`.
+`attempts.jsonl` carries one row per measured ordinal, so the published latency
+denominator can be reconciled with the configured sample count; together with
+`run-findings.jsonl` it makes the whole-run disposition recomputable from
+artifacts alone. See the runbook for the verification procedure.
 
 Exit codes: `0` complete, correctness-clean; `2` invalid CLI/contract/threshold/
 price/provenance; `3` correctness or approved-threshold failure; `4` unsafe

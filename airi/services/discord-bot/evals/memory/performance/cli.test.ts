@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, rmSync, writeFileSync, readFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
@@ -63,8 +63,8 @@ describe('benchmark CLI invalid input', () => {
     expect(result.code).toBe(2)
   })
 
-  it('rejects performance-v1 without an explicit --output with exit 2', async () => {
-    const result = await runCli(['--suite', 'performance-v1', '--seed', '1'])
+  it('rejects performance-v2 without an explicit --output with exit 2', async () => {
+    const result = await runCli(['--suite', 'performance-v2', '--seed', '1'])
     expect(result.code).toBe(2)
   })
 
@@ -121,8 +121,8 @@ describe('benchmark CLI integration and evidence loading', () => {
 
   const validThreshold = {
     format: 'performance-thresholds',
-    schemaVersion: 1,
-    contractId: 'performance-v1',
+    schemaVersion: 2,
+    contractId: 'performance-v2',
     contractDigest: WORKLOAD_CATALOG_DIGEST,
     source: 'test',
     approver: 'test-approver',
@@ -136,7 +136,7 @@ describe('benchmark CLI integration and evidence loading', () => {
         unit: 'milliseconds',
         comparator: 'lte',
         bound: 100000,
-      }
+      },
     ],
   }
 

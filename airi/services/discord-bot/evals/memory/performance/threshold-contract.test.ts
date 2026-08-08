@@ -11,8 +11,8 @@ import {
 describe('threshold-contract', () => {
   const validDocument = {
     format: 'performance-thresholds',
-    schemaVersion: 1,
-    contractId: 'performance-v1',
+    schemaVersion: 2,
+    contractId: 'performance-v2',
     contractDigest: '0000000000000000000000000000000000000000000000000000000000000000',
     source: 'test',
     approver: 'test-approver',
@@ -44,7 +44,9 @@ describe('threshold-contract', () => {
       runner: 'runtime',
       operation: 'test',
       role: 'active',
-      suites: ['performance-v1'],
+      driverCase: 'runtime-operation',
+      triggerStage: null,
+      suites: ['performance-v2'],
       warmupCount: 1,
       sampleCount: 1,
       sampleCapacity: 1,
@@ -56,8 +58,8 @@ describe('threshold-contract', () => {
   ]
 
   const baseMeasurement: MeasurementRecord = {
-    schemaVersion: 1,
-    contractId: 'performance-v1',
+    schemaVersion: 2,
+    contractId: 'performance-v2',
     contractDigest: '0000000000000000000000000000000000000000000000000000000000000000',
     workloadId: 'test-workload',
     metricId: 'test-metric',
@@ -75,7 +77,7 @@ describe('threshold-contract', () => {
 
   it('parses a valid document and generates a stable digest', () => {
     const parsed = parsePerformanceThresholdDocument(validDocument)
-    expect(parsed.contractId).toBe('performance-v1')
+    expect(parsed.contractId).toBe('performance-v2')
     const digest = performanceThresholdDocumentDigest(parsed)
     expect(digest).toMatch(/^[0-9a-f]{64}$/)
   })
