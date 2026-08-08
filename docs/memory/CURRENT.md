@@ -89,6 +89,14 @@ degraded, spool, summary, extraction, lexical, and semantic capabilities remain
 gated and are not advertised as operational. Evidence is recorded in
 `docs/memory/evidence/g8-functional-baseline-2026-08-06.md`.
 
+### G8 deterministic performance baseline (IMP-803)
+
+IMP-803 deterministic performance baseline recorded for the active profile at
+`a215840bfc366d4ae68f8dc4c09fb86c34dded19` using contract digest
+`c403dd7781fdd28c214c65010d1f36fcbb4a68c9aa849d6b7dfb2b8624e959c6` and
+seed `20260802` (run `bench-2026-08-07T1903-a215840b`). The host environment was `win32 x64` running Node `v24.14.0`.
+The disposition was `correctness_clean_measured_not_evaluated`. **This result does not mean G8 passed or deployment approved.**
+
 ## Schema and rollout
 
 - Latest SQLite schema: v8.
