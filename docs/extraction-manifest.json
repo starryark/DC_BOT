@@ -1562,5 +1562,14 @@
       "source": "services/discord-bot/src/memory/program-docs.test.ts",
       "reason": "Checks DC_BOT historical program docs, release status and backlog; those remain owned by the original repository."
     }
+  ],
+  "voiceModelWorkingTreeDirty": true,
+  "voiceModelReferenceNote": "The reviewed Voice_Model checkout contains work in progress beyond its recorded HEAD; its files were read but not copied or changed.",
+  "adaptations": [
+    "Moved service source, scripts, and evals to the project root and corrected repository/character paths.",
+    "Retained seven internal packages with source exports and pinned former catalog dependencies to locally recorded lockfile versions.",
+    "Removed unused service dependencies and unrelated historical program-document governance test.",
+    "Retained shared-chat patch and AIRI software attribution.",
+    "Created independent pnpm lockfile, validation commands, launch shortcut, and architecture handoff."
   ]
 }

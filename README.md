@@ -47,6 +47,7 @@ and use `/leave` when finished. `/voice-test` checks TTS and playback.
 | `docs/deep-research-report.md` | The supplied architecture research, preserved as a reference snapshot |
 | `docs/voice-model-integration.md` | External voice-model location, ownership boundary, and remaining integration work |
 | `docs/extraction-manifest.json` | Source revisions and copied-file provenance |
+| `docs/validation.md` | Extraction checks and the limits of offline validation |
 
 Shared packages keep their original names to preserve imports. They expose
 TypeScript source to `tsx` and Vitest, so no AIRI build, frontend toolchain,

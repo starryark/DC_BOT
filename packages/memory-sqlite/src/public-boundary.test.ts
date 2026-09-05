@@ -13,7 +13,7 @@ describe('memory-sqlite public authority boundary', () => {
   })
 
   it('keeps Discord runtime free of direct SQLite construction and internal openers', () => {
-    const runtimeRoot = fileURLToPath(new URL('../../../services/discord-bot/src/', import.meta.url))
+    const runtimeRoot = fileURLToPath(new URL('../../../src/', import.meta.url))
     const files: string[] = []
     const visit = (directory: string): void => {
       for (const entry of readdirSync(directory)) {

@@ -16,7 +16,7 @@ import { describe, expect, it } from 'vitest'
  */
 
 const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const AIRI_ROOT = resolve(PACKAGE_ROOT, '../..')
+const PROJECT_ROOT = resolve(PACKAGE_ROOT, '../..')
 
 /**
  * Import specifiers this package may never reach for.
@@ -65,7 +65,7 @@ describe('memory-domain dependency direction (AC-003)', () => {
       for (const specifier of importSpecifiers(source)) {
         const forbidden = FORBIDDEN_IMPORT_PATTERNS.find(rule => rule.pattern.test(specifier))
         if (forbidden)
-          violations.push(`${relative(AIRI_ROOT, file)} imports "${specifier}" — ${forbidden.why}`)
+          violations.push(`${relative(PROJECT_ROOT, file)} imports "${specifier}" — ${forbidden.why}`)
       }
     }
     expect(violations).toEqual([])
@@ -120,7 +120,7 @@ const SINGLY_OWNED_CONTRACTS: readonly string[] = Object.freeze([
 ])
 
 describe('no shadow contracts in the Discord service (AC-002)', () => {
-  const serviceFiles = globSync('services/discord-bot/src/**/*.ts', { cwd: AIRI_ROOT, absolute: true })
+  const serviceFiles = globSync('src/**/*.ts', { cwd: PROJECT_ROOT, absolute: true })
 
   it('finds the Discord service sources', () => {
     expect(serviceFiles.length).toBeGreaterThan(10)
@@ -130,7 +130,7 @@ describe('no shadow contracts in the Discord service (AC-002)', () => {
     const declaration = new RegExp(`\\bexport\\s+(?:interface|type|class|enum)\\s+${contract}\\b`)
     const offenders = serviceFiles
       .filter(file => declaration.test(readFileSync(file, 'utf8')))
-      .map(file => relative(AIRI_ROOT, file))
+      .map(file => relative(PROJECT_ROOT, file))
     expect(offenders).toEqual([])
   })
 })
