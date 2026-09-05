@@ -1,0 +1,252 @@
+{
+  "format": 1,
+  "datasetVersion": "1.0.0",
+  "description": "G8-1 active-profile functional baseline scenario matrix",
+  "characterId": "eval-character",
+  "activeProfile": "active",
+  "enabledCapabilities": [
+    "durableEvents",
+    "actorSnapshots",
+    "roomBindings",
+    "sharedRecentContext",
+    "deliveryLifecycle"
+  ],
+  "scenarios": [
+    {
+      "scenarioId": "ID-001",
+      "category": "identity",
+      "title": "Two people with the same visible name remain distinct",
+      "suites": ["smoke", "active-v1"],
+      "assertions": [
+        { "id": "ID-001-A", "severity": "zero_tolerance", "description": "same-name speakers resolve to distinct durable persons" }
+      ],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "supported" }
+    },
+    {
+      "scenarioId": "ID-002",
+      "category": "identity",
+      "title": "A presentation rename preserves continuity and historical evidence",
+      "suites": ["active-v1"],
+      "assertions": [
+        { "id": "ID-002-A", "severity": "zero_tolerance", "description": "current display updates without creating a new person" },
+        { "id": "ID-002-B", "severity": "standard", "description": "historical events remain attributable to the same person" }
+      ],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "supported" }
+    },
+    {
+      "scenarioId": "AUTH-001",
+      "category": "authorization",
+      "title": "Guild-scoped data never enters another guild context or export",
+      "suites": ["smoke", "active-v1"],
+      "assertions": [
+        { "id": "AUTH-001-A", "severity": "zero_tolerance", "description": "cross-guild context and export are empty of the other guild" }
+      ],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "supported" }
+    },
+    {
+      "scenarioId": "AUTH-002",
+      "category": "authorization",
+      "title": "Logical-room and unbound-room isolation fail closed",
+      "suites": ["active-v1"],
+      "assertions": [
+        { "id": "AUTH-002-A", "severity": "zero_tolerance", "description": "a room without scope grant denies context reads" }
+      ],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "supported" }
+    },
+    {
+      "scenarioId": "AUTH-003",
+      "category": "authorization",
+      "title": "Character-scoped data never enters another character context",
+      "suites": ["active-v1"],
+      "assertions": [
+        { "id": "AUTH-003-A", "severity": "zero_tolerance", "description": "a second character sees no first-character context" }
+      ],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "supported" }
+    },
+    {
+      "scenarioId": "AUTH-004",
+      "category": "authorization",
+      "title": "Synthetic DM authority scope stays isolated from guild scope",
+      "suites": ["active-v1"],
+      "assertions": [
+        { "id": "AUTH-004-A", "severity": "standard", "description": "DM authority does not read guild context" }
+      ],
+      "expectation": { "outcome": "unverified", "capabilityDisposition": "supported" },
+      "limitations": ["live DM transport is explicitly unverified; only the authority scope is exercised"]
+    },
+    {
+      "scenarioId": "ATTR-001",
+      "category": "attribution",
+      "title": "Multi-speaker input preserves each actor and the complete cause set",
+      "suites": ["active-v1"],
+      "assertions": [
+        { "id": "ATTR-001-A", "severity": "zero_tolerance", "description": "each speaker resolves to a distinct attributed actor" },
+        { "id": "ATTR-001-B", "severity": "zero_tolerance", "description": "the generation cause set names every triggering event" }
+      ],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "supported" }
+    },
+    {
+      "scenarioId": "CONT-001",
+      "category": "context",
+      "title": "Text input is eligible for later voice context in the same room",
+      "suites": ["active-v1"],
+      "assertions": [
+        { "id": "CONT-001-A", "severity": "standard", "description": "a later voice-context manifest includes the text event" }
+      ],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "supported" }
+    },
+    {
+      "scenarioId": "CONT-002",
+      "category": "context",
+      "title": "Voice input is eligible for later text context in the same room",
+      "suites": ["active-v1"],
+      "assertions": [
+        { "id": "CONT-002-A", "severity": "standard", "description": "a later text-context manifest includes the voice event" }
+      ],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "supported" }
+    },
+    {
+      "scenarioId": "DELIV-001",
+      "category": "delivery",
+      "title": "Completed eligible output enters context with exact manifest identity",
+      "suites": ["active-v1"],
+      "assertions": [
+        { "id": "DELIV-001-A", "severity": "standard", "description": "delivered segment ids in context equal the manifest ids" }
+      ],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "supported" }
+    },
+    {
+      "scenarioId": "DELIV-002",
+      "category": "delivery",
+      "title": "Partial, failed, and unknown-after-crash output never enters context",
+      "suites": ["smoke", "active-v1"],
+      "assertions": [
+        { "id": "DELIV-002-A", "severity": "zero_tolerance", "description": "partially delivered segment is excluded from completed context" },
+        { "id": "DELIV-002-B", "severity": "zero_tolerance", "description": "failed delivery is excluded from completed context" },
+        { "id": "DELIV-002-C", "severity": "zero_tolerance", "description": "unknown-after-crash delivery is excluded from completed context" }
+      ],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "supported" }
+    },
+    {
+      "scenarioId": "IDEMP-001",
+      "category": "idempotency",
+      "title": "Duplicate idempotency keys do not duplicate durable records",
+      "suites": ["active-v1"],
+      "assertions": [
+        { "id": "IDEMP-001-A", "severity": "standard", "description": "duplicate event append is deduplicated" },
+        { "id": "IDEMP-001-B", "severity": "standard", "description": "duplicate generation begin is deduplicated" },
+        { "id": "IDEMP-001-C", "severity": "standard", "description": "duplicate delivery begin is deduplicated" }
+      ],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "supported" }
+    },
+    {
+      "scenarioId": "RESTART-001",
+      "category": "restart",
+      "title": "Close and reopen the same root preserves context and deletion state",
+      "suites": ["smoke", "active-v1"],
+      "assertions": [
+        { "id": "RESTART-001-A", "severity": "standard", "description": "reopened context matches pre-close context" },
+        { "id": "RESTART-001-B", "severity": "zero_tolerance", "description": "forgotten data stays absent after reopen" }
+      ],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "supported" }
+    },
+    {
+      "scenarioId": "CONTEXT-001",
+      "category": "contextBudget",
+      "title": "Item and character budgets select the expected manifest and truncation",
+      "suites": ["active-v1"],
+      "assertions": [
+        { "id": "CONTEXT-001-A", "severity": "standard", "description": "item budget caps the selected manifest length" },
+        { "id": "CONTEXT-001-B", "severity": "standard", "description": "character budget sets truncation as expected" }
+      ],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "supported" }
+    },
+    {
+      "scenarioId": "PROMPT-001",
+      "category": "promptSafety",
+      "title": "Role markers, mass mentions, bidi, and malicious aliases stay untrusted",
+      "suites": ["smoke", "active-v1"],
+      "assertions": [
+        { "id": "PROMPT-001-A", "severity": "zero_tolerance", "description": "payload serializes as length-prefixed data with no chat role" }
+      ],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "supported" }
+    },
+    {
+      "scenarioId": "PRIV-001",
+      "category": "privacy",
+      "title": "Status, show, and export expose only requester authorized room data",
+      "suites": ["active-v1"],
+      "assertions": [
+        { "id": "PRIV-001-A", "severity": "zero_tolerance", "description": "export carries only the requester room facts" }
+      ],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "supported" }
+    },
+    {
+      "scenarioId": "PRIV-002",
+      "category": "privacy",
+      "title": "Forget then close/reopen never re-exposes deleted data",
+      "suites": ["smoke", "active-v1"],
+      "assertions": [
+        { "id": "PRIV-002-A", "severity": "zero_tolerance", "description": "forgotten data is absent from context after reopen" },
+        { "id": "PRIV-002-B", "severity": "zero_tolerance", "description": "forgotten data is absent from export after reopen" }
+      ],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "supported" }
+    },
+    {
+      "scenarioId": "CAP-001",
+      "category": "capability",
+      "title": "Remember and correct return disabled-capability outcome with no mutation",
+      "suites": ["smoke", "active-v1"],
+      "assertions": [
+        { "id": "CAP-001-A", "severity": "standard", "description": "remember and correct return capability_disabled and write nothing" }
+      ],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "unsupported", "passOnRefusal": true }
+    },
+    {
+      "scenarioId": "CAP-002",
+      "category": "capability",
+      "title": "Deferred retrieval categories are explicitly classified",
+      "suites": ["active-v1"],
+      "assertions": [
+        { "id": "CAP-002-A", "severity": "standard", "description": "every deferred category has an explicit disposition" }
+      ],
+      "expectation": { "outcome": "unsupported", "capabilityDisposition": "unsupported" },
+      "limitations": [
+        "vector, graph, remote, degraded, spool, summary, extraction, lexical, and semantic are unsupported in the active profile"
+      ]
+    },
+    {
+      "scenarioId": "LIVE-001",
+      "category": "live",
+      "title": "Live Discord DM ingress and delivery",
+      "suites": ["active-v1"],
+      "assertions": [
+        { "id": "LIVE-001-A", "severity": "standard", "description": "requires live transport evidence outside this harness" }
+      ],
+      "expectation": { "outcome": "unverified", "capabilityDisposition": "unsupported" },
+      "limitations": ["live Discord DM transport is not exercised by this deterministic harness"]
+    },
+    {
+      "scenarioId": "LIVE-002",
+      "category": "live",
+      "title": "Acoustic barge-in cancellation under shipped configuration",
+      "suites": ["active-v1"],
+      "assertions": [
+        { "id": "LIVE-002-A", "severity": "standard", "description": "requires acoustic evidence outside G8-1" }
+      ],
+      "expectation": { "outcome": "unverified", "capabilityDisposition": "unsupported" },
+      "limitations": ["acoustic barge-in is outside the G8-1 scope"]
+    },
+    {
+      "scenarioId": "LIVE-003",
+      "category": "live",
+      "title": "Provider latency, cost, and deployment-host performance",
+      "suites": ["active-v1"],
+      "assertions": [
+        { "id": "LIVE-003-A", "severity": "standard", "description": "requires provider and deployment evidence outside this harness" }
+      ],
+      "expectation": { "outcome": "unverified", "capabilityDisposition": "unsupported" },
+      "limitations": ["provider latency, cost, and host performance are not measured here"]
+    }
+  ]
+}

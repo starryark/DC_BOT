@@ -1,0 +1,1566 @@
+{
+  "created": "2026-09-05",
+  "source": "../DC_BOT/airi",
+  "sourceCommit": "abcb9031f33e1b8826a6003dd5c1a4295332a965",
+  "voiceModelPath": "C:/Users/lyang/Voice_Model/repo",
+  "voiceModelCommit": "d6b3680f28440afdd2b2eb8944b360b72d1f5635",
+  "packages": [
+    "discord-avatar-protocol",
+    "memory-domain",
+    "memory-sqlite",
+    "server-sdk",
+    "server-shared",
+    "better-ws",
+    "plugin-protocol"
+  ],
+  "removedUnusedDependencies": [
+    "@huggingface/transformers",
+    "@proj-airi/audio",
+    "@xsai-ext/providers",
+    "@xsai/generate-speech",
+    "@xsai/generate-text",
+    "@xsai/generate-transcription",
+    "@xsai/shared-chat",
+    "wavefile"
+  ],
+  "files": [
+    {
+      "source": "services/discord-bot/.config",
+      "destination": ".config"
+    },
+    {
+      "source": "services/discord-bot/.env.example",
+      "destination": ".env.example"
+    },
+    {
+      "source": "services/discord-bot/config/gpt-sovits-voice-profiles.example.json",
+      "destination": "config/gpt-sovits-voice-profiles.example.json"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/README.md",
+      "destination": "evals/memory/README.md"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/cli.test.ts",
+      "destination": "evals/memory/cli.test.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/contracts.ts",
+      "destination": "evals/memory/contracts.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/dataset.test.ts",
+      "destination": "evals/memory/dataset.test.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/dataset.ts",
+      "destination": "evals/memory/dataset.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/datasets/active-v1.json",
+      "destination": "evals/memory/datasets/active-v1.json"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/datasets/multilingual-v1.json",
+      "destination": "evals/memory/datasets/multilingual-v1.json"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/g8/qualification-cli.test.ts",
+      "destination": "evals/memory/g8/qualification-cli.test.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/g8/qualification-fixtures.ts",
+      "destination": "evals/memory/g8/qualification-fixtures.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/g8/qualification.test.ts",
+      "destination": "evals/memory/g8/qualification.test.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/g8/qualification.ts",
+      "destination": "evals/memory/g8/qualification.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/oracles/authorization.ts",
+      "destination": "evals/memory/oracles/authorization.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/oracles/context.ts",
+      "destination": "evals/memory/oracles/context.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/oracles/delivery.ts",
+      "destination": "evals/memory/oracles/delivery.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/oracles/identity.ts",
+      "destination": "evals/memory/oracles/identity.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/oracles/oracles.test.ts",
+      "destination": "evals/memory/oracles/oracles.test.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/oracles/privacy.ts",
+      "destination": "evals/memory/oracles/privacy.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/performance/baseline.test.ts",
+      "destination": "evals/memory/performance/baseline.test.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/performance/baseline.ts",
+      "destination": "evals/memory/performance/baseline.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/performance/brain-usage-capture.test.ts",
+      "destination": "evals/memory/performance/brain-usage-capture.test.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/performance/brain-usage-capture.ts",
+      "destination": "evals/memory/performance/brain-usage-capture.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/performance/cli.test.ts",
+      "destination": "evals/memory/performance/cli.test.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/performance/contracts.test.ts",
+      "destination": "evals/memory/performance/contracts.test.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/performance/contracts.ts",
+      "destination": "evals/memory/performance/contracts.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/performance/controller-runner.test.ts",
+      "destination": "evals/memory/performance/controller-runner.test.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/performance/controller-runner.ts",
+      "destination": "evals/memory/performance/controller-runner.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/performance/cost-evidence.test.ts",
+      "destination": "evals/memory/performance/cost-evidence.test.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/performance/cost-evidence.ts",
+      "destination": "evals/memory/performance/cost-evidence.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/performance/environment.test.ts",
+      "destination": "evals/memory/performance/environment.test.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/performance/environment.ts",
+      "destination": "evals/memory/performance/environment.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/performance/fixtures/barrier.ts",
+      "destination": "evals/memory/performance/fixtures/barrier.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/performance/fixtures/text.ts",
+      "destination": "evals/memory/performance/fixtures/text.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/performance/fixtures/voice.ts",
+      "destination": "evals/memory/performance/fixtures/voice.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/performance/live-artifact.test.ts",
+      "destination": "evals/memory/performance/live-artifact.test.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/performance/live-artifact.ts",
+      "destination": "evals/memory/performance/live-artifact.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/performance/price-contract.test.ts",
+      "destination": "evals/memory/performance/price-contract.test.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/performance/price-contract.ts",
+      "destination": "evals/memory/performance/price-contract.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/performance/provider-observability.test.ts",
+      "destination": "evals/memory/performance/provider-observability.test.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/performance/provider-observability.ts",
+      "destination": "evals/memory/performance/provider-observability.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/performance/report.test.ts",
+      "destination": "evals/memory/performance/report.test.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/performance/report.ts",
+      "destination": "evals/memory/performance/report.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/performance/run-findings.ts",
+      "destination": "evals/memory/performance/run-findings.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/performance/runtime-runner.test.ts",
+      "destination": "evals/memory/performance/runtime-runner.test.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/performance/runtime-runner.ts",
+      "destination": "evals/memory/performance/runtime-runner.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/performance/sample-results.test.ts",
+      "destination": "evals/memory/performance/sample-results.test.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/performance/sample-results.ts",
+      "destination": "evals/memory/performance/sample-results.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/performance/threshold-contract.test.ts",
+      "destination": "evals/memory/performance/threshold-contract.test.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/performance/threshold-contract.ts",
+      "destination": "evals/memory/performance/threshold-contract.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/performance/voice-sample-diagnostics.test.ts",
+      "destination": "evals/memory/performance/voice-sample-diagnostics.test.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/performance/voice-sample-diagnostics.ts",
+      "destination": "evals/memory/performance/voice-sample-diagnostics.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/performance/workloads.test.ts",
+      "destination": "evals/memory/performance/workloads.test.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/performance/workloads.ts",
+      "destination": "evals/memory/performance/workloads.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/redaction.ts",
+      "destination": "evals/memory/redaction.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/report.test.ts",
+      "destination": "evals/memory/report.test.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/report.ts",
+      "destination": "evals/memory/report.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/retrieval/metrics.test.ts",
+      "destination": "evals/memory/retrieval/metrics.test.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/retrieval/metrics.ts",
+      "destination": "evals/memory/retrieval/metrics.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/retrieval/policy.test.ts",
+      "destination": "evals/memory/retrieval/policy.test.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/retrieval/policy.ts",
+      "destination": "evals/memory/retrieval/policy.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/retrieval/qualification-cli.test.ts",
+      "destination": "evals/memory/retrieval/qualification-cli.test.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/retrieval/qualification-fixtures.ts",
+      "destination": "evals/memory/retrieval/qualification-fixtures.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/retrieval/qualification.test.ts",
+      "destination": "evals/memory/retrieval/qualification.test.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/retrieval/qualification.ts",
+      "destination": "evals/memory/retrieval/qualification.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/retrieval/report.test.ts",
+      "destination": "evals/memory/retrieval/report.test.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/retrieval/report.ts",
+      "destination": "evals/memory/retrieval/report.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/runner.test.ts",
+      "destination": "evals/memory/runner.test.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/runner.ts",
+      "destination": "evals/memory/runner.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/runtime-adapter.test.ts",
+      "destination": "evals/memory/runtime-adapter.test.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/runtime-adapter.ts",
+      "destination": "evals/memory/runtime-adapter.ts"
+    },
+    {
+      "source": "services/discord-bot/evals/memory/thresholds.ts",
+      "destination": "evals/memory/thresholds.ts"
+    },
+    {
+      "source": "services/discord-bot/package.json",
+      "destination": "package.json"
+    },
+    {
+      "source": "services/discord-bot/scripts/benchmark-voice.ts",
+      "destination": "scripts/benchmark-voice.ts"
+    },
+    {
+      "source": "services/discord-bot/scripts/memory/active-soak-stages.ts",
+      "destination": "scripts/memory/active-soak-stages.ts"
+    },
+    {
+      "source": "services/discord-bot/scripts/memory/active-soak.ts",
+      "destination": "scripts/memory/active-soak.ts"
+    },
+    {
+      "source": "services/discord-bot/scripts/memory/baseline.ts",
+      "destination": "scripts/memory/baseline.ts"
+    },
+    {
+      "source": "services/discord-bot/scripts/memory/benchmark.ts",
+      "destination": "scripts/memory/benchmark.ts"
+    },
+    {
+      "source": "services/discord-bot/scripts/memory/capture-brain-usage.ts",
+      "destination": "scripts/memory/capture-brain-usage.ts"
+    },
+    {
+      "source": "services/discord-bot/scripts/memory/evaluate.ts",
+      "destination": "scripts/memory/evaluate.ts"
+    },
+    {
+      "source": "services/discord-bot/scripts/memory/index.ts",
+      "destination": "scripts/memory/index.ts"
+    },
+    {
+      "source": "services/discord-bot/scripts/memory/output-safety.ts",
+      "destination": "scripts/memory/output-safety.ts"
+    },
+    {
+      "source": "services/discord-bot/scripts/memory/qualify-g8.ts",
+      "destination": "scripts/memory/qualify-g8.ts"
+    },
+    {
+      "source": "services/discord-bot/scripts/memory/qualify-retrieval.ts",
+      "destination": "scripts/memory/qualify-retrieval.ts"
+    },
+    {
+      "source": "services/discord-bot/src/adapters/airi-adapter.test.ts",
+      "destination": "src/adapters/airi-adapter.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/adapters/airi-adapter.ts",
+      "destination": "src/adapters/airi-adapter.ts"
+    },
+    {
+      "source": "services/discord-bot/src/avatar/publisher.test.ts",
+      "destination": "src/avatar/publisher.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/avatar/publisher.ts",
+      "destination": "src/avatar/publisher.ts"
+    },
+    {
+      "source": "services/discord-bot/src/bots/discord/commands/avatar-state.ts",
+      "destination": "src/bots/discord/commands/avatar-state.ts"
+    },
+    {
+      "source": "services/discord-bot/src/bots/discord/commands/index.ts",
+      "destination": "src/bots/discord/commands/index.ts"
+    },
+    {
+      "source": "services/discord-bot/src/bots/discord/commands/memory.ts",
+      "destination": "src/bots/discord/commands/memory.ts"
+    },
+    {
+      "source": "services/discord-bot/src/bots/discord/commands/ping.ts",
+      "destination": "src/bots/discord/commands/ping.ts"
+    },
+    {
+      "source": "services/discord-bot/src/bots/discord/commands/summon.ts",
+      "destination": "src/bots/discord/commands/summon.ts"
+    },
+    {
+      "source": "services/discord-bot/src/bots/discord/commands/voice-test.ts",
+      "destination": "src/bots/discord/commands/voice-test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/character/card-schema.test.ts",
+      "destination": "src/character/card-schema.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/character/card-schema.ts",
+      "destination": "src/character/card-schema.ts"
+    },
+    {
+      "source": "services/discord-bot/src/character/character-registry.test.ts",
+      "destination": "src/character/character-registry.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/character/character-registry.ts",
+      "destination": "src/character/character-registry.ts"
+    },
+    {
+      "source": "services/discord-bot/src/character/output-protocol/act-v1-parser.test.ts",
+      "destination": "src/character/output-protocol/act-v1-parser.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/character/output-protocol/act-v1-parser.ts",
+      "destination": "src/character/output-protocol/act-v1-parser.ts"
+    },
+    {
+      "source": "services/discord-bot/src/character/prompt-compiler.test.ts",
+      "destination": "src/character/prompt-compiler.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/character/prompt-compiler.ts",
+      "destination": "src/character/prompt-compiler.ts"
+    },
+    {
+      "source": "services/discord-bot/src/character/types.ts",
+      "destination": "src/character/types.ts"
+    },
+    {
+      "source": "services/discord-bot/src/config.test.ts",
+      "destination": "src/config.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/config.ts",
+      "destination": "src/config.ts"
+    },
+    {
+      "source": "services/discord-bot/src/constants/audio.ts",
+      "destination": "src/constants/audio.ts"
+    },
+    {
+      "source": "services/discord-bot/src/index.ts",
+      "destination": "src/index.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/active-soak-cli.test.ts",
+      "destination": "src/memory/active-soak-cli.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/active-soak.test.ts",
+      "destination": "src/memory/active-soak.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/active-soak.ts",
+      "destination": "src/memory/active-soak.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/context-assembler.ts",
+      "destination": "src/memory/context-assembler.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/context-authority.ts",
+      "destination": "src/memory/context-authority.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/degraded-mode.test.ts",
+      "destination": "src/memory/degraded-mode.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/delivery-fault-injection.test.ts",
+      "destination": "src/memory/delivery-fault-injection.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/delivery-reconciliation.test.ts",
+      "destination": "src/memory/delivery-reconciliation.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/delivery-reconciliation.ts",
+      "destination": "src/memory/delivery-reconciliation.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/discord-actor-snapshot.test.ts",
+      "destination": "src/memory/discord-actor-snapshot.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/discord-actor-snapshot.ts",
+      "destination": "src/memory/discord-actor-snapshot.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/discord-member-state-posture.test.ts",
+      "destination": "src/memory/discord-member-state-posture.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/discord-member-state-posture.ts",
+      "destination": "src/memory/discord-member-state-posture.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/feature-flags.test.ts",
+      "destination": "src/memory/feature-flags.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/feature-flags.ts",
+      "destination": "src/memory/feature-flags.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/fixtures/degraded-spool-child.ts",
+      "destination": "src/memory/fixtures/degraded-spool-child.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/fixtures/delivery-crash-child.ts",
+      "destination": "src/memory/fixtures/delivery-crash-child.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/g5-cross-modal-continuity.test.ts",
+      "destination": "src/memory/g5-cross-modal-continuity.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/g5-shared-facade.test.ts",
+      "destination": "src/memory/g5-shared-facade.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/g6-context-assembly.test.ts",
+      "destination": "src/memory/g6-context-assembly.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/g7-external-storage.test.ts",
+      "destination": "src/memory/g7-external-storage.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/g7-privacy-controls.test.ts",
+      "destination": "src/memory/g7-privacy-controls.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/ingress-authority.ts",
+      "destination": "src/memory/ingress-authority.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/intelligence-worker.ts",
+      "destination": "src/memory/intelligence-worker.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/privacy-authority.ts",
+      "destination": "src/memory/privacy-authority.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/privacy-completeness.test.ts",
+      "destination": "src/memory/privacy-completeness.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/privacy-completeness.ts",
+      "destination": "src/memory/privacy-completeness.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/profile.test.ts",
+      "destination": "src/memory/profile.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/profile.ts",
+      "destination": "src/memory/profile.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/prompt-context.test.ts",
+      "destination": "src/memory/prompt-context.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/prompt-context.ts",
+      "destination": "src/memory/prompt-context.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/room-bindings.test.ts",
+      "destination": "src/memory/room-bindings.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/room-bindings.ts",
+      "destination": "src/memory/room-bindings.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/runtime-paths.test.ts",
+      "destination": "src/memory/runtime-paths.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/runtime-paths.ts",
+      "destination": "src/memory/runtime-paths.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/runtime.test.ts",
+      "destination": "src/memory/runtime.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/runtime.ts",
+      "destination": "src/memory/runtime.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/spool-reconciliation.test.ts",
+      "destination": "src/memory/spool-reconciliation.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/spool-reconciliation.ts",
+      "destination": "src/memory/spool-reconciliation.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/sqlite-boundary.test.ts",
+      "destination": "src/memory/sqlite-boundary.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/text-memory-adapter.test.ts",
+      "destination": "src/memory/text-memory-adapter.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/text-memory-adapter.ts",
+      "destination": "src/memory/text-memory-adapter.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/text-observer.ts",
+      "destination": "src/memory/text-observer.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/trace-authority.ts",
+      "destination": "src/memory/trace-authority.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/voice-memory-adapter.test.ts",
+      "destination": "src/memory/voice-memory-adapter.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/voice-memory-adapter.ts",
+      "destination": "src/memory/voice-memory-adapter.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/write-spool.test.ts",
+      "destination": "src/memory/write-spool.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/memory/write-spool.ts",
+      "destination": "src/memory/write-spool.ts"
+    },
+    {
+      "source": "services/discord-bot/src/orchestration/conversation-controller.test.ts",
+      "destination": "src/orchestration/conversation-controller.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/orchestration/conversation-controller.ts",
+      "destination": "src/orchestration/conversation-controller.ts"
+    },
+    {
+      "source": "services/discord-bot/src/orchestration/conversation-floor-coordinator.test.ts",
+      "destination": "src/orchestration/conversation-floor-coordinator.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/orchestration/conversation-floor-coordinator.ts",
+      "destination": "src/orchestration/conversation-floor-coordinator.ts"
+    },
+    {
+      "source": "services/discord-bot/src/orchestration/conversation-floor.test.ts",
+      "destination": "src/orchestration/conversation-floor.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/orchestration/conversation-floor.ts",
+      "destination": "src/orchestration/conversation-floor.ts"
+    },
+    {
+      "source": "services/discord-bot/src/orchestration/conversation-state.test.ts",
+      "destination": "src/orchestration/conversation-state.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/orchestration/conversation-state.ts",
+      "destination": "src/orchestration/conversation-state.ts"
+    },
+    {
+      "source": "services/discord-bot/src/orchestration/events.test.ts",
+      "destination": "src/orchestration/events.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/orchestration/events.ts",
+      "destination": "src/orchestration/events.ts"
+    },
+    {
+      "source": "services/discord-bot/src/orchestration/group-turn-builder.ts",
+      "destination": "src/orchestration/group-turn-builder.ts"
+    },
+    {
+      "source": "services/discord-bot/src/orchestration/guild-session.ts",
+      "destination": "src/orchestration/guild-session.ts"
+    },
+    {
+      "source": "services/discord-bot/src/orchestration/input-understanding.test.ts",
+      "destination": "src/orchestration/input-understanding.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/orchestration/input-understanding.ts",
+      "destination": "src/orchestration/input-understanding.ts"
+    },
+    {
+      "source": "services/discord-bot/src/orchestration/mention-responder.test.ts",
+      "destination": "src/orchestration/mention-responder.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/orchestration/mention-responder.ts",
+      "destination": "src/orchestration/mention-responder.ts"
+    },
+    {
+      "source": "services/discord-bot/src/orchestration/output.ts",
+      "destination": "src/orchestration/output.ts"
+    },
+    {
+      "source": "services/discord-bot/src/orchestration/room-id.ts",
+      "destination": "src/orchestration/room-id.ts"
+    },
+    {
+      "source": "services/discord-bot/src/orchestration/room.test.ts",
+      "destination": "src/orchestration/room.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/orchestration/room.ts",
+      "destination": "src/orchestration/room.ts"
+    },
+    {
+      "source": "services/discord-bot/src/orchestration/speech-chunker.test.ts",
+      "destination": "src/orchestration/speech-chunker.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/orchestration/speech-chunker.ts",
+      "destination": "src/orchestration/speech-chunker.ts"
+    },
+    {
+      "source": "services/discord-bot/src/orchestration/speech-events.test.ts",
+      "destination": "src/orchestration/speech-events.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/orchestration/speech-events.ts",
+      "destination": "src/orchestration/speech-events.ts"
+    },
+    {
+      "source": "services/discord-bot/src/orchestration/speech-style-resolver.test.ts",
+      "destination": "src/orchestration/speech-style-resolver.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/orchestration/speech-style-resolver.ts",
+      "destination": "src/orchestration/speech-style-resolver.ts"
+    },
+    {
+      "source": "services/discord-bot/src/orchestration/style-aware-speech-chunker.test.ts",
+      "destination": "src/orchestration/style-aware-speech-chunker.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/orchestration/style-aware-speech-chunker.ts",
+      "destination": "src/orchestration/style-aware-speech-chunker.ts"
+    },
+    {
+      "source": "services/discord-bot/src/orchestration/transcript-filter.test.ts",
+      "destination": "src/orchestration/transcript-filter.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/orchestration/transcript-filter.ts",
+      "destination": "src/orchestration/transcript-filter.ts"
+    },
+    {
+      "source": "services/discord-bot/src/orchestration/tts-pipeline.test.ts",
+      "destination": "src/orchestration/tts-pipeline.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/orchestration/tts-pipeline.ts",
+      "destination": "src/orchestration/tts-pipeline.ts"
+    },
+    {
+      "source": "services/discord-bot/src/orchestration/turn-classifier.test.ts",
+      "destination": "src/orchestration/turn-classifier.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/orchestration/turn-classifier.ts",
+      "destination": "src/orchestration/turn-classifier.ts"
+    },
+    {
+      "source": "services/discord-bot/src/providers/asr/qwen-http.test.ts",
+      "destination": "src/providers/asr/qwen-http.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/providers/asr/qwen-http.ts",
+      "destination": "src/providers/asr/qwen-http.ts"
+    },
+    {
+      "source": "services/discord-bot/src/providers/asr/types.ts",
+      "destination": "src/providers/asr/types.ts"
+    },
+    {
+      "source": "services/discord-bot/src/providers/brain/errors.test.ts",
+      "destination": "src/providers/brain/errors.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/providers/brain/errors.ts",
+      "destination": "src/providers/brain/errors.ts"
+    },
+    {
+      "source": "services/discord-bot/src/providers/brain/gemini.test.ts",
+      "destination": "src/providers/brain/gemini.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/providers/brain/gemini.ts",
+      "destination": "src/providers/brain/gemini.ts"
+    },
+    {
+      "source": "services/discord-bot/src/providers/brain/prompt.ts",
+      "destination": "src/providers/brain/prompt.ts"
+    },
+    {
+      "source": "services/discord-bot/src/providers/brain/rate-limiter.test.ts",
+      "destination": "src/providers/brain/rate-limiter.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/providers/brain/rate-limiter.ts",
+      "destination": "src/providers/brain/rate-limiter.ts"
+    },
+    {
+      "source": "services/discord-bot/src/providers/brain/types.ts",
+      "destination": "src/providers/brain/types.ts"
+    },
+    {
+      "source": "services/discord-bot/src/providers/tts/gpt-sovits.test.ts",
+      "destination": "src/providers/tts/gpt-sovits.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/providers/tts/gpt-sovits.ts",
+      "destination": "src/providers/tts/gpt-sovits.ts"
+    },
+    {
+      "source": "services/discord-bot/src/providers/tts/language.test.ts",
+      "destination": "src/providers/tts/language.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/providers/tts/language.ts",
+      "destination": "src/providers/tts/language.ts"
+    },
+    {
+      "source": "services/discord-bot/src/providers/tts/pronunciation.test.ts",
+      "destination": "src/providers/tts/pronunciation.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/providers/tts/pronunciation.ts",
+      "destination": "src/providers/tts/pronunciation.ts"
+    },
+    {
+      "source": "services/discord-bot/src/providers/tts/speech-style-types.ts",
+      "destination": "src/providers/tts/speech-style-types.ts"
+    },
+    {
+      "source": "services/discord-bot/src/providers/tts/tts-cache.test.ts",
+      "destination": "src/providers/tts/tts-cache.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/providers/tts/tts-cache.ts",
+      "destination": "src/providers/tts/tts-cache.ts"
+    },
+    {
+      "source": "services/discord-bot/src/providers/tts/types.ts",
+      "destination": "src/providers/tts/types.ts"
+    },
+    {
+      "source": "services/discord-bot/src/providers/tts/voice-profile-catalog.test.ts",
+      "destination": "src/providers/tts/voice-profile-catalog.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/providers/tts/voice-profile-catalog.ts",
+      "destination": "src/providers/tts/voice-profile-catalog.ts"
+    },
+    {
+      "source": "services/discord-bot/src/services.ts",
+      "destination": "src/services.ts"
+    },
+    {
+      "source": "services/discord-bot/src/telemetry.test.ts",
+      "destination": "src/telemetry.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/telemetry.ts",
+      "destination": "src/telemetry.ts"
+    },
+    {
+      "source": "services/discord-bot/src/utils/audio-monitor.ts",
+      "destination": "src/utils/audio-monitor.ts"
+    },
+    {
+      "source": "services/discord-bot/src/utils/audio.ts",
+      "destination": "src/utils/audio.ts"
+    },
+    {
+      "source": "services/discord-bot/src/utils/opus.ts",
+      "destination": "src/utils/opus.ts"
+    },
+    {
+      "source": "services/discord-bot/src/voice/playback.test.ts",
+      "destination": "src/voice/playback.test.ts"
+    },
+    {
+      "source": "services/discord-bot/src/voice/playback.ts",
+      "destination": "src/voice/playback.ts"
+    },
+    {
+      "source": "services/discord-bot/src/voice/types.ts",
+      "destination": "src/voice/types.ts"
+    },
+    {
+      "source": "services/discord-bot/src/voice/voice-manager.ts",
+      "destination": "src/voice/voice-manager.ts"
+    },
+    {
+      "source": "services/discord-bot/tsconfig.json",
+      "destination": "tsconfig.json"
+    },
+    {
+      "source": "services/discord-bot/vitest.config.ts",
+      "destination": "vitest.config.ts"
+    },
+    {
+      "source": "packages/discord-avatar-protocol/package.json",
+      "destination": "packages/discord-avatar-protocol/package.json"
+    },
+    {
+      "source": "packages/discord-avatar-protocol/src/index.test.ts",
+      "destination": "packages/discord-avatar-protocol/src/index.test.ts"
+    },
+    {
+      "source": "packages/discord-avatar-protocol/src/index.ts",
+      "destination": "packages/discord-avatar-protocol/src/index.ts"
+    },
+    {
+      "source": "packages/discord-avatar-protocol/tsconfig.json",
+      "destination": "packages/discord-avatar-protocol/tsconfig.json"
+    },
+    {
+      "source": "packages/discord-avatar-protocol/vitest.config.ts",
+      "destination": "packages/discord-avatar-protocol/vitest.config.ts"
+    },
+    {
+      "source": "packages/memory-domain/package.json",
+      "destination": "packages/memory-domain/package.json"
+    },
+    {
+      "source": "packages/memory-domain/src/addressing.test.ts",
+      "destination": "packages/memory-domain/src/addressing.test.ts"
+    },
+    {
+      "source": "packages/memory-domain/src/addressing.ts",
+      "destination": "packages/memory-domain/src/addressing.ts"
+    },
+    {
+      "source": "packages/memory-domain/src/aliases.ts",
+      "destination": "packages/memory-domain/src/aliases.ts"
+    },
+    {
+      "source": "packages/memory-domain/src/authorization.test.ts",
+      "destination": "packages/memory-domain/src/authorization.test.ts"
+    },
+    {
+      "source": "packages/memory-domain/src/authorization.ts",
+      "destination": "packages/memory-domain/src/authorization.ts"
+    },
+    {
+      "source": "packages/memory-domain/src/boundaries.test.ts",
+      "destination": "packages/memory-domain/src/boundaries.test.ts"
+    },
+    {
+      "source": "packages/memory-domain/src/capabilities.ts",
+      "destination": "packages/memory-domain/src/capabilities.ts"
+    },
+    {
+      "source": "packages/memory-domain/src/causality.ts",
+      "destination": "packages/memory-domain/src/causality.ts"
+    },
+    {
+      "source": "packages/memory-domain/src/corrections.test.ts",
+      "destination": "packages/memory-domain/src/corrections.test.ts"
+    },
+    {
+      "source": "packages/memory-domain/src/corrections.ts",
+      "destination": "packages/memory-domain/src/corrections.ts"
+    },
+    {
+      "source": "packages/memory-domain/src/delivery.test.ts",
+      "destination": "packages/memory-domain/src/delivery.test.ts"
+    },
+    {
+      "source": "packages/memory-domain/src/delivery.ts",
+      "destination": "packages/memory-domain/src/delivery.ts"
+    },
+    {
+      "source": "packages/memory-domain/src/errors.ts",
+      "destination": "packages/memory-domain/src/errors.ts"
+    },
+    {
+      "source": "packages/memory-domain/src/events.test.ts",
+      "destination": "packages/memory-domain/src/events.test.ts"
+    },
+    {
+      "source": "packages/memory-domain/src/events.ts",
+      "destination": "packages/memory-domain/src/events.ts"
+    },
+    {
+      "source": "packages/memory-domain/src/fixtures.ts",
+      "destination": "packages/memory-domain/src/fixtures.ts"
+    },
+    {
+      "source": "packages/memory-domain/src/generation.test.ts",
+      "destination": "packages/memory-domain/src/generation.test.ts"
+    },
+    {
+      "source": "packages/memory-domain/src/generation.ts",
+      "destination": "packages/memory-domain/src/generation.ts"
+    },
+    {
+      "source": "packages/memory-domain/src/identity.test.ts",
+      "destination": "packages/memory-domain/src/identity.test.ts"
+    },
+    {
+      "source": "packages/memory-domain/src/identity.ts",
+      "destination": "packages/memory-domain/src/identity.ts"
+    },
+    {
+      "source": "packages/memory-domain/src/ids.ts",
+      "destination": "packages/memory-domain/src/ids.ts"
+    },
+    {
+      "source": "packages/memory-domain/src/index.ts",
+      "destination": "packages/memory-domain/src/index.ts"
+    },
+    {
+      "source": "packages/memory-domain/src/memory-records.ts",
+      "destination": "packages/memory-domain/src/memory-records.ts"
+    },
+    {
+      "source": "packages/memory-domain/src/port.test.ts",
+      "destination": "packages/memory-domain/src/port.test.ts"
+    },
+    {
+      "source": "packages/memory-domain/src/port.ts",
+      "destination": "packages/memory-domain/src/port.ts"
+    },
+    {
+      "source": "packages/memory-domain/src/provenance.ts",
+      "destination": "packages/memory-domain/src/provenance.ts"
+    },
+    {
+      "source": "packages/memory-domain/src/rooms.test.ts",
+      "destination": "packages/memory-domain/src/rooms.test.ts"
+    },
+    {
+      "source": "packages/memory-domain/src/rooms.ts",
+      "destination": "packages/memory-domain/src/rooms.ts"
+    },
+    {
+      "source": "packages/memory-domain/tsconfig.json",
+      "destination": "packages/memory-domain/tsconfig.json"
+    },
+    {
+      "source": "packages/memory-domain/vitest.config.ts",
+      "destination": "packages/memory-domain/vitest.config.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/package.json",
+      "destination": "packages/memory-sqlite/package.json"
+    },
+    {
+      "source": "packages/memory-sqlite/src/backup.ts",
+      "destination": "packages/memory-sqlite/src/backup.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/benchmark-statistics.test.ts",
+      "destination": "packages/memory-sqlite/src/benchmark-statistics.test.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/benchmark-statistics.ts",
+      "destination": "packages/memory-sqlite/src/benchmark-statistics.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/benchmark/g2-config.ts",
+      "destination": "packages/memory-sqlite/src/benchmark/g2-config.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/benchmark/g2-environment.ts",
+      "destination": "packages/memory-sqlite/src/benchmark/g2-environment.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/benchmark/g2-harness.test.ts",
+      "destination": "packages/memory-sqlite/src/benchmark/g2-harness.test.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/benchmark/g2-metrics.ts",
+      "destination": "packages/memory-sqlite/src/benchmark/g2-metrics.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/benchmark/g2-operational-soak.ts",
+      "destination": "packages/memory-sqlite/src/benchmark/g2-operational-soak.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/benchmark/g2-path-safety.ts",
+      "destination": "packages/memory-sqlite/src/benchmark/g2-path-safety.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/benchmark/g2-report.ts",
+      "destination": "packages/memory-sqlite/src/benchmark/g2-report.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/benchmark/g2-thresholds.ts",
+      "destination": "packages/memory-sqlite/src/benchmark/g2-thresholds.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/benchmark/imp208-benchmark.ts",
+      "destination": "packages/memory-sqlite/src/benchmark/imp208-benchmark.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/boundaries.test.ts",
+      "destination": "packages/memory-sqlite/src/boundaries.test.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/connection-profile.ts",
+      "destination": "packages/memory-sqlite/src/connection-profile.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/deletion-completeness.test.ts",
+      "destination": "packages/memory-sqlite/src/deletion-completeness.test.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/deletion-completeness.ts",
+      "destination": "packages/memory-sqlite/src/deletion-completeness.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/deletion-targets.ts",
+      "destination": "packages/memory-sqlite/src/deletion-targets.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/derived-invalidation.test.ts",
+      "destination": "packages/memory-sqlite/src/derived-invalidation.test.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/derived-invalidation.ts",
+      "destination": "packages/memory-sqlite/src/derived-invalidation.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/derived-repair.test.ts",
+      "destination": "packages/memory-sqlite/src/derived-repair.test.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/derived-repair.ts",
+      "destination": "packages/memory-sqlite/src/derived-repair.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/fixtures/crash-child.mjs",
+      "destination": "packages/memory-sqlite/src/fixtures/crash-child.mjs"
+    },
+    {
+      "source": "packages/memory-sqlite/src/fixtures/writer-ownership-child.ts",
+      "destination": "packages/memory-sqlite/src/fixtures/writer-ownership-child.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/idempotency.ts",
+      "destination": "packages/memory-sqlite/src/idempotency.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/imp208.integration.test.ts",
+      "destination": "packages/memory-sqlite/src/imp208.integration.test.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/index.ts",
+      "destination": "packages/memory-sqlite/src/index.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/intelligence-queue.ts",
+      "destination": "packages/memory-sqlite/src/intelligence-queue.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/migration-runner.test.ts",
+      "destination": "packages/memory-sqlite/src/migration-runner.test.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/migration-runner.ts",
+      "destination": "packages/memory-sqlite/src/migration-runner.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/migrations/index.ts",
+      "destination": "packages/memory-sqlite/src/migrations/index.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/public-boundary.test.ts",
+      "destination": "packages/memory-sqlite/src/public-boundary.test.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/reconciliation-queue.test.ts",
+      "destination": "packages/memory-sqlite/src/reconciliation-queue.test.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/reconciliation-queue.ts",
+      "destination": "packages/memory-sqlite/src/reconciliation-queue.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/repositories/alias.test.ts",
+      "destination": "packages/memory-sqlite/src/repositories/alias.test.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/repositories/alias.ts",
+      "destination": "packages/memory-sqlite/src/repositories/alias.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/repositories/bindings.ts",
+      "destination": "packages/memory-sqlite/src/repositories/bindings.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/repositories/causal-edges.ts",
+      "destination": "packages/memory-sqlite/src/repositories/causal-edges.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/repositories/corrections.ts",
+      "destination": "packages/memory-sqlite/src/repositories/corrections.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/repositories/deliveries.ts",
+      "destination": "packages/memory-sqlite/src/repositories/deliveries.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/repositories/events.test.ts",
+      "destination": "packages/memory-sqlite/src/repositories/events.test.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/repositories/events.ts",
+      "destination": "packages/memory-sqlite/src/repositories/events.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/repositories/generation-delivery.test.ts",
+      "destination": "packages/memory-sqlite/src/repositories/generation-delivery.test.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/repositories/generations.ts",
+      "destination": "packages/memory-sqlite/src/repositories/generations.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/repositories/identity.test.ts",
+      "destination": "packages/memory-sqlite/src/repositories/identity.test.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/repositories/identity.ts",
+      "destination": "packages/memory-sqlite/src/repositories/identity.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/repositories/index.ts",
+      "destination": "packages/memory-sqlite/src/repositories/index.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/repositories/layered-memory.test.ts",
+      "destination": "packages/memory-sqlite/src/repositories/layered-memory.test.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/repositories/memories.ts",
+      "destination": "packages/memory-sqlite/src/repositories/memories.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/repositories/outputs.ts",
+      "destination": "packages/memory-sqlite/src/repositories/outputs.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/repositories/policy-data.ts",
+      "destination": "packages/memory-sqlite/src/repositories/policy-data.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/repositories/privacy-operation-reportability.test.ts",
+      "destination": "packages/memory-sqlite/src/repositories/privacy-operation-reportability.test.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/repositories/privacy-operations.test.ts",
+      "destination": "packages/memory-sqlite/src/repositories/privacy-operations.test.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/repositories/privacy-operations.ts",
+      "destination": "packages/memory-sqlite/src/repositories/privacy-operations.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/repositories/privacy.test.ts",
+      "destination": "packages/memory-sqlite/src/repositories/privacy.test.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/repositories/privacy.ts",
+      "destination": "packages/memory-sqlite/src/repositories/privacy.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/repositories/provenance.ts",
+      "destination": "packages/memory-sqlite/src/repositories/provenance.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/repositories/rooms.test.ts",
+      "destination": "packages/memory-sqlite/src/repositories/rooms.test.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/repositories/rooms.ts",
+      "destination": "packages/memory-sqlite/src/repositories/rooms.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/repositories/search.test.ts",
+      "destination": "packages/memory-sqlite/src/repositories/search.test.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/repositories/search.ts",
+      "destination": "packages/memory-sqlite/src/repositories/search.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/repositories/summaries.ts",
+      "destination": "packages/memory-sqlite/src/repositories/summaries.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/retention.test.ts",
+      "destination": "packages/memory-sqlite/src/retention.test.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/schema/v1.test.ts",
+      "destination": "packages/memory-sqlite/src/schema/v1.test.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/schema/v1.ts",
+      "destination": "packages/memory-sqlite/src/schema/v1.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/schema/v10.ts",
+      "destination": "packages/memory-sqlite/src/schema/v10.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/schema/v2.ts",
+      "destination": "packages/memory-sqlite/src/schema/v2.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/schema/v3.ts",
+      "destination": "packages/memory-sqlite/src/schema/v3.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/schema/v4.ts",
+      "destination": "packages/memory-sqlite/src/schema/v4.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/schema/v5.ts",
+      "destination": "packages/memory-sqlite/src/schema/v5.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/schema/v6.ts",
+      "destination": "packages/memory-sqlite/src/schema/v6.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/schema/v7.ts",
+      "destination": "packages/memory-sqlite/src/schema/v7.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/schema/v8.ts",
+      "destination": "packages/memory-sqlite/src/schema/v8.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/schema/v9.ts",
+      "destination": "packages/memory-sqlite/src/schema/v9.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/unit-of-work.ts",
+      "destination": "packages/memory-sqlite/src/unit-of-work.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/writer-ownership.test.ts",
+      "destination": "packages/memory-sqlite/src/writer-ownership.test.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/src/writer-ownership.ts",
+      "destination": "packages/memory-sqlite/src/writer-ownership.ts"
+    },
+    {
+      "source": "packages/memory-sqlite/tsconfig.json",
+      "destination": "packages/memory-sqlite/tsconfig.json"
+    },
+    {
+      "source": "packages/memory-sqlite/vitest.config.ts",
+      "destination": "packages/memory-sqlite/vitest.config.ts"
+    },
+    {
+      "source": "packages/server-sdk/package.json",
+      "destination": "packages/server-sdk/package.json"
+    },
+    {
+      "source": "packages/server-sdk/src/client.ts",
+      "destination": "packages/server-sdk/src/client.ts"
+    },
+    {
+      "source": "packages/server-sdk/src/codec.ts",
+      "destination": "packages/server-sdk/src/codec.ts"
+    },
+    {
+      "source": "packages/server-sdk/src/extension-peer.ts",
+      "destination": "packages/server-sdk/src/extension-peer.ts"
+    },
+    {
+      "source": "packages/server-sdk/src/index.ts",
+      "destination": "packages/server-sdk/src/index.ts"
+    },
+    {
+      "source": "packages/server-sdk/src/utils/node/index.ts",
+      "destination": "packages/server-sdk/src/utils/node/index.ts"
+    },
+    {
+      "source": "packages/server-sdk/src/utils/node/process.ts",
+      "destination": "packages/server-sdk/src/utils/node/process.ts"
+    },
+    {
+      "source": "packages/server-sdk/test/client.test.ts",
+      "destination": "packages/server-sdk/test/client.test.ts"
+    },
+    {
+      "source": "packages/server-sdk/test/codec.test.ts",
+      "destination": "packages/server-sdk/test/codec.test.ts"
+    },
+    {
+      "source": "packages/server-sdk/test/extension-peer.test.ts",
+      "destination": "packages/server-sdk/test/extension-peer.test.ts"
+    },
+    {
+      "source": "packages/server-sdk/tsconfig.json",
+      "destination": "packages/server-sdk/tsconfig.json"
+    },
+    {
+      "source": "packages/server-sdk/vitest.config.ts",
+      "destination": "packages/server-sdk/vitest.config.ts"
+    },
+    {
+      "source": "packages/server-shared/package.json",
+      "destination": "packages/server-shared/package.json"
+    },
+    {
+      "source": "packages/server-shared/src/errors.ts",
+      "destination": "packages/server-shared/src/errors.ts"
+    },
+    {
+      "source": "packages/server-shared/src/index.ts",
+      "destination": "packages/server-shared/src/index.ts"
+    },
+    {
+      "source": "packages/server-shared/src/types/index.ts",
+      "destination": "packages/server-shared/src/types/index.ts"
+    },
+    {
+      "source": "packages/server-shared/src/types/websocket/events.ts",
+      "destination": "packages/server-shared/src/types/websocket/events.ts"
+    },
+    {
+      "source": "packages/server-shared/src/types/websocket/index.ts",
+      "destination": "packages/server-shared/src/types/websocket/index.ts"
+    },
+    {
+      "source": "packages/server-shared/tsconfig.json",
+      "destination": "packages/server-shared/tsconfig.json"
+    },
+    {
+      "source": "packages/better-ws/package.json",
+      "destination": "packages/better-ws/package.json"
+    },
+    {
+      "source": "packages/better-ws/src/client/crossws/index.test.ts",
+      "destination": "packages/better-ws/src/client/crossws/index.test.ts"
+    },
+    {
+      "source": "packages/better-ws/src/client/crossws/index.ts",
+      "destination": "packages/better-ws/src/client/crossws/index.ts"
+    },
+    {
+      "source": "packages/better-ws/src/client/index.ts",
+      "destination": "packages/better-ws/src/client/index.ts"
+    },
+    {
+      "source": "packages/better-ws/src/index.test.ts",
+      "destination": "packages/better-ws/src/index.test.ts"
+    },
+    {
+      "source": "packages/better-ws/src/index.ts",
+      "destination": "packages/better-ws/src/index.ts"
+    },
+    {
+      "source": "packages/better-ws/src/server/h3/index.test.ts",
+      "destination": "packages/better-ws/src/server/h3/index.test.ts"
+    },
+    {
+      "source": "packages/better-ws/src/server/h3/index.ts",
+      "destination": "packages/better-ws/src/server/h3/index.ts"
+    },
+    {
+      "source": "packages/better-ws/src/server/index.ts",
+      "destination": "packages/better-ws/src/server/index.ts"
+    },
+    {
+      "source": "packages/better-ws/src/server/liveness.test.ts",
+      "destination": "packages/better-ws/src/server/liveness.test.ts"
+    },
+    {
+      "source": "packages/better-ws/src/server/peers.ts",
+      "destination": "packages/better-ws/src/server/peers.ts"
+    },
+    {
+      "source": "packages/better-ws/src/shared/index.ts",
+      "destination": "packages/better-ws/src/shared/index.ts"
+    },
+    {
+      "source": "packages/better-ws/src/shared/utils/event-wait-for.test.ts",
+      "destination": "packages/better-ws/src/shared/utils/event-wait-for.test.ts"
+    },
+    {
+      "source": "packages/better-ws/src/shared/utils/event-wait-for.ts",
+      "destination": "packages/better-ws/src/shared/utils/event-wait-for.ts"
+    },
+    {
+      "source": "packages/better-ws/src/shared/utils/index.ts",
+      "destination": "packages/better-ws/src/shared/utils/index.ts"
+    },
+    {
+      "source": "packages/better-ws/tsconfig.json",
+      "destination": "packages/better-ws/tsconfig.json"
+    },
+    {
+      "source": "packages/better-ws/vitest.config.ts",
+      "destination": "packages/better-ws/vitest.config.ts"
+    },
+    {
+      "source": "packages/plugin-protocol/package.json",
+      "destination": "packages/plugin-protocol/package.json"
+    },
+    {
+      "source": "packages/plugin-protocol/src/index.ts",
+      "destination": "packages/plugin-protocol/src/index.ts"
+    },
+    {
+      "source": "packages/plugin-protocol/src/types/events.test.ts",
+      "destination": "packages/plugin-protocol/src/types/events.test.ts"
+    },
+    {
+      "source": "packages/plugin-protocol/src/types/events.ts",
+      "destination": "packages/plugin-protocol/src/types/events.ts"
+    },
+    {
+      "source": "packages/plugin-protocol/src/types/index.ts",
+      "destination": "packages/plugin-protocol/src/types/index.ts"
+    },
+    {
+      "source": "packages/plugin-protocol/tsconfig.json",
+      "destination": "packages/plugin-protocol/tsconfig.json"
+    },
+    {
+      "source": "packages/plugin-protocol/vitest.config.ts",
+      "destination": "packages/plugin-protocol/vitest.config.ts"
+    }
+  ],
+  "excludedFiles": [
+    {
+      "source": "services/discord-bot/src/memory/program-docs.test.ts",
+      "reason": "Checks DC_BOT historical program docs, release status and backlog; those remain owned by the original repository."
+    }
+  ]
+}

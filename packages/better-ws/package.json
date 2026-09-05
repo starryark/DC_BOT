@@ -1,0 +1,34 @@
+{
+  "name": "@proj-airi/better-ws",
+  "type": "module",
+  "version": "0.11.3",
+  "private": true,
+  "description": "Transport-agnostic reliable WebSocket runtime primitives",
+  "author": {
+    "name": "Moeru AI Project AIRI Team",
+    "email": "airi@moeru.ai",
+    "url": "https://github.com/moeru-ai"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/moeru-ai/airi.git",
+    "directory": "packages/better-ws"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./server": "./src/server/index.ts",
+    "./client/crossws": "./src/client/crossws/index.ts",
+    "./server/h3": "./src/server/h3/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@moeru/eventa": "1.0.0-beta.8",
+    "crossws": "0.4.5",
+    "h3": "2.0.1-rc.20",
+    "srvx": "0.11.15"
+  }
+}

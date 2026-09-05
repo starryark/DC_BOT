@@ -1,0 +1,180 @@
+{
+  "format": 1,
+  "datasetVersion": "2.0.0",
+  "description": "IMP-607 frozen synthetic multilingual retrieval benchmark",
+  "characterId": "eval-character",
+  "activeProfile": "active",
+  "enabledCapabilities": ["lexical"],
+  "scenarios": [
+    {
+      "scenarioId": "RET-001",
+      "category": "retrieval",
+      "title": "English retrieval",
+      "suites": ["multilingual-v1"],
+      "assertions": [{ "id": "RET-001-A", "severity": "standard", "description": "English phrases match" }],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "supported" },
+      "retrieval": {
+        "queryId": "RET-001-Q01",
+        "query": "orchid lantern",
+        "cutoff": 2,
+        "requestedModes": ["lexical"],
+        "corpus": [{ "itemId": "ret-001-relevant", "role": "relevant", "content": "The orchid lantern marks the quiet archive." }, { "itemId": "ret-001-distractor", "role": "irrelevant", "content": "A copper compass rests beside the window." }],
+        "judgments": [{ "itemId": "ret-001-relevant", "relevance": 1 }, { "itemId": "ret-001-distractor", "relevance": 0 }],
+        "expectations": { "authorization": "authorized_only", "lifecycle": "current_only", "temporal": "inclusive" }
+      }
+    },
+    {
+      "scenarioId": "RET-002",
+      "category": "retrieval",
+      "title": "Japanese retrieval",
+      "suites": ["multilingual-v1"],
+      "assertions": [{ "id": "RET-002-A", "severity": "standard", "description": "Japanese phrases match" }],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "supported" },
+      "retrieval": {
+        "queryId": "RET-002-Q01",
+        "query": "星空観測",
+        "cutoff": 2,
+        "requestedModes": ["lexical"],
+        "corpus": [{ "itemId": "ret-002-relevant", "role": "relevant", "content": "今夜は星空観測の記録を残します。" }, { "itemId": "ret-002-distractor", "role": "irrelevant", "content": "静かな図書館で地図を読みます。" }],
+        "judgments": [{ "itemId": "ret-002-relevant", "relevance": 1 }, { "itemId": "ret-002-distractor", "relevance": 0 }],
+        "expectations": { "authorization": "authorized_only", "lifecycle": "current_only", "temporal": "inclusive" }
+      }
+    },
+    {
+      "scenarioId": "RET-003",
+      "category": "retrieval",
+      "title": "Simplified Chinese retrieval",
+      "suites": ["multilingual-v1"],
+      "assertions": [{ "id": "RET-003-A", "severity": "standard", "description": "Simplified Chinese phrases match" }],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "supported" },
+      "retrieval": {
+        "queryId": "RET-003-Q01",
+        "query": "蓝色风筝",
+        "cutoff": 2,
+        "requestedModes": ["lexical"],
+        "corpus": [{ "itemId": "ret-003-relevant", "role": "relevant", "content": "蓝色风筝飞过安静的花园。" }, { "itemId": "ret-003-distractor", "role": "irrelevant", "content": "铜色时钟放在书架旁边。" }],
+        "judgments": [{ "itemId": "ret-003-relevant", "relevance": 1 }, { "itemId": "ret-003-distractor", "relevance": 0 }],
+        "expectations": { "authorization": "authorized_only", "lifecycle": "current_only", "temporal": "inclusive" }
+      }
+    },
+    {
+      "scenarioId": "RET-004",
+      "category": "retrieval",
+      "title": "Traditional Chinese retrieval",
+      "suites": ["multilingual-v1"],
+      "assertions": [{ "id": "RET-004-A", "severity": "standard", "description": "Traditional Chinese phrases match" }],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "supported" },
+      "retrieval": {
+        "queryId": "RET-004-Q01",
+        "query": "藍色風箏",
+        "cutoff": 2,
+        "requestedModes": ["lexical"],
+        "corpus": [{ "itemId": "ret-004-relevant", "role": "relevant", "content": "藍色風箏飛過安靜的花園。" }, { "itemId": "ret-004-distractor", "role": "irrelevant", "content": "銅色時鐘放在書架旁邊。" }],
+        "judgments": [{ "itemId": "ret-004-relevant", "relevance": 1 }, { "itemId": "ret-004-distractor", "relevance": 0 }],
+        "expectations": { "authorization": "authorized_only", "lifecycle": "current_only", "temporal": "inclusive" }
+      }
+    },
+    {
+      "scenarioId": "RET-005",
+      "category": "retrieval",
+      "title": "Mixed-script and code-switched queries",
+      "suites": ["multilingual-v1"],
+      "assertions": [{ "id": "RET-005-A", "severity": "standard", "description": "mixed-script queries match" }],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "supported" },
+      "retrieval": {
+        "queryId": "RET-005-Q01",
+        "query": "AIRI記憶",
+        "cutoff": 2,
+        "requestedModes": ["lexical"],
+        "corpus": [{ "itemId": "ret-005-relevant", "role": "relevant", "content": "AIRI記憶 keeps this synthetic note." }, { "itemId": "ret-005-distractor", "role": "irrelevant", "content": "AIRI calendar keeps a different synthetic note." }],
+        "judgments": [{ "itemId": "ret-005-relevant", "relevance": 1 }, { "itemId": "ret-005-distractor", "relevance": 0 }],
+        "expectations": { "authorization": "authorized_only", "lifecycle": "current_only", "temporal": "inclusive" }
+      }
+    },
+    {
+      "scenarioId": "RET-006",
+      "category": "retrieval",
+      "title": "Names and aliases",
+      "suites": ["multilingual-v1"],
+      "assertions": [{ "id": "RET-006-A", "severity": "standard", "description": "names and aliases match" }],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "supported" },
+      "retrieval": {
+        "queryId": "RET-006-Q01",
+        "query": "Aria Northstar",
+        "cutoff": 2,
+        "requestedModes": ["lexical"],
+        "corpus": [{ "itemId": "ret-006-relevant", "role": "relevant", "content": "Aria Northstar is the synthetic archive alias." }, { "itemId": "ret-006-distractor", "role": "irrelevant", "content": "Mira Southwind is another synthetic alias." }],
+        "judgments": [{ "itemId": "ret-006-relevant", "relevance": 1 }, { "itemId": "ret-006-distractor", "relevance": 0 }],
+        "expectations": { "authorization": "authorized_only", "lifecycle": "current_only", "temporal": "inclusive" }
+      }
+    },
+    {
+      "scenarioId": "RET-007",
+      "category": "retrieval",
+      "title": "No-space text",
+      "suites": ["multilingual-v1"],
+      "assertions": [{ "id": "RET-007-A", "severity": "standard", "description": "no-space text matches" }],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "supported" },
+      "retrieval": {
+        "queryId": "RET-007-Q01",
+        "query": "東京喫茶店",
+        "cutoff": 2,
+        "requestedModes": ["lexical"],
+        "corpus": [{ "itemId": "ret-007-relevant", "role": "relevant", "content": "東京喫茶店案内を保存します。" }, { "itemId": "ret-007-distractor", "role": "irrelevant", "content": "大阪図書館案内を保存します。" }],
+        "judgments": [{ "itemId": "ret-007-relevant", "relevance": 1 }, { "itemId": "ret-007-distractor", "relevance": 0 }],
+        "expectations": { "authorization": "authorized_only", "lifecycle": "current_only", "temporal": "inclusive" }
+      }
+    },
+    {
+      "scenarioId": "RET-008",
+      "category": "retrieval",
+      "title": "Temporal constraints",
+      "suites": ["multilingual-v1"],
+      "assertions": [{ "id": "RET-008-A", "severity": "standard", "description": "temporal constraints applied" }],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "supported" },
+      "retrieval": {
+        "queryId": "RET-008-Q01",
+        "query": "temporal beacon",
+        "cutoff": 3,
+        "requestedModes": ["lexical"],
+        "corpus": [{ "itemId": "ret-008-before", "role": "temporal_before", "content": "temporal beacon before boundary", "offsetSeconds": -1 }, { "itemId": "ret-008-boundary", "role": "relevant", "content": "temporal beacon at inclusive boundary", "offsetSeconds": 0 }, { "itemId": "ret-008-after", "role": "temporal_after", "content": "temporal beacon after boundary", "offsetSeconds": 1 }],
+        "judgments": [{ "itemId": "ret-008-before", "relevance": 1 }, { "itemId": "ret-008-boundary", "relevance": 1 }, { "itemId": "ret-008-after", "relevance": 1 }],
+        "expectations": { "authorization": "authorized_only", "lifecycle": "current_only", "temporal": "inclusive" }
+      }
+    },
+    {
+      "scenarioId": "RET-009",
+      "category": "retrieval",
+      "title": "Authorization-negative cases",
+      "suites": ["multilingual-v1"],
+      "assertions": [{ "id": "RET-009-A", "severity": "zero_tolerance", "description": "unauthorized scopes do not match" }],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "supported" },
+      "retrieval": {
+        "queryId": "RET-009-Q01",
+        "query": "scope lure",
+        "cutoff": 2,
+        "requestedModes": ["lexical"],
+        "corpus": [{ "itemId": "ret-009-authorized", "role": "relevant", "content": "scope lure exact synthetic evidence" }, { "itemId": "ret-009-unauthorized", "role": "unauthorized_relevant", "content": "scope lure exact synthetic evidence" }],
+        "judgments": [{ "itemId": "ret-009-authorized", "relevance": 1 }, { "itemId": "ret-009-unauthorized", "relevance": 1 }],
+        "expectations": { "authorization": "authorized_only", "lifecycle": "current_only", "temporal": "inclusive" }
+      }
+    },
+    {
+      "scenarioId": "RET-010",
+      "category": "retrieval",
+      "title": "Deletion and correction lifecycle",
+      "suites": ["multilingual-v1"],
+      "assertions": [{ "id": "RET-010-A", "severity": "zero_tolerance", "description": "deleted items do not match" }],
+      "expectation": { "outcome": "passed", "capabilityDisposition": "supported" },
+      "retrieval": {
+        "queryId": "RET-010-Q01",
+        "query": "deleted beacon",
+        "cutoff": 1,
+        "requestedModes": ["lexical"],
+        "corpus": [{ "itemId": "ret-010-deleted", "role": "lifecycle_invalid", "content": "deleted beacon exact synthetic evidence" }],
+        "judgments": [{ "itemId": "ret-010-deleted", "relevance": 1 }],
+        "expectations": { "authorization": "authorized_only", "lifecycle": "current_only", "temporal": "inclusive" }
+      }
+    }
+  ]
+}

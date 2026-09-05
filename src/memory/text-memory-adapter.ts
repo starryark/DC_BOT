@@ -1,0 +1,248 @@
+import type { AuthorizationContext, CharacterId, DeliveryAttempt, GenerationAttempt, InboundEventEnvelope, RoomResolution } from '@proj-airi/memory-domain'
+
+import type { DiscordMentionInputEvent } from '../orchestration/events'
+import type { MemoryRuntime } from './runtime'
+import type { DiscordTextMemoryObserver, TextIngressContext } from './text-observer'
+
+import { asPersonId, asRequestId, asSegmentId, timestampFromEpochMs } from '@proj-airi/memory-domain'
+
+import { recentManifestOfLayered } from './context-authority'
+
+interface TextTrace {
+  authorization: AuthorizationContext
+  event: InboundEventEnvelope
+  room: RoomResolution
+  generation?: GenerationAttempt
+  deliveries: DeliveryAttempt[]
+}
+
+export interface TextMemoryAdapterOptions {
+  readonly runtime: MemoryRuntime
+  readonly characterId: CharacterId
+  readonly modelRef: string
+  readonly onFailure?: (error: unknown) => void
+}
+
+/** Creates the shared text shadow adapter; failures are observable but never reported as durable success. */
+export function createTextMemoryAdapter(options: TextMemoryAdapterOptions): DiscordTextMemoryObserver {
+  const traces = new Map<string, TextTrace>()
+  /**
+   * Forgets the turn and reports the error. Never throws.
+   *
+   * For callers that are already handling `error` and only need it recorded —
+   * re-raising there would replace their error handling with a rejection.
+   */
+  const record = (event: DiscordMentionInputEvent, error: unknown): void => {
+    traces.delete(event.turnId)
+    options.onFailure?.(error)
+  }
+
+  /**
+   * Fail-closed for durable *write* paths. In `durableActive` the store is the
+   * source of truth, so a write that did not land must never be reported as
+   * success — the caller has to see it.
+   *
+   * Do not call this from a catch block that is already handling the error.
+   * Use {@link record} instead: rethrowing out of an error handler turns a
+   * handled failure into an unhandled rejection, which is what killed the bot
+   * process in DEFECT-005.
+   */
+  const fail = (event: DiscordMentionInputEvent, error: unknown): void => {
+    record(event, error)
+    if (options.runtime.health.state === 'durableActive')
+      throw error
+  }
+
+  return {
+    prepareForModel: async (event) => {
+      const trace = traces.get(event.turnId)
+      if (!trace || !options.runtime.trace)
+        return { context: options.runtime.health.promptUseEnabled ? { status: 'required_unavailable', error: new Error('Required durable recent context trace is unavailable') } : { status: 'disabled' } }
+      try {
+        const layered = options.runtime.health.promptUseEnabled && options.runtime.health.layeredContextEnabled && options.runtime.context
+          ? await boundedContext(options.runtime.context.assembleLayered({ authorization: trace.authorization, logicalRoomId: trace.room.logicalRoomId, physicalRoomId: trace.room.physicalRoomId, characterId: options.characterId, query: event.text, exactPredicates: [], includeLayers: ['recent', 'summary', 'semantic', 'episodic'], maxItems: 24, maxCharacters: 8_000, excludeEventIds: [trace.event.eventId] }), 250)
+          : undefined
+        const recent = options.runtime.health.promptUseEnabled && !layered && options.runtime.context
+          ? await boundedContext(options.runtime.context.assembleRecent({ authorization: trace.authorization, logicalRoomId: trace.room.logicalRoomId, physicalRoomId: trace.room.physicalRoomId, characterId: options.characterId, maxItems: 24, maxCharacters: 8_000, excludeEventIds: [trace.event.eventId] }), 250)
+          : undefined
+        const selected = layered ?? recent
+        if (options.runtime.health.promptUseEnabled && (!selected || selected.sentinel !== 'ok'))
+          throw new Error('Required durable recent context is unavailable')
+        const at = timestampFromEpochMs(Date.now())
+        const manifest = layered
+          ? recentManifestOfLayered(layered.manifest)
+          : recent
+            ? { formatVersion: recent.manifest.formatVersion, logicalRoomVersion: recent.manifest.logicalRoomVersion, bindingRevision: recent.manifest.bindingRevision, maxItems: recent.manifest.maxItems, maxCharacters: recent.manifest.maxCharacters, candidateReadLimit: recent.manifest.candidateReadLimit, truncated: recent.manifest.truncated, items: recent.manifest.selected }
+            : { formatVersion: 1 as const, logicalRoomVersion: trace.event.roomVersion ?? 0, bindingRevision: trace.room.bindingVersion, maxItems: 0, maxCharacters: 0, candidateReadLimit: 0, truncated: false, items: [] }
+        const begun = await options.runtime.trace.beginGeneration(trace.authorization, { idempotencyKey: asRequestId(`generation:${event.turnId}`), logicalRoomId: trace.room.logicalRoomId, characterId: options.characterId, causes: [{ inboundEventId: trace.event.eventId, role: 'trigger' }], evidence: { observedRoomVersion: manifest.logicalRoomVersion, observedEventIds: [trace.event.eventId, ...manifest.items.flatMap(item => item.sourceType === 'inbound' ? [item.eventId] : [])], contextManifestHash: '', contextManifest: manifest, ...(layered ? { layeredContextManifest: layered.manifest, layeredContextManifestHash: '' } : {}), observedBindingVersion: manifest.bindingRevision, capturedAt: at }, modelRef: options.modelRef, startedAt: at })
+        trace.generation = begun.generation
+        return { context: selected ? { status: 'available', text: selected.text } : { status: 'disabled' }, generation: begun.generation }
+      }
+      catch (error) {
+        if (options.runtime.health.state === 'durableActive')
+          throw error
+        options.onFailure?.(error)
+        return { context: { status: 'disabled' } }
+      }
+    },
+    admit: async (event, context) => {
+      // Degraded posture: there is no authority to resolve a person, a room, or
+      // an event id, so the turn is durably deferred as replayable intent
+      // instead. No trace is registered, which is what keeps the rest of this
+      // turn from reporting a durable generation or delivery that cannot exist.
+      const deferred = options.runtime.deferred
+      if (deferred) {
+        try {
+          await deferred.spoolInboundEvent({
+            idempotencyKey: `message:${event.messageId}`,
+            observationKey: `message:${event.messageId}`,
+            kind: 'user_text',
+            actorEvidence: event.actorEvidence,
+            location: locationOf(event, context),
+            occurredAt: timestampFromEpochMs(event.timestamp),
+            content: event.text.trim() || '(empty mention)',
+            retentionClass: 'transcript',
+          })
+        }
+        catch (error) { fail(event, error) }
+        return
+      }
+      if (!options.runtime.ingress || !options.runtime.trace) {
+        if (options.runtime.health.state === 'durableActive')
+          throw new Error('Required durable admission authority is unavailable')
+        return
+      }
+      try {
+        const location = locationOf(event, context)
+        const ingressAuthorization: AuthorizationContext = {
+          principal: {
+            botUserId: 'discord-bot',
+            operations: ['identity:observe', 'room:read'],
+            scopes: [{ kind: context.isDirectMessage ? 'dm' : 'guild', id: context.isDirectMessage ? event.channelId : event.guildId }],
+            operator: false,
+          },
+          characterId: options.characterId,
+          ...(context.isDirectMessage ? { dmParticipants: [] } : {}),
+        }
+        // DM authorization needs a participant assertion; the durable identity
+        // is resolved by this call and is used for every subsequent operation.
+        if (context.isDirectMessage)
+          ingressAuthorization.dmParticipants = [asPersonId('requester')]
+        const resolved = await options.runtime.ingress.resolve({ authorization: ingressAuthorization, actorEvidence: event.actorEvidence, location, observationKey: `message:${event.messageId}` })
+        const authorization: AuthorizationContext = {
+          principal: { botUserId: 'discord-bot', operations: ['event:write', 'draft:write', 'delivery:write', 'context:read'], scopes: [{ kind: 'logical_room', id: resolved.room.logicalRoomId }], operator: false },
+          characterId: options.characterId,
+          logicalRoomId: resolved.room.logicalRoomId,
+          ...(resolved.actor.kind === 'attributed' && context.isDirectMessage ? { dmParticipants: [resolved.actor.personId] } : {}),
+        }
+        const appended = await options.runtime.trace.appendEvent(authorization, {
+          idempotencyKey: asRequestId(`message:${event.messageId}`),
+          kind: 'user_text',
+          actor: resolved.actor,
+          physicalRoomId: resolved.room.physicalRoomId,
+          logicalRoomId: resolved.room.logicalRoomId,
+          occurredAt: timestampFromEpochMs(event.timestamp),
+          payload: { content: event.text.trim() || '(empty mention)' },
+          retentionClass: 'transcript',
+        })
+        traces.set(event.turnId, { authorization, event: appended.envelope, room: resolved.room, deliveries: [] })
+      }
+      catch (error) { fail(event, error) }
+    },
+    generated: async (event, chunks) => {
+      const trace = traces.get(event.turnId)
+      if (!trace?.generation || !options.runtime.trace) {
+        if (options.runtime.health.state === 'durableActive')
+          throw new Error('Required durable generation trace is unavailable')
+        return
+      }
+      try {
+        const at = timestampFromEpochMs(Date.now())
+        const segments = await options.runtime.trace.appendSegments(trace.authorization, trace.generation, chunks.map((text, ordinal) => ({ segmentId: asSegmentId(`text:${event.messageId}:${ordinal}`), ordinal, modality: 'text', text })))
+        for (const segment of segments) {
+          const delivery = await options.runtime.trace.beginDelivery(trace.authorization, { segmentId: segment.segmentId, transport: 'discord_text', destinationId: event.channelId ?? event.messageId, idempotencyKey: asRequestId(`text-delivery:${event.messageId}:${segment.ordinal}`), startedAt: at })
+          trace.deliveries.push(delivery)
+        }
+        const generated = await options.runtime.trace.transitionGeneration(trace.authorization, trace.generation, 'running', 'generated', at)
+        trace.generation = await options.runtime.trace.transitionGeneration(trace.authorization, generated, 'generated', 'persisted', at)
+      }
+      catch (error) { fail(event, error) }
+    },
+    delivering: async (event, segmentIndex) => {
+      const trace = traces.get(event.turnId)
+      if (!trace || !options.runtime.trace)
+        return
+      try {
+        const at = timestampFromEpochMs(Date.now())
+        const delivery = trace.deliveries[segmentIndex]
+        if (!delivery)
+          throw new Error(`Missing durable text delivery segment ${segmentIndex}`)
+        trace.deliveries[segmentIndex] = await options.runtime.trace.transitionDelivery(trace.authorization, { deliveryId: delivery.deliveryId, from: 'pending', to: 'delivering', evidence: { kind: 'none' }, at })
+      }
+      catch (error) { fail(event, error) }
+    },
+    deliveredSegment: async (event, segmentIndex, messageId) => {
+      const trace = traces.get(event.turnId)
+      if (!trace || !options.runtime.trace)
+        return
+      try {
+        const delivery = trace.deliveries[segmentIndex]
+        if (!delivery)
+          throw new Error(`Missing durable text delivery segment ${segmentIndex}`)
+        trace.deliveries[segmentIndex] = await options.runtime.trace.transitionDelivery(trace.authorization, { deliveryId: delivery.deliveryId, from: 'delivering', to: 'delivered', evidence: { kind: 'platformMessageId', platformMessageId: messageId }, at: timestampFromEpochMs(Date.now()) })
+      }
+      catch (error) { fail(event, error) }
+    },
+    delivered: async (event) => {
+      try {
+        traces.delete(event.turnId)
+      }
+      catch (error) { fail(event, error) }
+    },
+    failed: async (event, error) => {
+      const trace = traces.get(event.turnId)
+      if (trace && options.runtime.trace) {
+        const at = timestampFromEpochMs(Date.now())
+        if (trace.generation?.state === 'running') {
+          try {
+            trace.generation = await options.runtime.trace.transitionGeneration(trace.authorization, trace.generation, 'running', 'failed', at)
+          }
+          catch (transitionError) { options.onFailure?.(transitionError) }
+        }
+        for (const [index, delivery] of trace.deliveries.entries()) {
+          if (delivery.state === 'delivered' || delivery.state === 'reconciled')
+            continue
+          try {
+            trace.deliveries[index] = await options.runtime.trace.transitionDelivery(trace.authorization, { deliveryId: delivery.deliveryId, from: delivery.state, to: 'failed', evidence: { kind: 'transportError', errorClass: 'discord-send-failed' }, at })
+          }
+          catch (transitionError) { options.onFailure?.(transitionError) }
+        }
+      }
+      // Recorded, not re-raised. `failed` is the failure-*recording* entry
+      // point: the caller already holds `error` and decides what to do with it.
+      // Every durable transition above reports its own problem through
+      // `onFailure` without escaping, so this call cannot mask a lost write.
+      record(event, error)
+    },
+  }
+}
+
+async function boundedContext<T>(operation: Promise<T>, timeoutMs: number): Promise<T> {
+  let timer: NodeJS.Timeout | undefined
+  try {
+    const deadline = new Promise<never>((_resolve, reject) => {
+      timer = setTimeout(() => reject(new Error('Durable context deadline exceeded')), timeoutMs)
+    })
+    return await Promise.race([operation, deadline])
+  }
+  finally {
+    if (timer)
+      clearTimeout(timer)
+  }
+}
+
+function locationOf(event: DiscordMentionInputEvent, context: TextIngressContext) {
+  if (context.isDirectMessage)
+    return { platform: 'discord' as const, channelId: event.channelId ?? event.userId, channelKind: 'dm' as const }
+  return { platform: 'discord' as const, guildId: event.guildId!, channelId: event.channelId ?? event.messageId, channelKind: context.isThread ? 'thread' as const : 'guildText' as const }
+}

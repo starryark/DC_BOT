@@ -1,0 +1,32 @@
+{
+  "name": "@proj-airi/memory-sqlite",
+  "type": "module",
+  "version": "0.11.3",
+  "private": true,
+  "description": "Inert SQLite schema and forward-only migrations for shared memory",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "files": [
+    "README.md",
+    "package.json",
+    "src"
+  ],
+  "scripts": {
+    "benchmark:g2": "tsx src/benchmark/g2-operational-soak.ts",
+    "benchmark:imp208": "tsx src/benchmark/imp208-benchmark.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@proj-airi/memory-domain": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "24.12.2",
+    "tinyglobby": "0.2.16",
+    "typescript": "5.9.3",
+    "vitest": "4.1.4"
+  }
+}
