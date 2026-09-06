@@ -166,6 +166,8 @@ export interface AppConfig {
   /** Conversation admission policy for busy-state speech. */
   inputPolicy: InputPolicy
 
+  escalation: { enabled: boolean, apiKey: string, model: string }
+  voiceModel: { mode: 'off' | 'shadow' | 'active', port: number, token: string }
   voice: VoiceEndpointConfig
   asr: AsrClientConfig
   brain: BrainConfig
@@ -308,6 +310,16 @@ export function config(): AppConfig {
 
     inputPolicy: parseInputPolicy(env.BOT_INPUT_POLICY),
 
+    escalation: {
+      enabled: parseBool(env.OPENAI_ESCALATION_ENABLED, false),
+      apiKey: env.OPENAI_API_KEY || '',
+      model: env.OPENAI_ESCALATION_MODEL || 'gpt-6-astra',
+    },
+    voiceModel: {
+      mode: env.VOICE_MODEL_MODE === 'active' ? 'active' : env.VOICE_MODEL_MODE === 'shadow' ? 'shadow' : 'off',
+      port: parseBounded(env.VOICE_MODEL_PORT, 8766, 65535),
+      token: env.VOICE_AGENT_BRIDGE_TOKEN || '',
+    },
     voice: {
       // 900 ms (was 650) so a natural mid-sentence pause no longer finalizes a
       // fragment — baseline-findings.md §5 traced most filler turns to this.

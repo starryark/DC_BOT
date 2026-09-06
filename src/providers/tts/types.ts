@@ -44,7 +44,16 @@ export interface TtsTraceContext {
   chunkIndex: number
 }
 
+export interface SpeechAuthorityContext {
+  guild_id: string
+  stream_id: string
+  revision_id: string
+  floor_epoch: number
+}
+
 export interface TtsRequest {
+  authority?: Readonly<SpeechAuthorityContext>
+  prosody?: Readonly<{ pace: number, instruction: string }>
   text: string
   /** Resolved target language; `auto` defers segmentation to GPT-SoVITS. */
   language: GptSoVitsLang

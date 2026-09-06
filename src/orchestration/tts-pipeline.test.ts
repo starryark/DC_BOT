@@ -96,3 +96,49 @@ async function* chunksOf<T>(values: T[]): AsyncIterable<T> {
   for (const value of values)
     yield value
 }
+
+describe('bounded producer cleanup', () => {
+  it('does not read an unbounded tail while playback is held', async () => {
+    let release!: () => void
+    let preparedTwo!: () => void
+    const held = new Promise<void>(resolve => { release = resolve })
+    const two = new Promise<void>(resolve => { preparedTwo = resolve })
+    let reads = 0
+    async function* source() {
+      for (let i = 0; i < 100; i++) { reads++; yield String(i) }
+    }
+    const run = runBoundedTtsPipeline(source(), {
+      async synthesize(text) { if (text === '1') preparedTwo(); return text },
+      async play(item) { if (item.chunkIndex === 0) await held },
+      isCancelled: () => false,
+    })
+    await two
+    expect(reads).toBe(2)
+    release()
+    await run
+  })
+
+  it('cancels a blocked source pull without waiting for another token', async () => {
+    const abort = new AbortController()
+    let entered!: () => void
+    let release!: (value: IteratorResult<string>) => void
+    let closed = false
+    const pulling = new Promise<void>(resolve => { entered = resolve })
+    const source = { [Symbol.asyncIterator]() {
+      return {
+        next() { entered(); return new Promise<IteratorResult<string>>(resolve => { release = resolve }) },
+        async return() { closed = true; return { done: true as const, value: undefined } },
+      }
+    } }
+    const run = runBoundedTtsPipeline(source, {
+      async synthesize(text) { return text }, async play() {},
+      isCancelled: () => abort.signal.aborted, signal: abort.signal,
+    })
+    const rejected = expect(run).rejects.toThrow('cancelled')
+    await pulling
+    abort.abort()
+    await rejected
+    expect(closed).toBe(true)
+    release({ done: true, value: undefined })
+  })
+})

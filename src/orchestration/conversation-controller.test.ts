@@ -1,3 +1,4 @@
+import { EventEmitter } from 'node:events'
 import type { Readable } from 'node:stream'
 
 import type { PreparedModelMemory } from '../memory/text-observer'
@@ -114,6 +115,8 @@ function makeUtterance(overrides: Partial<VoiceUtterance> = {}): VoiceUtterance 
 }
 
 interface HarnessOptions {
+  voiceBridge?: import("../voice/model-bridge").VoiceModelBridge
+  voiceModelActive?: boolean
   asrLanguage?: string
   asrText?: string
   /** Successive ASR results; falls back to `asrText` once exhausted. */
@@ -196,7 +199,7 @@ function buildController(opts: HarnessOptions) {
   }
 
   const voiceProfileCatalog = opts.voiceProfileCatalog ?? createSingleReferenceCatalog({ referenceAudio: 'neutral.wav', referenceText: 'neutral reference', promptLanguage: 'ja' })
-  const controller = new ConversationController({ voice: voice as never, asr, brain, tts, voiceProfileCatalog, memory: opts.memory })
+  const controller = new ConversationController({ voice: voice as never, asr, brain, tts, voiceProfileCatalog, memory: opts.memory, voiceBridge: opts.voiceBridge, voiceModelActive: opts.voiceModelActive })
   return { controller, voice, asrCalls, brainRequests, ttsRequests, brainSignals, ttsSignals }
 }
 
@@ -999,5 +1002,44 @@ describe('conversationController — interrupting policies', () => {
     await settle(120)
 
     expect(asrCalls).toHaveLength(1)
+  })
+})
+
+describe('Python-authorized voice mode', () => {
+  it('bypasses legacy ASR and accepts a fresh room epoch after reset', async () => {
+    const bridge = Object.assign(new EventEmitter(), { playback() {} })
+    const { voice, asrCalls, brainRequests, ttsRequests } = buildController({
+      voiceBridge: bridge as never, voiceModelActive: true,
+    })
+    voice.emit('utterance', makeUtterance())
+    await settle()
+    expect(asrCalls).toHaveLength(0)
+    expect(brainRequests).toHaveLength(0)
+    const first = { decision: 'TAKE_TURN', guild_id: 'g1', stream_id: 's1',
+      revision_id: 'r1', floor_epoch: 5, text: 'Please answer the first question.', language: 'en' }
+    bridge.emit('decision', first, makeUtterance())
+    await settle()
+    expect(brainRequests).toHaveLength(1)
+    expect(ttsRequests[0].authority).toMatchObject({ stream_id: 's1', revision_id: 'r1', floor_epoch: 5 })
+    bridge.emit('roomReset', 'g1')
+    await settle()
+    bridge.emit('decision', { ...first, stream_id: 's2', revision_id: 'r2', floor_epoch: 1,
+      text: 'Please answer another question.' }, makeUtterance())
+    await settle()
+    expect(brainRequests).toHaveLength(2)
+    expect(asrCalls).toHaveLength(0)
+  })
+
+  it('gives an explicit voice-test command its own authority and response epoch', async () => {
+    const authority = { guild_id: 'g1', stream_id: 'command:test', revision_id: 'command:r', floor_epoch: 1 }
+    const bridge = Object.assign(new EventEmitter(), { playback() {}, async authorizeCommand() { return authority } })
+    const { controller, asrCalls, brainRequests, ttsRequests } = buildController({
+      voiceBridge: bridge as never, voiceModelActive: true,
+    })
+    await controller.testVoice('g1', 'c1', 'u1', 'command-id', 'Hello.', 'en')
+    expect(asrCalls).toHaveLength(0)
+    expect(brainRequests).toHaveLength(0)
+    expect(ttsRequests[0].authority).toEqual(authority)
+    expect(ttsRequests[0].trace?.responseEpoch).toBeGreaterThan(0)
   })
 })

@@ -43,6 +43,7 @@ export type CancellationReason = 'disconnect' | 'barge_in' | 'superseded' | 'fai
  * compiler receives the real input rather than a reconstructed stand-in.
  */
 export interface AcceptedTurn {
+  voiceAuthority?: import('../voice/model-bridge').FloorDecision
   turnId: string
   inputEvent: VoiceInputEvent
   /** All separately persisted speaker events contributing to a grouped reply. */

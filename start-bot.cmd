@@ -1,5 +1,5 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-call pnpm start
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0start-bot.ps1" %*
 exit /b %errorlevel%

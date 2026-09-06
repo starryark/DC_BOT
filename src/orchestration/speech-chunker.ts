@@ -13,7 +13,10 @@
  *
  * Handles English (.?!), Japanese (。？！), and Chinese (。？！).
  */
+import { safeSpeechBoundary } from './safe-speech-boundary'
+
 export interface SpeechChunkerOptions {
+  safeBoundaries?: boolean
   minLatinChars: number
   targetLatinChars: number
   maxLatinChars: number
@@ -78,10 +81,20 @@ export class SpeechChunker {
   pushWithBoundaries(delta: string): SpeechChunk[] {
     if (!delta)
       return []
+    if (this.options.safeBoundaries && delta.length > 256) {
+      if (delta.length > 65536)
+        throw new Error('Speech delta exceeds its bound')
+      const chunks: SpeechChunk[] = []
+      for (let offset = 0; offset < delta.length; offset += 256)
+        chunks.push(...this.pushWithBoundaries(delta.slice(offset, offset + 256)))
+      return chunks
+    }
     this.buffer += delta
     const out: SpeechChunk[] = []
     while (true) {
-      const boundary = this.findBoundary()
+      let boundary = this.findBoundary()
+      if (boundary && this.options.safeBoundaries && !safeSpeechBoundary(this.buffer, boundary.cut))
+        boundary = this.findSafeAlternative()
       if (!boundary)
         break
       const text = this.buffer.slice(0, boundary.cut).trim()
@@ -93,6 +106,8 @@ export class SpeechChunker {
       // when a later boundary in this same delta produced it.
       this.opened = true
     }
+    if (this.options.safeBoundaries && this.buffer.length > 4096)
+      throw new Error('No safe speech boundary within the text buffer limit')
     return out
   }
 
@@ -103,6 +118,8 @@ export class SpeechChunker {
 
   /** Flush remaining text as an explicit stream-end chunk. */
   flushWithBoundary(): SpeechChunk[] {
+    if (this.options.safeBoundaries && !safeSpeechBoundary(this.buffer, this.buffer.length, true))
+      throw new Error('Unfinished protected text cannot be spoken')
     const rest = this.buffer.trim()
     this.buffer = ''
     if (!rest)
@@ -113,6 +130,8 @@ export class SpeechChunker {
 
   /** Flush buffered text at a semantic control-token boundary. */
   flushForControlToken(): SpeechChunk[] {
+    if (this.options.safeBoundaries && !safeSpeechBoundary(this.buffer, this.buffer.length, true))
+      throw new Error('Unfinished protected text cannot be spoken')
     const rest = this.buffer.trim()
     this.buffer = ''
     if (!rest)
@@ -146,6 +165,18 @@ export class SpeechChunker {
   }
 
   /** Returns the index to cut at (inclusive of the boundary char), or 0. */
+  private findSafeAlternative(): { cut: number, boundary: SpeechChunkBoundary } | undefined {
+    const { min, target, max } = this.sizing(isCjkDominant(this.buffer))
+    for (let cut = min; cut <= this.buffer.length; cut++) {
+      const char = this.buffer[cut - 1]
+      const terminal = /[.!?。？！]/u.test(char) && (char !== '.' || !isProtectedLatinPeriod(this.buffer, cut - 1))
+      const clause = cut >= target && /[\s,，、;；]/u.test(char)
+      if ((terminal || clause || cut >= max) && safeSpeechBoundary(this.buffer, cut))
+        return { cut, boundary: terminal ? 'sentence' : clause ? 'clause' : 'hard-limit' }
+    }
+    return undefined
+  }
+
   private findBoundary(): { cut: number, boundary: SpeechChunkBoundary } | undefined {
     const cjk = isCjkDominant(this.buffer)
     const { min, target, max } = this.sizing(cjk)

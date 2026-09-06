@@ -10,10 +10,13 @@ Use Node.js 24.14+ within the Node 24 release line and pnpm 10.33.0. From this d
 
 ```powershell
 pnpm install --frozen-lockfile
-Copy-Item .env.example .env
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 ```
 
 Set `DISCORD_TOKEN`, `GEMINI_API_KEY`, and an available `GEMINI_MODEL` in `.env`.
+This local checkout already has the credentials and settings copied from the
+original bot's `.env` and `.config`. `.env` is ignored by Git. The character
+path is adjusted to `./characters`; other supplied settings are preserved.
 The configuration order is `.env`, `.config`, then optional `.env.local`; later
 files win, and existing process environment variables take precedence.
 Put personal tuning overrides in `.env.local`.
@@ -24,9 +27,35 @@ pnpm start
 # Windows shortcut: .\start-bot.cmd
 ```
 
-The launcher starts the Discord process in this directory. It uses separately
-running ASR and TTS services configured by `ASR_BASE_URL` and `GPT_SOVITS_URL`
-(defaults: `http://127.0.0.1:8765` and `http://127.0.0.1:9880`).
+On Windows, `pnpm start` or `start-bot.cmd` starts the existing external ASR and
+TTS installations, waits for readiness, and runs this project's Discord bot in
+the current terminal. The default external folders are `../DC_BOT/qwen3-asr`
+and `../DC_BOT/GPT-SoVITS`. Their environments and model files stay there.
+Endpoints come from `ASR_BASE_URL` and `GPT_SOVITS_URL` (defaults:
+`http://127.0.0.1:8765` and `http://127.0.0.1:9880`). Healthy running services are
+reused. Newly started services run in hidden windows with logs under
+`.local/services/`; the launcher stops only its own services when it exits.
+
+If the external projects move, set `ASR_PROJECT_DIR` and
+`GPT_SOVITS_PROJECT_DIR` in `.env.local`. Interpreter overrides are
+`ASR_PYTHON` and `GPT_SOVITS_PYTHON`. The launcher detects the existing virtual
+environments by default. It never starts the old Discord bot.
+
+Use `pnpm start:bot` when you manage services yourself (also the direct entry
+point on non-Windows hosts). To check the full local setup without posting to
+Discord, run:
+
+```powershell
+.\start-bot.cmd -CheckOnly
+# When services are already running:
+pnpm runtime:check
+```
+
+The check loads the character, authenticates to the Discord gateway, makes a
+small Gemini generation request, synthesizes a Japanese test sentence, converts
+it through Discord's Opus path locally, and transcribes the result. It does not
+register commands, send Discord messages, join voice channels, or play audio.
+
 `GPT_SOVITS_REF_AUDIO` is resolved by the TTS server, relative to that server's
 working directory; the supplied value supports the existing external GPT-SoVITS
 installation. Set it to the reference clip on your TTS server when changing hosts.
@@ -67,10 +96,10 @@ Its environments, training data, checkpoints, and evidence are not dependencies
 of installing or testing this TypeScript project. No voice-model server is
 started by this launcher; see the integration document before adding a bridge.
 
-The original `../DC_BOT` is retained. Secrets, personal overrides, live memory
-databases, caches, recordings, model repositories, and weights were not copied.
-Configure this project explicitly before starting it. If continuing an existing
-memory deployment, use the retained memory backup/restore commands and the
+The original `../DC_BOT` is retained. Only its explicitly supplied `.env` and
+`.config` were migrated; its optional `.env.local`, live memory databases,
+caches, recordings, model repositories, and weights were not copied.
+If continuing an existing memory deployment, use the retained memory backup/restore commands and the
 intended runtime root rather than starting a second writer against a live store.
 
 ## Development
@@ -88,3 +117,9 @@ The original memory program's documentation-governance test remains with
 `DC_BOT`: it checks that repository's historical evidence, release status,
 runbooks, and backlog rather than bot behavior. Those documents and that test
 are outside this extraction. Runtime and adapter regression tests are retained.
+
+
+The local Python voice-model bridge is now implemented as an opt-in voice path.
+See [voice-model-integration.md](docs/voice-model-integration.md) for off/shadow/
+active selection, streaming PCM, revision ownership and qualification limits.
+The legacy default remains available. Existing local configuration is preserved.

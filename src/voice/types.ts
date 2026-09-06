@@ -46,6 +46,7 @@ export interface GuildVoiceSession {
   audioPlayer: AudioPlayer
   /** Sole owner of playback ordering, cancellation and completion for this guild. */
   playback: GuildPlaybackScheduler
+  packetFence?: { invalidate: () => void, dispose: () => void }
 }
 
 export type UserCaptureState = 'idle' | 'speaking' | 'finalizing'
@@ -62,6 +63,7 @@ export interface UserCaptureSession {
 
   pcmChunks: Buffer[]
   totalBytes: number
+  transportSsrc?: number
 
   speechStartedAt: number
   lastPacketAt: number
@@ -77,6 +79,10 @@ export interface UserCaptureSession {
  *  - `bargeInLevel`: raw volume telemetry (optional, for tuning).
  */
 export interface VoiceManagerEvents {
+  packetSubmitted: [{ guildId: string, epoch?: number, silence: boolean, monotonicNs: string }]
+  pcmFrame: [{ guildId: string, channelId: string, userId: string, pcm: Buffer, ssrc?: number }]
+  pcmEnd: [{ guildId: string, userId: string, utterance?: VoiceUtterance }]
+  pcmAbort: [{ guildId: string, userId?: string }]
   utterance: [VoiceUtterance]
   bargeIn: [{ guildId: string, userId: string, displayName: string }]
   bargeInLevel: [{ guildId: string, userId: string, avgVolume: number }]

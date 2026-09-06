@@ -40,6 +40,7 @@ import { buildDiscordActorEvidence } from '../memory/discord-actor-snapshot'
 import { convertOpusToWav } from '../utils/audio'
 import { OpusDecoder } from '../utils/opus'
 import { GuildPlaybackScheduler } from './playback'
+import { fenceVoicePackets } from './packet-fence'
 
 /** 16 kHz mono 16-bit => 32 000 bytes per second of audio. */
 const BYTES_PER_MS = (DECODE_SAMPLE_RATE * 2) / 1000
@@ -154,6 +155,8 @@ export class VoiceManager extends TypedVoiceEmitter {
 
   handleVoiceConnectionStateChange(session: GuildVoiceSession): (oldState: VoiceConnectionState, newState: VoiceConnectionState) => Promise<void> {
     return async (oldState, newState) => {
+      if (this.sessions.get(session.guildId) !== session)
+        return
       this.logger.withFields({ old: oldState.status, new: newState.status }).log(
         `Voice connection state changed from ${oldState.status} to ${newState.status}`,
       )
@@ -162,6 +165,13 @@ export class VoiceManager extends TypedVoiceEmitter {
         await this.teardownSession(session.guildId)
       }
       else if (newState.status === VoiceConnectionStatus.Disconnected) {
+        session.packetFence?.invalidate()
+        this.emit('pcmAbort', { guildId: session.guildId })
+        for (const capture of session.users.values()) {
+          capture.pcmChunks = []
+          capture.totalBytes = 0
+          capture.speechStartedAt = 0
+        }
         this.logger.log('Handling disconnection...')
         try {
           await Promise.race([
@@ -171,6 +181,8 @@ export class VoiceManager extends TypedVoiceEmitter {
           this.logger.log('Reconnecting to channel...')
         }
         catch {
+          if (this.sessions.get(session.guildId) !== session)
+            return
           this.logger.log('Disconnection confirmed - cleaning up...')
           session.connection.destroy()
           await this.teardownSession(session.guildId)
@@ -225,9 +237,15 @@ export class VoiceManager extends TypedVoiceEmitter {
         playback: new GuildPlaybackScheduler({
           guildId,
           player: adaptAudioPlayer(audioPlayer),
-          createResource: item => createAudioResource(item.audio as Readable, { inputType: StreamType.Arbitrary }),
+          createResource: item => createAudioResource(item.audio as Readable, { inputType: (item.audio as Readable & { voicePcmFormat?: string }).voicePcmFormat === 's16le-48000-stereo' ? StreamType.Raw : StreamType.Arbitrary }),
         }),
       }
+      session.packetFence = fenceVoicePackets(connection, {
+        currentEpoch: () => session.playback.getSnapshot().currentEpoch,
+        eligible: epoch => session.playback.canSubmitEpoch(epoch),
+        nowNs: () => process.hrtime.bigint(),
+        submitted: event => this.emit('packetSubmitted', { guildId, ...event }),
+      })
       this.sessions.set(guildId, session)
 
       connection.on('stateChange', this.handleVoiceConnectionStateChange(session))
@@ -283,6 +301,8 @@ export class VoiceManager extends TypedVoiceEmitter {
 
   private handleSpeakingStart(session: GuildVoiceSession, channel: BaseGuildVoiceChannel): (userId: string) => Promise<void> {
     return async (userId: string) => {
+      if (this.sessions.get(session.guildId) !== session)
+        return
       // Never capture the bot itself.
       if (userId === this.client.user?.id)
         return
@@ -298,6 +318,9 @@ export class VoiceManager extends TypedVoiceEmitter {
           this.logger.withError(error).error('Failed to fetch member')
         }
       }
+      // Member lookup can outlive a disconnect/rejoin.
+      if (this.sessions.get(session.guildId) !== session)
+        return
       if (member?.user.bot)
         return
 
@@ -340,6 +363,8 @@ export class VoiceManager extends TypedVoiceEmitter {
 
   private handleSpeakingEnd(_session: GuildVoiceSession, _channel: BaseGuildVoiceChannel): (userId: string) => void {
     return (userId: string) => {
+      if (this.sessions.get(_session.guildId) !== _session)
+        return
       if (userId === this.client.user?.id)
         return
       // Discord's speaking-end is a hint, not a guarantee. We rely on the
@@ -397,17 +422,50 @@ export class VoiceManager extends TypedVoiceEmitter {
     const opusDecoder = new OpusDecoder(DECODE_SAMPLE_RATE, 1)
     this.decoders.set(key, opusDecoder)
 
-    const dataHandler = (pcmData: Buffer) => this.onPcmPacket(guildId, userId, pcmData, session)
-    const errorHandler = (err: Error) => this.logger.withError(err).error('Opus decoding error')
+    let retired = false
+    const retireSource = () => {
+      if (retired)
+        return
+      retired = true
+      opusDecoder.removeListener('data', dataHandler)
+      // A late close from an old pipeline must not abort its replacement.
+      if (this.decoders.get(key) !== opusDecoder)
+        return
+      this.decoders.delete(key)
+      if (this.sessions.get(guildId) !== session)
+        return
+      const capture = this.captures.get(key)
+      if (capture) {
+        clearTimeout(capture.finalizeTimer)
+        capture.finalizeTimer = undefined
+        capture.pcmChunks = []
+        capture.totalBytes = 0
+        capture.speechStartedAt = 0
+        capture.lastPacketAt = 0
+        capture.transportSsrc = undefined
+        capture.state = 'idle'
+      }
+      this.bargeInTriggered.delete(key)
+      this.emit('pcmAbort', { guildId, userId })
+    }
+    const dataHandler = (pcmData: Buffer) => {
+      if (!retired && this.decoders.get(key) === opusDecoder)
+        this.onPcmPacket(guildId, userId, pcmData, session)
+    }
+    const errorHandler = (err: Error) => {
+      this.logger.withError(err).error('Opus decoding error')
+      retireSource()
+    }
     const closeHandler = () => {
       this.logger.withField('displayName', displayName).log('Opus decoder closed')
-      opusDecoder.removeListener('data', dataHandler)
+      retireSource()
       opusDecoder.removeListener('error', errorHandler)
       opusDecoder.removeListener('close', closeHandler)
     }
     const streamCloseHandler = () => {
       this.logger.withField('displayName', displayName).log('Voice stream closed')
-      this.decoders.delete(key)
+      retireSource()
+      receiveStream.removeListener('close', streamCloseHandler)
     }
 
     opusDecoder.on('data', dataHandler)
@@ -433,6 +491,17 @@ export class VoiceManager extends TypedVoiceEmitter {
     if (!capture)
       return
 
+    if (this.sessions.get(guildId) !== session)
+      return
+    const ssrc = session.connection.receiver.ssrcMap.get(userId)?.audioSSRC
+    if (capture.transportSsrc !== undefined && capture.transportSsrc !== ssrc) {
+      this.emit('pcmAbort', { guildId, userId })
+      capture.pcmChunks = []
+      capture.totalBytes = 0
+      capture.speechStartedAt = 0
+    }
+    capture.transportSsrc = ssrc
+    this.emit('pcmFrame', { guildId, channelId: session.channelId, userId, pcm: pcmData, ssrc })
     capture.pcmChunks.push(pcmData)
     capture.totalBytes += pcmData.length
     capture.lastPacketAt = Date.now()
@@ -521,6 +590,7 @@ export class VoiceManager extends TypedVoiceEmitter {
     capture.speechStartedAt = 0
 
     if (durationMs < config().voice.minUtteranceMs || pcm.length === 0) {
+      this.emit('pcmEnd', { guildId, userId })
       this.logger.withFields({ userId, ms: durationMs }).log('Discarding too-short utterance')
       return
     }
@@ -549,6 +619,7 @@ export class VoiceManager extends TypedVoiceEmitter {
     if (config().voice.debugDumpAudio)
       void this.dumpWav(utterance)
 
+    this.emit('pcmEnd', { guildId, userId, utterance })
     this.emit('utterance', utterance)
   }
 
@@ -611,6 +682,7 @@ export class VoiceManager extends TypedVoiceEmitter {
 
   /** Immediately stop the guild's playback and clear its queue. */
   stopPlayback(guildId: string, reason: PlaybackStopReason = 'cancelled'): void {
+    this.sessions.get(guildId)?.packetFence?.invalidate()
     void this.sessions.get(guildId)?.playback.stopAll(reason)
   }
 
@@ -620,6 +692,10 @@ export class VoiceManager extends TypedVoiceEmitter {
   }
 
   /** Does this guild have an active voice session (joined a channel)? */
+  currentChannelId(guildId: string): string | undefined {
+    return this.sessions.get(guildId)?.channelId
+  }
+
   hasSession(guildId: string): boolean {
     return this.sessions.has(guildId) || this.getVoiceConnection(guildId) != null
   }
@@ -629,6 +705,7 @@ export class VoiceManager extends TypedVoiceEmitter {
   // ─────────────────────────────────────────────────────────────────────────
 
   private async teardownSession(guildId: string, channelId?: string): Promise<void> {
+    this.emit('pcmAbort', { guildId })
     const session = this.sessions.get(guildId)
     const cid = channelId ?? session?.channelId
 
@@ -657,6 +734,7 @@ export class VoiceManager extends TypedVoiceEmitter {
     if (session) {
       // Dispose settles every pending playback promise and detaches the
       // scheduler's observers; the player itself is dropped with the session.
+      session.packetFence?.dispose()
       session.playback.dispose()
       session.audioPlayer.removeAllListeners()
       try {

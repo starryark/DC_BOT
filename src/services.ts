@@ -1,3 +1,4 @@
+import type { ConversationController } from './orchestration/conversation-controller'
 import type { AvatarPublisher } from './avatar/publisher'
 import type { AsrProvider } from './providers/asr/types'
 import type { BrainProvider } from './providers/brain/types'
@@ -10,6 +11,7 @@ import type { VoiceManager } from './voice/voice-manager'
  * the same instances without a DI framework.
  */
 export interface Services {
+  controller?: ConversationController
   voice: VoiceManager
   asr: AsrProvider
   brain: BrainProvider

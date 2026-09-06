@@ -9,106 +9,100 @@ export interface BoundedTtsPipelineOptions<TChunk, TAudio> {
   synthesize: (chunk: TChunk, chunkIndex: number) => Promise<TAudio | null>
   play: (chunk: PreparedTtsChunk<TChunk, TAudio>) => Promise<void>
   isCancelled: () => boolean
+  signal?: AbortSignal
+  cancelSource?: () => void
+  discard?: (audio: TAudio) => void
   onChunk?: (chunk: TChunk, chunkIndex: number) => void
 }
 
-/**
- * Run streaming TTS with one-chunk lookahead.
- *
- * While chunk N plays, the model may produce and synthesize N+1. The iterator
- * is not advanced to N+2 until N has completed, so cancellation can waste at
- * most one synthesized, unplayed chunk.
- *
- * The depth of one is a structural invariant of this loop, not a setting. It
- * used to be surfaced as `TTS_PREFETCH_CHUNKS`, clamped to the range [1, 1] —
- * an operator control that could take exactly one value. Deeper lookahead would
- * raise the cancellation-waste bound above one chunk and needs a change here,
- * not in configuration.
- */
+/** Pull the current phrase and one lookahead; never retain an eager text queue. */
 export async function runBoundedTtsPipeline<TChunk, TAudio>(
   chunks: AsyncIterable<TChunk>,
   options: BoundedTtsPipelineOptions<TChunk, TAudio>,
 ): Promise<{ chunksSeen: number, chunksPrepared: number }> {
-  let nextIndex = 0
+  const iterator = chunks[Symbol.asyncIterator]()
   let chunksSeen = 0
   let chunksPrepared = 0
+  let closing = false
+  let completed = false
+  let current: PreparedTtsChunk<TChunk, TAudio> | null = null
+  const cancelled = () => closing || options.signal?.aborted || options.isCancelled()
 
-  // Eagerly consume the incoming chunks stream in the background to prevent upstream HTTP connection
-  // timeouts (e.g. from Gemini) while waiting for slow TTS playback.
-  const sourceIterator = chunks[Symbol.asyncIterator]()
-  const chunkQueue: TChunk[] = []
-  let sourceDone = false
-  let sourceError: unknown
-  let waitingResolve: (() => void) | undefined
-
-  const consumeSource = async () => {
-    try {
-      while (!options.isCancelled()) {
-        const next = await sourceIterator.next()
-        if (next.done) {
-          sourceDone = true
-          break
-        }
-        chunkQueue.push(next.value)
-        if (waitingResolve) {
-          const resolve = waitingResolve
-          waitingResolve = undefined
-          resolve()
-        }
-      }
-    }
-    catch (e) {
-      sourceError = e
-    }
-    if (waitingResolve) {
-      const resolve = waitingResolve
-      waitingResolve = undefined
-      resolve()
-    }
-  }
-
-  // Start consuming immediately (floating promise intentionally ignored).
-  void consumeSource()
-
-  const prepareNext = async (): Promise<PreparedTtsChunk<TChunk, TAudio> | null> => {
-    while (!options.isCancelled()) {
-      // eslint-disable-next-line no-unmodified-loop-condition -- sourceDone and sourceError are mutated by the consumeSource closure above
-      while (chunkQueue.length === 0 && !sourceDone && sourceError === undefined && !options.isCancelled()) {
-        await new Promise<void>((resolve) => {
-          waitingResolve = resolve
-        })
-      }
-      if (sourceError !== undefined) {
-        throw sourceError
-      }
-      if (options.isCancelled() || (chunkQueue.length === 0 && sourceDone)) {
+  const prepare = async (): Promise<PreparedTtsChunk<TChunk, TAudio> | null> => {
+    while (!cancelled()) {
+      const next = await interruptible(iterator.next(), options.signal)
+      if (next.done || cancelled())
         return null
-      }
-
-      const value = chunkQueue.shift()!
-      const chunkIndex = nextIndex++
-      chunksSeen++
-      options.onChunk?.(value, chunkIndex)
-      const audio = await options.synthesize(value, chunkIndex)
-      if (audio != null && !options.isCancelled()) {
+      const chunkIndex = chunksSeen++
+      options.onChunk?.(next.value, chunkIndex)
+      const prepared = options.synthesize(next.value, chunkIndex).then((audio) => {
+        if (audio != null && cancelled()) { options.discard?.(audio); return null }
+        return audio
+      })
+      const audio = await interruptible(prepared, options.signal)
+      if (audio != null) {
+        if (cancelled()) {
+          options.discard?.(audio)
+          return null
+        }
         chunksPrepared++
-        return { chunk: value, chunkIndex, audio }
+        return { chunk: next.value, chunkIndex, audio }
       }
     }
     return null
   }
 
-  let current = await prepareNext()
-  while (current && !options.isCancelled()) {
-    const playback = options.play(current)
-    // This is the sole lookahead slot. `prepareNext` cannot advance again until
-    // this promise is consumed after current playback settles.
-    const successor = prepareNext()
-    await playback
-    if (options.isCancelled())
-      break
-    current = await successor
+  try {
+    current = await prepare()
+    while (current && !cancelled()) {
+      const playback = options.play(current).catch((error) => {
+        closing = true
+        options.cancelSource?.()
+        throw error
+      })
+      // Observe both promises immediately, including failures during playback.
+      const [played, prepared] = await Promise.allSettled([playback, prepare()])
+      if (played.status === 'rejected') {
+        if (prepared.status === 'fulfilled' && prepared.value)
+          options.discard?.(prepared.value.audio)
+        throw played.reason
+      }
+      if (prepared.status === 'rejected')
+        throw prepared.reason
+      current = prepared.value
+      if (current && cancelled())
+        options.discard?.(current.audio)
+    }
+    completed = true
+    return { chunksSeen, chunksPrepared }
   }
+  finally {
+    closing = true
+    if (!completed) {
+      options.cancelSource?.()
+      if (current)
+        options.discard?.(current.audio)
+    }
+    const returned = iterator.return?.()
+    if (options.signal?.aborted)
+      void returned?.catch(() => {})
+    else
+      await returned
+  }
+}
 
-  return { chunksSeen, chunksPrepared }
+async function interruptible<T>(work: Promise<T>, signal?: AbortSignal): Promise<T> {
+  if (!signal)
+    return work
+  if (signal.aborted) {
+    void work.catch(() => {})
+    throw new DOMException('Speech pipeline cancelled', 'AbortError')
+  }
+  let stop!: () => void
+  const aborted = new Promise<never>((_, reject) => {
+    stop = () => reject(new DOMException('Speech pipeline cancelled', 'AbortError'))
+    signal.addEventListener('abort', stop, { once: true })
+  })
+  try { return await Promise.race([work, aborted]) }
+  finally { signal.removeEventListener('abort', stop) }
 }

@@ -1,4 +1,5 @@
 import type { Readable } from 'node:stream'
+import type { FloorDecision, VoiceModelBridge } from '../voice/model-bridge'
 
 import type { Content } from '@google/genai'
 
@@ -83,10 +84,14 @@ export class ConversationController {
   private voiceProfileCatalog: VoiceProfileCatalog
   private defaultSpeechStyle: ResolvedSpeechStyle
   private conversationFloor: ConversationFloorCoordinator
+  private voiceBridge?: VoiceModelBridge
+  private modelAuthorities = new Map<string, FloorDecision>()
   private memory?: VoiceMemoryAdapter
 
   constructor(deps: {
     voice: VoiceManager
+    voiceBridge?: VoiceModelBridge
+    voiceModelActive?: boolean
     asr: AsrProvider
     brain: BrainProvider
     tts: TtsProvider
@@ -97,6 +102,7 @@ export class ConversationController {
     memory?: VoiceMemoryAdapter
   }) {
     this.voice = deps.voice
+    this.voiceBridge = deps.voiceBridge
     this.asr = deps.asr
     this.brain = deps.brain
     this.tts = deps.tts
@@ -116,9 +122,25 @@ export class ConversationController {
       onFlush: input => this.onConversationGroup(input),
     })
 
-    this.voice.on('utterance', u => this.onUtterance(u))
+    if (!deps.voiceModelActive)
+      this.voice.on('utterance', u => this.onUtterance(u))
+    if (deps.voiceModelActive && this.voiceBridge) {
+      this.voiceBridge.on('decision', (decision: FloorDecision, utterance?: VoiceUtterance) => {
+        void this.onModelDecision(decision, utterance)
+      })
+      this.voiceBridge.on('disconnected', (guilds: string[]) => {
+        for (const guildId of new Set([...this.modelAuthorities.keys(), ...guilds]))
+          void this.cancelActiveResponse(guildId, 'disconnect')
+        this.modelAuthorities.clear()
+      })
+      this.voiceBridge.on('roomReset', (guildId: string) => {
+        if (this.modelAuthorities.delete(guildId) || this.states.get(guildId).currentTurnId)
+          void this.cancelActiveResponse(guildId, 'superseded')
+      })
+    }
     this.voice.on('bargeIn', ({ guildId }) => this.onBargeIn(guildId))
     this.voice.on('sessionEnd', ({ guildId }) => {
+      this.modelAuthorities.delete(guildId)
       void this.onSessionEnd(guildId)
     })
   }
@@ -128,11 +150,60 @@ export class ConversationController {
     await this.cancel(this.states.get(guildId), reason)
   }
 
+  private async onModelDecision(decision: FloorDecision, utterance?: VoiceUtterance): Promise<void> {
+    const previous = this.modelAuthorities.get(decision.guild_id)
+    if ((previous && decision.floor_epoch <= previous.floor_epoch)
+      || !['TAKE_TURN', 'STOP_SPEAKING'].includes(decision.decision))
+      return
+    if (!previous && this.modelAuthorities.size >= 8)
+      return
+    this.modelAuthorities.set(decision.guild_id, Object.freeze({ ...decision }))
+    const current = this.modelAuthorities.get(decision.guild_id)!
+    await this.cancelActiveResponse(decision.guild_id, 'superseded')
+    if (this.modelAuthorities.get(decision.guild_id) !== current || !utterance || decision.decision !== 'TAKE_TURN')
+      return
+    await this.handleUtterance(utterance, current)
+  }
+
+  async testVoice(guildId: string, channelId: string, memberId: string, commandId: string, text: string, language: GptSoVitsLang): Promise<void> {
+    if (!this.voiceBridge)
+      throw new Error('Voice model bridge is unavailable')
+    const session = this.states.get(guildId)
+    await this.cancel(session, 'superseded')
+    const admitted = session.responseEpoch
+    const authority = await this.voiceBridge.authorizeCommand(guildId, channelId, memberId, commandId)
+    if (session.responseEpoch !== admitted)
+      throw new BrainRequestAbortedError()
+    transitionGuildPhase(session, 'collecting', 'voice_test_admitted')
+    transitionGuildPhase(session, 'thinking', 'voice_test_synthesis')
+    const epoch = ++session.responseEpoch
+    const abort = new AbortController()
+    session.generationAbort = abort
+    session.currentTurnId = commandId
+    try {
+      const audio = await this.tts.synthesize({ text, language, authority,
+        trace: { guildId, turnId: commandId, responseEpoch: epoch, chunkIndex: 0 } }, abort.signal)
+      if (this.isStale(session, epoch, abort)) { audio.destroy(); return }
+      transitionGuildPhase(session, 'speaking', 'voice_test_playback')
+      this.voiceBridge.playback(guildId, true, text, authority.floor_epoch)
+      await this.voice.playAudioStream(guildId, audio, { turnId: commandId, responseEpoch: epoch, chunkIndex: 0 })
+      await this.voice.awaitPlaybackDrained(guildId, epoch)
+    }
+    finally {
+      if (session.responseEpoch === epoch) {
+        this.voiceBridge.playback(guildId, false, '', authority.floor_epoch)
+        session.generationAbort = undefined
+        session.currentTurnId = undefined
+        transitionGuildPhase(session, 'idle', 'voice_test_finished')
+      }
+    }
+  }
+
   private onUtterance(utterance: VoiceUtterance): void {
     void this.handleUtterance(utterance)
   }
 
-  private async handleUtterance(utterance: VoiceUtterance): Promise<void> {
+  private async handleUtterance(utterance: VoiceUtterance, authorized?: FloorDecision): Promise<void> {
     const session = this.states.get(utterance.guildId)
 
     // Admission first: everything below this line costs inference.
@@ -181,8 +252,9 @@ export class ConversationController {
     let asrText = ''
     let asrLanguage = 'und'
     try {
-      const wav = convertOpusToWav(utterance.pcm)
-      const result = await this.asr.transcribe({ wav, sampleRate: 16000, hotwords: this.character?.asr.hotwords ?? [] })
+      const result = authorized
+        ? { text: authorized.text, language: authorized.language }
+        : await this.asr.transcribe({ wav: convertOpusToWav(utterance.pcm), sampleRate: 16000, hotwords: this.character?.asr.hotwords ?? [] })
       asrText = result.text
       asrLanguage = result.language
     }
@@ -251,6 +323,15 @@ export class ConversationController {
       return
     }
 
+    if (authorized) {
+      if (this.modelAuthorities.get(utterance.guildId) !== authorized || session.responseEpoch !== admissionEpoch)
+        return
+      await this.generateAndSpeak(session, {
+        turnId, inputEvent, userId: utterance.userId, displayName: utterance.displayName,
+        text: verdict.normalizedText, language: asrLanguage, understanding, voiceAuthority: authorized,
+      })
+      return
+    }
     const floorDecision = this.conversationFloor.add({
       inputEvent,
       text: verdict.normalizedText,
@@ -344,17 +425,23 @@ export class ConversationController {
         neutralStyle: this.defaultSpeechStyle,
         turnId: turn.turnId,
         maxModelPauseMs: config().tts.maxModelPauseMs,
-        chunker: config().ttsChunking,
+        chunker: { ...config().ttsChunking, safeBoundaries: true },
         onAvatarAction: action => this.logAvatarAction(session, epoch, turn.turnId, action),
       })
 
       const pipeline = await runBoundedTtsPipeline(stream, {
-        synthesize: (chunk, index) => this.synthesizeChunk(session, epoch, turn.turnId, chunk, index, turnLang, turn.understanding.responseLanguage, abort.signal),
-        play: prepared => this.playChunk(session, epoch, turn.turnId, turn.inputEvent.voiceChannelId, prepared.chunk, prepared.audio, prepared.chunkIndex, abort.signal, (error) => {
+        synthesize: (chunk, index) => this.synthesizeChunk(session, epoch, turn.turnId, chunk, index, turnLang, turn.understanding.responseLanguage, abort.signal, turn.voiceAuthority),
+        play: prepared => {
+          this.voiceBridge?.playback(session.guildId, true, prepared.chunk.text, turn.voiceAuthority?.floor_epoch)
+          return this.playChunk(session, epoch, turn.turnId, turn.inputEvent.voiceChannelId, prepared.chunk, prepared.audio, prepared.chunkIndex, abort.signal, (error) => {
           // Keep the first cause; later chunks fail for the same reason.
           playbackTraceFailure ??= { error }
-        }),
+        })
+        },
         isCancelled: () => this.isStale(session, epoch, abort),
+        signal: abort.signal,
+        cancelSource: () => abort.abort(),
+        discard: audio => audio.destroy(),
         onChunk: (chunk) => {
           fullReply += chunk.text
         },
@@ -406,6 +493,7 @@ export class ConversationController {
       if (session.responseEpoch === epoch) {
         session.generationAbort = undefined
         session.currentTurnId = undefined
+        this.voiceBridge?.playback(session.guildId, false, '', turn.voiceAuthority?.floor_epoch)
         transitionGuildPhase(session, 'idle', 'turn_finished')
         await this.startPendingTurn(session)
       }
@@ -485,6 +573,7 @@ export class ConversationController {
     turnLang: GptSoVitsLang,
     responseLanguage: 'ja' | 'zh' | 'en',
     parentSignal: AbortSignal,
+    authority?: FloorDecision,
   ): Promise<Readable | null> {
     if (!chunk.text.trim() || parentSignal.aborted)
       return null
@@ -528,6 +617,8 @@ export class ConversationController {
       const { emotion: _emotion, intensity: _intensity, ...conditioning } = chunk.style
       const stream = await this.tts.synthesize({
         text: prepared.speechText,
+        authority,
+        prosody: { pace: chunk.style.speedFactor, instruction: "Emotion: " + chunk.style.emotion + ". Intensity: " + chunk.style.intensity + "." },
         language: resolved.language,
         pronunciationProfileVersion: this.character?.interaction.pronunciationProfileVersion ?? 'default-v1',
         conditioning,
@@ -536,8 +627,10 @@ export class ConversationController {
 
       // A synthesis that finished after its response was superseded must never
       // reach the speaker.
-      if (session.responseEpoch !== epoch || parentSignal.aborted)
+      if (session.responseEpoch !== epoch || parentSignal.aborted) {
+        stream.destroy()
         return null
+      }
       this.logger.withFields({
         guildId: session.guildId,
         turnId,
@@ -552,6 +645,8 @@ export class ConversationController {
     catch (err) {
       if (!parentSignal.aborted)
         this.logger.withError(err).withFields({ guildId: session.guildId, turnId, chunkIndex }).error('tts_synthesis_failed')
+      if (authority && !parentSignal.aborted)
+        throw err
       return null
     }
   }

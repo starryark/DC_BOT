@@ -1,62 +1,58 @@
-# External voice-model integration
+# Local voice-model integration
 
-## References and observed state
+The Python service and TypeScript client are implemented. The Python checkout is
+C:/Users/lyang/Voice_Model/repo; its docs/OPTIMIZATION_RUNTIME.md is the complete
+operating and qualification guide. This project keeps gateway/DAVE/Opus,
+character/persona, durable Discord memory and cloud reasoning. Python owns
+independent decoded-source recognition, room revision authority and local speech.
 
-- Research: [deep-research-report.md](deep-research-report.md), especially
-  “The target repository boundary should look like this”. Its embedded research
-  citations are preserved; they are not independently revalidated here.
-- Working Python checkout: `C:/Users/lyang/Voice_Model/repo`.
-- Read that checkout's `AGENTS.md`, `HANDOFF.md`, `docs/ARCHITECTURE.md`,
-  `docs/PROTOCOL.md`, and `docs/COMPONENT_CONTRACTS.md` before changing it.
-- Source revisions at extraction are recorded in `extraction-manifest.json`.
+## Runtime selection
 
-The current checkout has revision authority, protocol/adapter contracts,
-S1 interaction policy and advisory TurnSense, FunASR acoustic/ASR adapters,
-VoxCPM and Qwen3 speech adapters, and provider-neutral reasoning boundaries.
-Its September 5 handoff records local model characterizations and training
-progress while leaving matched TTS comparisons, reference corpora, and empirical
-acceptance open. The extracted bot currently has no implemented service bridge
-to those Python adapters.
+VOICE_MODEL_MODE is off by default. Shadow mode streams decoded PCM while the
+existing utterance route remains the response owner. Active mode uses only
+Python-authorized turns for voice reasoning and returns streamed PCM through
+the same authenticated connection. Set VOICE_MODEL_PORT (default 8766) and
+VOICE_AGENT_BRIDGE_TOKEN to match the Python service. Active mode requires a
+speech-capable service with verified GPU release control.
 
-## Ownership
+The client has finite source/audio/socket/request bounds. SSRC changes, decoder
+resets, reconnects and unknown discontinuities retire old sources. Source sample
+coordinates advance through dropped frames; loss is reported, not compressed.
+Room reset clears the old room epoch on both sides. Decoder failures clear partial
+audio and pending endpoint timers; callbacks and member lookups from a prior
+connection cannot clear or repopulate a replacement session. A broken bridge
+fails closed.
 
-| This TypeScript project | External Python voice service |
-| --- | --- |
-| Discord gateway and per-guild/member lifecycle | Audio framing, AEC/VAD, acoustic evidence |
-| Opus transport and playback scheduling | Streaming ASR and transcript revisions |
-| Character/persona and durable Discord memory | S1/floor decisions and revision authority |
-| Existing cloud reasoning adapter | Local TTS adapters and GPU admission/cancellation |
+The Python protocol is voice-agent.discord-pcm.v1, non-canonical transport
+records around the frozen voice-agent protocol. A speech request carries the
+exact guild, stream, revision and floor epoch that authorized its response.
+An old LLM task cannot use the guild's newer authority. Neutral pace/instruction
+metadata is forwarded; unsupported conditioning is reported as degradation.
 
-Keep model weights, Python environments, training datasets, and heavyweight
-inference dependencies in their own project. The eventual bridge should use
-PCM frames and structured events, with bounded queues and cancellation, through
-a versioned local streaming transport. Do not treat `VOICE_MODEL_ROOT` or an
-invented endpoint as an already implemented runtime setting.
+One credit gates PCM output. The client retains at most current speech plus one
+lookahead and the text producer is bounded by pull. Safe phrase cuts protect
+unfinished code, citations and numbers. The SDK receives explicit 48 kHz stereo
+PCM, without a WAV accumulation stage. A final prepare/dispatch fence blocks
+obsolete voice packets while preserving required codec silence.
 
-## Implementation sequence
+The voice-test command uses an explicit gateway-command authority in active
+mode. It checks that the caller and bot are in the same channel. It does not
+manufacture an ASR observation, and its audio uses the controller's response
+epoch and the same cancellation path.
 
-1. Agree a versioned service protocol against the Python checkout's canonical
-   contracts. The research's `audio.frame`, `asr.revision`, `turn.committed`,
-   `speech.cancel`, and `tts.chunk` labels are illustrative, not a frozen wire
-   schema. Preserve session/guild/member mapping, turn/revision identity,
-   monotonic timestamps, and sample coordinates. Distinguish source identity
-   from bot response epochs and define reconnect and discontinuity semantics.
-2. Expose continuous 10–20 ms capture frames while preserving the current
-   utterance provider as the explicitly selected baseline. Preserve per-user
-   state, bounded admission, and sample accounting under overload.
-3. Add playback render-reference feedback and implement real echo/near-end
-   evidence or an explicit degraded policy. Missing takeover/completion
-   observations must remain unknown; deterministic fixtures do not establish
-   that real acoustic adapters can drive the S1 policy.
-4. Connect provisional ASR revisions and authoritative turn commitment to the
-   existing streamed reasoning adapter. Propagate supersession/cancellation to
-   reasoning, TTS admission, queued playback, and the final outgoing packet.
-5. Bound unsynthesized speech text as well as the retained one-chunk TTS
-   lookahead. Keep model choices replaceable and qualify real streaming support.
-6. Replay multilingual turns, hesitations, echo, overlap, backchannels, and
-   interruptions. Measure first/last voiced frames, ASR revisions, turn commit,
-   first semantic token/PCM, packet submission, and the final obsolete packet.
-   Report distributions and hardware/conditioning context for model trials.
+## Verification
 
-This directory extraction does not change latency policy, select model weights,
-implement the protocol, or claim full-duplex readiness.
+Run the Python script scripts/bridge_integration_smoke.py with --bot-repo pointing
+here. It launches both real protocol implementations with synthetic models and
+checks two speakers, cancellation, stale-revision refusal and replacement PCM.
+No Discord login or hosted API call occurs.
+
+Optional OpenAI escalation is enabled with OPENAI_ESCALATION_ENABLED,
+OPENAI_API_KEY and OPENAI_ESCALATION_MODEL (default gpt-6-astra). Ordinary turns
+stay on Gemini; detailed/high-reasoning turns use Responses. No provider change
+is enabled by default.
+
+Live DAVE/rejoin/loss tests, exact Kurisu compatibility, matched conditioned
+latency/RTF, 30-minute sessions and blinded listening remain separate empirical
+qualification. The conservative transport/endpoint S1 policy is explicitly
+degraded; do not label these software checks as full-duplex human-quality proof.

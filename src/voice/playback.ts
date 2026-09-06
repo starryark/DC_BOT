@@ -78,6 +78,7 @@ export interface PlaybackSnapshot {
   queueDepth: number
   latestEpoch: number
   currentItemId?: string
+  currentEpoch?: number
 }
 
 export interface GuildPlaybackSchedulerOptions {
@@ -145,8 +146,11 @@ export class GuildPlaybackScheduler {
     if (this.disposed)
       return Promise.resolve({ status: 'cancelled', durationMs: 0 })
 
-    if (item.responseEpoch > this.latestEpoch)
+    if (item.responseEpoch > this.latestEpoch) {
       this.latestEpoch = item.responseEpoch
+      for (const cancelled of this.cancelledEpochs)
+        if (cancelled < this.latestEpoch) this.cancelledEpochs.delete(cancelled)
+    }
 
     if (this.isStale(item.responseEpoch)) {
       this.logger.withFields({ guildId: this.guildId, itemId: item.id, epoch: item.responseEpoch, latestEpoch: this.latestEpoch }).log('playback_cancelled')
@@ -173,7 +177,11 @@ export class GuildPlaybackScheduler {
 
   /** Drop every pending item of `epoch`, and stop it if it is currently playing. */
   cancelEpoch(epoch: number): void {
-    this.cancelledEpochs.add(epoch)
+    if (epoch >= this.latestEpoch) {
+      if (this.cancelledEpochs.size >= 128 && !this.cancelledEpochs.has(epoch))
+        throw new Error('Too many future playback cancellations')
+      this.cancelledEpochs.add(epoch)
+    }
 
     const keep: QueuedPlayback[] = []
     for (const entry of this.queue) {
@@ -219,6 +227,7 @@ export class GuildPlaybackScheduler {
       queueDepth: this.queue.length,
       latestEpoch: this.latestEpoch,
       currentItemId: this.active?.item.id,
+      currentEpoch: this.active?.item.responseEpoch,
     }
   }
 
@@ -229,6 +238,10 @@ export class GuildPlaybackScheduler {
     this.disposed = true
     void this.stopAll('shutdown')
     this.unobserve()
+  }
+
+  canSubmitEpoch(epoch: number): boolean {
+    return !this.disposed && !this.isStale(epoch)
   }
 
   private isStale(epoch: number): boolean {

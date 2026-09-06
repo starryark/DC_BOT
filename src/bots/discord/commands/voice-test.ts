@@ -4,6 +4,7 @@ import type { GptSoVitsLang } from '../../../providers/tts/types'
 
 import { useLogg } from '@guiiai/logg'
 
+import { config } from '../../../config'
 import { resolveTtsLanguage } from '../../../providers/tts/language'
 import { tryGetServices } from '../../../services'
 
@@ -47,6 +48,16 @@ export async function handleVoiceTest(interaction: ChatInputCommandInteraction<C
       return
     }
 
+    if (services.voice.currentChannelId(interaction.guildId!) !== voiceChannel.id) {
+      await interaction.followUp('Join the same voice channel as the bot before running this test.')
+      return
+    }
+    if (config().voiceModel.mode === 'active') {
+      if (!services.controller)
+        throw new Error('Voice controller unavailable')
+      await services.controller.testVoice(interaction.guildId!, voiceChannel.id, interaction.user.id, interaction.id, text, language)
+      return
+    }
     const controller = new AbortController()
     const stream = await services.tts.synthesize({ text, language }, controller.signal)
     await services.voice.playAudioStream(interaction.guildId!, stream)
@@ -54,6 +65,6 @@ export async function handleVoiceTest(interaction: ChatInputCommandInteraction<C
   }
   catch (error) {
     log.withError(error).error('voice-test failed')
-    await interaction.followUp('TTS failed — is GPT-SoVITS running on :9880?').catch(() => {})
+    await interaction.followUp('Speech synthesis failed. Check the configured voice service.').catch(() => {})
   }
 }

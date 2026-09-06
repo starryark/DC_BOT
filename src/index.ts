@@ -18,7 +18,10 @@ import { createVoiceMemoryAdapter } from './memory/voice-memory-adapter'
 import { ConversationController } from './orchestration/conversation-controller'
 import { MentionResponder } from './orchestration/mention-responder'
 import { QwenHttpAsrProvider } from './providers/asr/qwen-http'
+import { OpenAiBrainProvider, EscalatingBrainProvider } from './providers/brain/openai'
 import { GeminiBrainProvider } from './providers/brain/gemini'
+import { VoiceModelBridge } from './voice/model-bridge'
+import { VoiceModelTtsProvider } from './providers/tts/voice-model'
 import { GptSoVitsTtsProvider } from './providers/tts/gpt-sovits'
 import { CachedTtsProvider, fingerprint } from './providers/tts/tts-cache'
 import { loadVoiceProfileCatalog } from './providers/tts/voice-profile-catalog'
@@ -77,6 +80,15 @@ async function main() {
     airiUrl: cfg.airiUrl,
   })
   const voice = adapter.voiceManager
+  const voiceBridge = cfg.voiceModel.mode === 'off' ? undefined : new VoiceModelBridge(cfg.voiceModel)
+  if (voiceBridge) {
+    if (cfg.backend !== 'direct')
+      throw new Error('Voice model bridge requires the direct backend')
+    voiceBridge.bind(voice)
+    voiceBridge.on('degradation', event => log.withFields(event).log('voice_model_degradation'))
+    await voiceBridge.start()
+    voiceBridge.on('disconnected', () => log.error('Voice model bridge disconnected; active mode is fail-closed'))
+  }
   const avatar = new AvatarPublisher({
     enabled: cfg.avatar.enabled,
     url: cfg.avatar.relayUrl,
@@ -87,7 +99,7 @@ async function main() {
 
   const asr = new QwenHttpAsrProvider()
   const rawTts = new GptSoVitsTtsProvider()
-  const tts = new CachedTtsProvider(rawTts, {
+  const tts = cfg.voiceModel.mode === 'active' && voiceBridge ? new VoiceModelTtsProvider(voiceBridge) : new CachedTtsProvider(rawTts, {
     ...cfg.ttsCache,
     identity: (request) => {
       const conditioning = request.conditioning
@@ -119,7 +131,8 @@ async function main() {
       }
     },
   })
-  const brain = new GeminiBrainProvider()
+  const primaryBrain = new GeminiBrainProvider()
+  const brain = cfg.escalation.enabled ? new EscalatingBrainProvider(primaryBrain, new OpenAiBrainProvider(cfg.escalation)) : primaryBrain
 
   // The character card supplies the persona and, via the prompt compiler, the
   // whole system instruction. A missing or broken card is not fatal: the
@@ -159,16 +172,19 @@ async function main() {
     })
   }
 
+  let conversationController: ConversationController | undefined
   if (cfg.backend === 'direct') {
     // The controller subscribes to voice utterances and barge-in events; it is
     // the only orchestrator in direct mode.
 
-    if (cfg.tts.warmupEnabled)
+    if (cfg.tts.warmupEnabled && cfg.voiceModel.mode !== 'active')
       await warmVoiceProfiles(rawTts, voiceProfileCatalog)
     // eslint-disable-next-line no-new
-    new ConversationController({ voice, asr, brain, tts, character, promptCompiler, voiceProfileCatalog, memory: voiceMemory })
+    conversationController = new ConversationController({ voice, asr, brain, tts, character, promptCompiler, voiceProfileCatalog, memory: voiceMemory, voiceBridge, voiceModelActive: cfg.voiceModel.mode === 'active' })
     adapter.setMentionResponder(new MentionResponder({ brain, character, promptCompiler }))
-    log.log('Direct backend active: Qwen ASR → Gemini → GPT-SoVITS, with Discord text replies.')
+    log.log(cfg.voiceModel.mode === 'active'
+      ? 'Direct backend active: Python source/turn authority and streaming speech, with Gemini reasoning.'
+      : 'Direct backend active: Qwen ASR → Gemini → GPT-SoVITS, with Discord text replies.')
   }
   else {
     log.log('AIRI backend active: deferring to WebSocket server.')
@@ -176,12 +192,13 @@ async function main() {
 
   // Publish the shared instances so /voice-test (and any future command) can
   // reach them without re-constructing providers.
-  setServices({ voice, asr, brain, tts, avatar })
+  setServices({ voice, asr, brain, tts, avatar, controller: conversationController })
 
   try {
     await adapter.start()
   }
   catch (error) {
+    voiceBridge?.close()
     avatar.stop()
     await memory.close()
     throw error
@@ -193,6 +210,7 @@ async function main() {
       return shutdown
     log.log(`Received ${signal}, shutting down...`)
     shutdown = (async () => {
+      voiceBridge?.close()
       await adapter.stop()
       avatar.stop()
       await memory.close()

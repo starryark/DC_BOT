@@ -10,7 +10,9 @@
   },
   "license": "MIT",
   "scripts": {
-    "start": "tsx --env-file=.env --env-file-if-exists=.config --env-file-if-exists=.env.local src/index.ts",
+    "start": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File start-bot.ps1",
+    "start:bot": "tsx --env-file=.env --env-file-if-exists=.config --env-file-if-exists=.env.local src/index.ts",
+    "runtime:check": "tsx --env-file=.env --env-file-if-exists=.config --env-file-if-exists=.env.local scripts/runtime-check.ts",
     "benchmark:voice": "tsx scripts/benchmark-voice.ts",
     "memory:status": "tsx scripts/memory/index.ts status",
     "memory:inspect": "tsx scripts/memory/index.ts inspect",
